@@ -3,10 +3,11 @@
   "main": "src/index.ts",
   "compatibility_date": "2026-09-01",
   "routes": [{ "pattern": "games.amittal.dev", "custom_domain": true }],
-  "assets": { "directory": "public", "binding": "ASSETS", "not_found_handling": "single-page-application", "run_worker_first": ["/api/*"] },
-  // One Durable Object per room: it holds the room's state and everyone's WebSocket.
-  "durable_objects": { "bindings": [{ "name": "ROOMS", "class_name": "Room" }] },
-  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["Room"] }],
+  "assets": { "directory": "public", "binding": "ASSETS", "not_found_handling": "single-page-application", "run_worker_first": ["/api/*", "/internal/*"] },
+  // One Durable Object per room: it holds the room's state and everyone's WebSocket. One more, Stats, keeps the
+  // site-wide counts the Switchboard reads at /internal/stats (secret: INTERNAL_KEY, the Switchboard's).
+  "durable_objects": { "bindings": [{ "name": "ROOMS", "class_name": "Room" }, { "name": "STATS", "class_name": "Stats" }] },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["Room"] }, { "tag": "v2", "new_sqlite_classes": ["Stats"] }],
   "rules": [{ "type": "Text", "globs": ["**/*.txt"], "fallthrough": true }],
   "dev": { "port": 8799 }
 }

@@ -1,5 +1,8 @@
 import { DurableObject } from 'cloudflare:workers'
+import type { Stats } from './stats'
 import { VALID, pickWords, score } from './words'
+
+interface Env { STATS: DurableObjectNamespace<Stats> }
 
 export type Mode = 'marathon' | 'race' | 'survival' | 'blitz'
 
@@ -86,11 +89,13 @@ function cmp(a: number[], b: number[]) {
   return 0
 }
 
-export class Room extends DurableObject {
+export class Room extends DurableObject<Env> {
   s: State | null = null
+  /** Reports for the site-wide counts, sent after everyone has the new state. */
+  reports: ((stats: DurableObjectStub<Stats>) => Promise<unknown>)[] = []
 
-  constructor(ctx: DurableObjectState, env: unknown) {
-    super(ctx, env as never)
+  constructor(ctx: DurableObjectState, env: Env) {
+    super(ctx, env)
     ctx.setWebSocketAutoResponse(new WebSocketRequestResponsePair('ping', 'pong'))
     ctx.blockConcurrencyWhile(async () => { this.s = (await ctx.storage.get<State>('s')) ?? null })
   }
@@ -104,7 +109,10 @@ export class Room extends DurableObject {
         code: url.searchParams.get('code') ?? '', host: null, phase: 'lobby', config: { ...DEFAULTS }, words: [], game: 0,
         startedAt: 0, endsAt: 0, round: 0, roundStartedAt: 0, roundEndsAt: 0, revealUntil: 0, endedAt: 0, touched: now, players: {},
       }
+      const code = this.s.code
+      this.reports.push(st => st.roomCreated(code))
       await this.save()
+      await this.flush()
       return new Response('ok')
     }
     if (!this.s) return new Response('no such room', { status: 404 })
@@ -150,6 +158,8 @@ export class Room extends DurableObject {
       }
       ws.serializeAttachment({ id })
       if (!s.host || !s.players[s.host]) s.host = id
+      const count = Object.keys(s.players).length
+      this.reports.push(st => st.joined(s.code, id, count))
       return this.commit()
     }
 
@@ -184,6 +194,8 @@ export class Room extends DurableObject {
         s.roundEndsAt = c.mode === 'blitz' ? s.startedAt + c.roundSeconds * 1000 : 0
         s.endedAt = 0
         for (const q of Object.values(s.players)) fresh(q)
+        const count = Object.keys(s.players).length
+        this.reports.push(st => st.started(s.code, c.mode, count))
         return this.commit()
       }
       case 'end': {
@@ -315,6 +327,10 @@ export class Room extends DurableObject {
     }
     s.phase = 'done'
     s.endedAt = now
+    const players = Object.values(s.players)
+    const guesses = players.reduce((a, q) => a + q.results.reduce((b, r) => b + (r?.tries ?? 0), 0), 0)
+    const solved = players.reduce((a, q) => a + q.solved, 0)
+    this.reports.push(st => st.finished(s.code, guesses, solved))
   }
 
   /** Applies whatever time has made due. */
@@ -380,6 +396,15 @@ export class Room extends DurableObject {
     await this.save()
     await this.schedule()
     this.broadcast()
+    await this.flush()
+  }
+
+  async flush() {
+    if (!this.reports.length) return
+    const stats = this.env.STATS.get(this.env.STATS.idFromName('global'))
+    const todo = this.reports.splice(0)
+    // Counting must never get in the way of a game.
+    for (const report of todo) await report(stats).catch(() => {})
   }
 
   async schedule() {

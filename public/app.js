@@ -47,8 +47,20 @@ function route() {
     renderHome()
   }
 }
-window.addEventListener('popstate', route)
-const go = path => { history.pushState(null, '', path); route() }
+window.addEventListener('popstate', () => { route(); countView() })
+const go = path => { history.pushState(null, '', path); route(); countView() }
+
+// Anonymous page-view count for the Switchboard (api.amittal.dev/hit): the page and the referring site, no cookies
+// or ids. Room codes are left out of the path. Skipped off amittal.dev and in automated browsers.
+let viewed = ''
+function countView() {
+  if (!navigator.sendBeacon || navigator.webdriver || !location.hostname.endsWith('amittal.dev')) return
+  const path = location.pathname.startsWith('/r/') ? '/r/' : location.pathname
+  if (path === viewed) return
+  const ref = viewed ? '' : document.referrer
+  viewed = path
+  try { navigator.sendBeacon('https://api.amittal.dev/hit', JSON.stringify({ s: 'games', p: path, r: ref })) } catch { /* never break the page */ }
+}
 
 // ---------- home ----------
 function renderHome() {
@@ -410,3 +422,4 @@ function tickTimers() {
 setInterval(tickTimers, 250)
 
 route()
+countView()

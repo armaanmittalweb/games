@@ -1,8 +1,22 @@
+import type { Stats } from './stats'
+
 export { Room } from './room'
+export { Stats } from './stats'
 
 interface Env {
   ROOMS: DurableObjectNamespace
+  STATS: DurableObjectNamespace<Stats>
   ASSETS: Fetcher
+  /** Shared with the Switchboard, which reads /internal/stats through a service binding. */
+  INTERNAL_KEY?: string
+}
+
+/** Compares two strings in time that does not depend on where they differ. */
+function sameKey(a: string, b: string) {
+  if (a.length !== b.length) return false
+  let d = 0
+  for (let i = 0; i < a.length; i++) d |= a.charCodeAt(i) ^ b.charCodeAt(i)
+  return d === 0
 }
 
 // No 0/O, 1/I/L: codes get read out loud.
@@ -31,6 +45,11 @@ export default {
     if (m) {
       const c = m[1].toUpperCase()
       return env.ROOMS.get(env.ROOMS.idFromName(c)).fetch(new Request(`https://room/ws`, req))
+    }
+    if (url.pathname === '/internal/stats') {
+      const key = req.headers.get('x-internal-key') ?? ''
+      if (!env.INTERNAL_KEY || !sameKey(key, env.INTERNAL_KEY)) return json({ error: 'not found' }, 404)
+      return json(await env.STATS.get(env.STATS.idFromName('global')).report())
     }
     if (url.pathname.startsWith('/api/')) return json({ error: 'not found' }, 404)
     return env.ASSETS.fetch(req)
