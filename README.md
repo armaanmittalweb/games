@@ -26,7 +26,9 @@ hand the host role to someone else, or remove a player. Anyone can join mid-game
   them. Timers run on Durable Object alarms. Rooms delete themselves a day after the last activity.
 - Players are identified by a random id and secret kept in `localStorage`, so a refresh or a dropped connection
   rejoins as the same player.
-- Word lists: `data/answers.txt` (2,315 answer words) and `data/allowed.txt` (accepted guesses).
+- Word lists: `data/answers.txt` (2,315 answer words) and `data/allowed.txt`, the guesses accepted: real English words only
+  (about 4,900), built by `scripts/build-words.mjs` from SCOWL (see `data/SCOWL-COPYRIGHT`). Anything else is rejected as
+  "Not a real English word" and costs no guess.
 
 ## Run and deploy
 

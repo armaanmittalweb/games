@@ -230,7 +230,7 @@ export class Room extends DurableObject {
         } else {
           const g = String(m.word ?? '').toLowerCase()
           if (!/^[a-z]{5}$/.test(g)) return ws.send(JSON.stringify({ t: 'bad', msg: 'Five letters' }))
-          if (!VALID.has(g)) return ws.send(JSON.stringify({ t: 'bad', msg: 'Not in word list' }))
+          if (!VALID.has(g)) return ws.send(JSON.stringify({ t: 'bad', msg: 'Not a real English word' }))
           const marks = score(g, answer)
           p.guesses.push(g)
           p.marks.push(marks)
