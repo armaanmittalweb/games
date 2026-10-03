@@ -52,6 +52,13 @@ export default {
       return json(await env.STATS.get(env.STATS.idFromName('global')).report())
     }
     if (url.pathname.startsWith('/api/')) return json({ error: 'not found' }, 404)
+    // A room link (/r/CODE) is the game page itself. Rooms last a day, so search engines are told not to index them.
+    if (/^\/r\/[A-Za-z0-9]{5}$/.test(url.pathname)) {
+      const page = await env.ASSETS.fetch(new Request(new URL('/', url), req))
+      const res = new Response(page.body, page)
+      res.headers.set('x-robots-tag', 'noindex')
+      return res
+    }
     return env.ASSETS.fetch(req)
   },
 }

@@ -1,14 +1,17 @@
 :root {
   --bg: #121213; --panel: #1c1c1f; --line: #3a3a3c; --text: #f2f2f2; --dim: #9a9aa0;
-  --green: #538d4e; --yellow: #b59f3b; --gray: #3a3a3c; --key: #818384; --red: #c0453a; --accent: #4f8cff;
+  --green: #538d4e; --btn: #45793f; --yellow: #b59f3b; --gray: #3a3a3c; --key: #818384; --red: #c0453a; --accent: #4f8cff;
 }
 * { box-sizing: border-box; }
 html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text); font: 16px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
 body { overscroll-behavior: none; }
-#app { min-height: 100dvh; display: flex; flex-direction: column; }
+#app { display: flex; flex-direction: column; }
+/* In a room the game takes the whole screen and the home page's guide is hidden (app.js sets data-view). */
+body[data-view="room"] #app { min-height: 100dvh; }
+body[data-view="room"] #about, body[data-view="room"] .foot { display: none; }
 button, input, select { font: inherit; color: inherit; }
 button { cursor: pointer; border: 0; border-radius: 6px; padding: 10px 14px; background: var(--line); font-weight: 600; touch-action: manipulation; }
-button.primary { background: var(--green); }
+button.primary { background: var(--btn); color: #fff; }
 button.danger { background: var(--red); }
 button.link { background: none; padding: 4px 6px; color: var(--accent); font-weight: 500; }
 button:disabled { opacity: .5; cursor: default; }
@@ -113,3 +116,41 @@ td.ok { color: #8fd18a; } td.miss { color: #ff8a80; }
   .bar .pill { font-size: 10px; padding: 2px 6px; }
   .bar .timer { font-size: 18px; }
 }
+
+/* Guide pages and the home page's guide */
+a { color: var(--accent); }
+.site-nav { display: flex; align-items: center; gap: 12px; padding: 10px 16px; border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+.site-nav .brand { color: var(--text); font-weight: 800; text-decoration: none; letter-spacing: .3px; font-size: 18px; }
+.site-nav nav { display: flex; gap: 14px; margin-left: auto; flex-wrap: wrap; align-items: center; }
+.site-nav nav a { color: var(--dim); text-decoration: none; font-size: 15px; }
+.site-nav nav a[aria-current="page"] { color: var(--text); }
+.site-nav nav a.play { background: var(--btn); color: #fff; padding: 6px 12px; border-radius: 6px; font-weight: 700; }
+.doc { width: 100%; max-width: 760px; margin: 0 auto; padding: 16px 16px 8px; line-height: 1.6; }
+.doc h1 { font-size: clamp(26px, 6vw, 36px); line-height: 1.2; margin: 8px 0 12px; }
+.doc h2 { font-size: 21px; margin: 32px 0 10px; }
+.doc h3 { font-size: 17px; margin: 0 0 6px; }
+.doc .lead { font-size: 18px; color: #d6d6da; }
+.doc ul, .doc ol { padding-left: 22px; }
+.doc li { margin: 6px 0; }
+.doc table { font-size: 15px; }
+.doc td, .doc th { white-space: normal; vertical-align: top; }
+.doc code { background: #232327; padding: 1px 5px; border-radius: 4px; font-size: 14px; }
+.crumbs { font-size: 14px; color: var(--dim); margin: 4px 0 0; }
+.crumbs a { color: var(--dim); }
+.cards { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+.cards .card p { margin: 0; color: #d6d6da; font-size: 15px; }
+.steps li { margin: 8px 0; }
+details { border-bottom: 1px solid #2a2a2d; padding: 10px 0; }
+summary { cursor: pointer; font-weight: 600; }
+details p { margin: 8px 0 2px; color: #d6d6da; }
+.ex { display: flex; gap: 5px; margin: 10px 0; }
+.ex span { width: 46px; height: 46px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 22px; }
+.ex .t2 { background: var(--green); } .ex .t1 { background: var(--yellow); } .ex .t0 { background: var(--gray); }
+b.g { color: #8fd18a; } b.y { color: #e2c75a; }
+.more { display: flex; gap: 10px 18px; flex-wrap: wrap; margin: 28px 0 8px; }
+.cta { margin: 28px 0 8px; display: flex; gap: 10px; flex-wrap: wrap; }
+a.button { display: inline-block; background: var(--btn); color: #fff; text-decoration: none; font-weight: 700; padding: 12px 18px; border-radius: 6px; }
+a.button.alt { background: var(--line); }
+.foot { max-width: 760px; margin: 16px auto 0; padding: 16px; border-top: 1px solid var(--line); color: var(--dim); font-size: 14px; }
+.foot nav { display: flex; gap: 8px 16px; flex-wrap: wrap; margin-bottom: 8px; }
+.home-links { display: flex; gap: 8px 14px; flex-wrap: wrap; font-size: 14px; }

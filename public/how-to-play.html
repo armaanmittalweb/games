@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>How to Play Wordle with Friends: Rules | Word Race</title>
+<meta name="description" content="Rules of multiplayer Wordle: green, yellow and grey tiles, repeated letters, rooms and timers, scoring in each mode, and how ties are broken.">
+<link rel="canonical" href="https://games.amittal.dev/how-to-play">
+<meta name="theme-color" content="#121213">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Word Race">
+<meta property="og:url" content="https://games.amittal.dev/how-to-play">
+<meta property="og:title" content="How to play Wordle with friends">
+<meta property="og:description" content="Tile colours, repeated letters, rooms, timers, scoring and tie-breaks in Word Race.">
+<meta property="og:image" content="https://games.amittal.dev/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="stylesheet" href="/style.css">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "HowTo",
+      "name": "How to play Wordle with friends on Word Race",
+      "description": "Start a multiplayer Wordle game in a private room and play the same words as your friends.",
+      "totalTime": "PT2M",
+      "estimatedCost": { "@type": "MonetaryAmount", "currency": "USD", "value": "0" },
+      "step": [
+        { "@type": "HowToStep", "position": 1, "name": "Create a room", "text": "Open games.amittal.dev, enter your name and tap Create a room.", "url": "https://games.amittal.dev/how-to-play#room" },
+        { "@type": "HowToStep", "position": 2, "name": "Invite friends", "text": "Share the room link or the five-character code. Up to 30 players can join.", "url": "https://games.amittal.dev/how-to-play#room" },
+        { "@type": "HowToStep", "position": 3, "name": "Choose the settings", "text": "The host picks a mode, the number of words and the time limit.", "url": "https://games.amittal.dev/how-to-play#room" },
+        { "@type": "HowToStep", "position": 4, "name": "Guess the words", "text": "Each word has six tries. Green means the right letter in the right place, yellow means the letter is in the word elsewhere, grey means it is not in the word.", "url": "https://games.amittal.dev/how-to-play#tiles" }
+      ]
+    },
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        { "@type": "ListItem", "position": 1, "name": "Word Race", "item": "https://games.amittal.dev/" },
+        { "@type": "ListItem", "position": 2, "name": "How to play", "item": "https://games.amittal.dev/how-to-play" }
+      ]
+    }
+  ]
+}
+</script>
+</head>
+<body>
+<header class="site-nav">
+  <a class="brand" href="/">Word Race</a>
+  <nav aria-label="Main"><a href="/how-to-play" aria-current="page">How to play</a><a href="/game-modes">Modes</a><a href="/wordle-tips">Tips</a><a class="play" href="/">Play</a></nav>
+</header>
+<main class="doc">
+  <p class="crumbs"><a href="/">Word Race</a> › How to play</p>
+  <h1>How to play Wordle with friends</h1>
+  <p class="lead">Word Race is Wordle for a group: everyone in a room guesses the same five-letter words at the same time, and a live leaderboard shows who is ahead. Here are the rules.</p>
+
+  <section id="tiles">
+    <h2>Guessing a word</h2>
+    <p>You have six tries to guess each five-letter word. Type a real English word and press Enter. Each letter then turns a colour:</p>
+    <div class="ex" aria-label="Example guess CRANE against the answer TRACE">
+      <span class="t1">C</span><span class="t2">R</span><span class="t2">A</span><span class="t0">N</span><span class="t2">E</span>
+    </div>
+    <p class="small dim">CRANE against the answer TRACE: R, A and E are in the right places, C is in TRACE but elsewhere, N is not in it.</p>
+    <ul>
+      <li><b class="g">Green</b>: the letter is in the word, in this spot.</li>
+      <li><b class="y">Yellow</b>: the letter is in the word, in a different spot.</li>
+      <li><b>Grey</b>: the letter is not in the word (or not as many times as you typed it).</li>
+    </ul>
+    <p><b>Repeated letters</b> are matched one at a time. If the answer is <b>ROBOT</b> and you guess <b>FLOOR</b>, the second O
+      is green (right place), the first O is yellow (ROBOT has a second O elsewhere), and R is yellow. If you type a letter
+      more times than it appears, the extra copies are grey.</p>
+    <p>A guess that is not a real English word is rejected with "Not a real English word" and does <b>not</b> use up a try.
+      The on-screen keyboard colours letters as you learn about them, so you can see at a glance what is left.</p>
+  </section>
+
+  <section id="room">
+    <h2>Rooms</h2>
+    <ol class="steps">
+      <li><b>Create a room</b> from the home page. The person who creates it is the host.</li>
+      <li><b>Share it.</b> Tap Share link, or read out the five-character code (it never uses 0, O, 1, I or L, so it is easy to say). Friends open the link, type a name and they are in.</li>
+      <li><b>The host sets up the game</b>: the mode, how many words (1 to 50, 15 by default) and the time limit (1 to 60 minutes), or for Blitz the number of rounds and the seconds per round.</li>
+      <li><b>Start.</b> A three-second countdown, then everyone gets the first word at once.</li>
+    </ol>
+    <p>Anyone can join a game that has already started; they begin at the first word with the time that is left. If your
+      connection drops or you refresh the page, you rejoin as the same player with your progress kept. The host can end a
+      game early, hand the host role to someone else or remove a player.</p>
+  </section>
+
+  <section id="scoring">
+    <h2>Scoring and winning</h2>
+    <p>Everyone gets the same words in the same order. In Marathon, Race and Survival you move to the next word as soon as
+      you solve one (or use all six tries). You can also skip a word you are stuck on; it counts as missed.</p>
+    <div class="scroll"><table>
+      <tr><th>Mode</th><th>Points</th><th>Ranking, then tie-breaks</th></tr>
+      <tr><td>Marathon</td><td>6 for a first-try solve, down to 1 on the sixth try</td><td>points → words solved → fewer guesses → solved their last word earlier</td></tr>
+      <tr><td>Race</td><td>Words solved</td><td>words solved → got there first → fewer guesses</td></tr>
+      <tr><td>Survival</td><td>Words solved until the first miss</td><td>words solved → fewer guesses → got there first</td></tr>
+      <tr><td>Blitz</td><td>7 minus your guesses, plus 3, 2 or 1 for the first three to solve the round</td><td>points → rounds won → less total solve time → fewer guesses</td></tr>
+    </table></div>
+    <p>Players who are still level after every tie-break share the place. At the end, the results show the final ranking,
+      every word, and how many tries each player took on each one.</p>
+    <p><a href="/game-modes">Read more about each mode and which to pick</a></p>
+  </section>
+
+  <section>
+    <h2>Fair play</h2>
+    <p>The words are picked and every guess is checked on the server. Your browser only receives a word after you have
+      finished it, so there is nothing to find by opening the developer tools. Your friends see the colours of your latest
+      guess on the leaderboard, never the letters.</p>
+  </section>
+
+  <p class="cta"><a class="button" href="/">Start a game</a></p>
+</main>
+<footer class="foot">
+  <nav aria-label="Guides"><a href="/">Play</a><a href="/how-to-play">How to play</a><a href="/game-modes">Game modes</a><a href="/wordle-tips">Starting words and tips</a><a href="/wordle-unlimited">Unlimited practice</a></nav>
+  <p>Word Race is an independent game by <a href="https://www.amittal.dev/">Armaan Mittal</a>. It is not affiliated with Wordle or The New York Times.</p>
+</footer>
+</body>
+</html>

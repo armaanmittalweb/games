@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /internal/
+
+Sitemap: https://games.amittal.dev/sitemap.xml

@@ -5,10 +5,15 @@
   "scripts": {
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
-    "check": "tsc --noEmit"
+    "check": "tsc --noEmit",
+    "words": "node scripts/build-words.mjs",
+    "word-stats": "node scripts/word-stats.mjs > data/word-stats.json",
+    "images": "node scripts/make-images.mjs",
+    "indexnow": "node scripts/indexnow.mjs"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^5.20260929.1",
+    "playwright": "^1.63.0",
     "typescript": "^7.0.2",
     "wordlist-english": "^1.2.1",
     "wrangler": "^4.143.0"

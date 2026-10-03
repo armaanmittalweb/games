@@ -36,15 +36,25 @@ const fmt = ms => { ms = Math.max(0, ms); const s = Math.ceil(ms / 1000); return
 const secs = ms => (ms / 1000).toFixed(1) + 's'
 
 // ---------- routing ----------
+const HOME_TITLE = document.title
 function route() {
   const m = location.pathname.match(/^\/r\/([A-Za-z0-9]{5})\/?$/)
+  document.body.dataset.view = m ? 'room' : 'home'
   if (m) {
     const code = m[1].toUpperCase()
+    document.title = `Room ${code} · Word Race`
     if (!store.get('wr.name', '')) return renderName(code)
     connect(code)
   } else {
+    document.title = HOME_TITLE
     disconnect()
     renderHome()
+    // /?solo=1 (the Play solo links on the guide pages): start a solo game straight away once there is a name.
+    if (new URLSearchParams(location.search).get('solo') === '1') {
+      history.replaceState(null, '', '/')
+      if (store.get('wr.name', '')) createRoom(true)
+      else toast('Enter your name, then tap Play solo', 2600)
+    }
   }
 }
 window.addEventListener('popstate', () => { route(); countView() })
@@ -66,28 +76,21 @@ function countView() {
 function renderHome() {
   $app.innerHTML = `
   <div class="wrap stack" style="max-width:460px">
-    <div><h1>Word Race</h1><p class="dim">Wordle with friends. Make a room, share the code, race through the same words.</p></div>
+    <div><h1>Multiplayer Wordle with friends</h1><p class="dim">Make a room, share the code, race through the same words.</p></div>
     <div class="card stack">
       <div><label for="name">Your name</label><input id="name" maxlength="16" autocomplete="nickname" value="${esc(store.get('wr.name', ''))}" placeholder="e.g. Armaan"></div>
       <button class="primary" id="create" style="width:100%">Create a room</button>
+      <button id="solo" style="width:100%">Play solo</button>
     </div>
     <div class="card stack">
       <label for="code" style="margin-top:0">Have a code?</label>
       <div class="row"><input class="grow" id="code" maxlength="5" placeholder="ABCDE" style="text-transform:uppercase;letter-spacing:3px" autocapitalize="characters" autocomplete="off"><button id="join">Join</button></div>
     </div>
-    <p class="dim small">Game modes: Marathon (most points), Race (fastest to finish), Survival (one miss and you're out), Blitz (same word for everyone, round by round).</p>
+    <p class="home-links"><a href="/how-to-play">How to play</a><a href="/game-modes">Game modes</a><a href="/wordle-tips">Best starting words</a></p>
   </div>`
   const name = () => { const n = document.getElementById('name').value.trim(); if (!n) { toast('Enter your name first'); return null } store.set('wr.name', n); return n }
-  document.getElementById('create').onclick = async e => {
-    if (!name()) return
-    e.target.disabled = true
-    try {
-      const r = await fetch('/api/rooms', { method: 'POST' })
-      const j = await r.json()
-      if (!r.ok) throw new Error(j.error || 'Could not make a room')
-      go('/r/' + j.code)
-    } catch (err) { toast(err.message); e.target.disabled = false }
-  }
+  document.getElementById('create').onclick = () => { if (name()) createRoom(false) }
+  document.getElementById('solo').onclick = () => { if (name()) createRoom(true) }
   const join = () => {
     const c = document.getElementById('code').value.trim().toUpperCase()
     if (!name()) return
@@ -98,10 +101,26 @@ function renderHome() {
   document.getElementById('code').onkeydown = e => { if (e.key === 'Enter') join() }
 }
 
+/** Makes a room and goes to it. A solo room starts its game as soon as it opens. */
+async function createRoom(solo) {
+  document.querySelectorAll('#create, #solo').forEach(b => { b.disabled = true })
+  try {
+    const r = await fetch('/api/rooms', { method: 'POST' })
+    const j = await r.json()
+    if (!r.ok) throw new Error(j.error || 'Could not make a room')
+    autostart = solo ? j.code : null
+    go('/r/' + j.code)
+  } catch (err) {
+    toast(err.message)
+    document.querySelectorAll('#create, #solo').forEach(b => { b.disabled = false })
+  }
+}
+let autostart = null
+
 function renderName(code) {
   $app.innerHTML = `
   <div class="wrap stack" style="max-width:460px">
-    <h1>Word Race</h1>
+    <h1>Join a Word Race room</h1>
     <div class="card stack">
       <p>Joining room <b style="letter-spacing:3px">${esc(code)}</b></p>
       <div><label for="name">Your name</label><input id="name" maxlength="16" autocomplete="nickname" placeholder="e.g. Armaan" autofocus></div>
@@ -164,6 +183,7 @@ function onState(m) {
   const key = `${m.game}:${m.round}:${m.me.idx}:${m.me.guesses.length}`
   if (key !== seen) { seen = key; input = '' }
   if (prev && prev.phase !== m.phase && m.phase === 'done') toast('Game over', 1200)
+  if (autostart === m.code && m.host === m.you && m.phase === 'lobby') { autostart = null; send({ t: 'start' }) }
   render()
 }
 
@@ -191,7 +211,7 @@ function render() {
 function topbar() {
   const mode = MODES[S.config.mode]
   return `<div class="bar">
-    <button class="link" data-act="home" title="Leave">←</button>
+    <button class="link" data-act="home" title="Leave" aria-label="Leave the room">←</button>
     <span class="code">${esc(S.code)}</span>
     <button class="link" data-act="share">Share link</button>
     <span class="pill">${mode.name}</span>
@@ -246,7 +266,7 @@ function boardHtml() {
 function keyboardHtml() {
   const best = {}
   S.me.guesses.forEach((w, r) => [...w].forEach((ch, i) => { best[ch] = Math.max(best[ch] ?? -1, S.me.marks[r][i]) }))
-  const row = (keys, last) => `<div class="kr">${last ? '<button class="k wide" data-key="Enter">Enter</button>' : ''}${[...keys].map(k => `<button class="k ${best[k] !== undefined ? 't' + best[k] : ''}" data-key="${k}">${k}</button>`).join('')}${last ? '<button class="k wide" data-key="Backspace">⌫</button>' : ''}</div>`
+  const row = (keys, last) => `<div class="kr">${last ? '<button class="k wide" data-key="Enter" aria-label="Enter">Enter</button>' : ''}${[...keys].map(k => `<button class="k ${best[k] !== undefined ? 't' + best[k] : ''}" data-key="${k}" aria-label="${k}${best[k] === 2 ? ', right place' : best[k] === 1 ? ', in the word' : best[k] === 0 ? ', not in the word' : ''}">${k}</button>`).join('')}${last ? '<button class="k wide" data-key="Backspace" aria-label="Delete letter">⌫</button>' : ''}</div>`
   return `<div class="kb">${row('qwertyuiop')}${row('asdfghjkl')}${row('zxcvbnm', true)}</div>`
 }
 
@@ -338,8 +358,19 @@ function results(isHost) {
         return r.solved ? `<td class="ok">${r.tries}${blitz && r.place ? ` · #${r.place}` : ''} · ${secs(r.at)}</td>` : `<td class="miss">✗</td>`
       }).join('')}</tr>`).join('')}
     </table></div>
+    <div class="row"><button data-act="result">Share result</button></div>
     ${isHost ? `<div class="row"><button class="primary" data-act="start">Play again (same settings)</button><button data-act="lobby">Change settings</button></div>` : '<p class="dim">The host can start another game.</p>'}
   </div>`
+}
+
+/** A spoiler-free summary: one square per word (green solved, red missed), place and score, and a link. */
+function resultText() {
+  const p = S.players.find(q => q.id === S.you)
+  const mode = MODES[S.config.mode].name
+  const squares = (S.words || []).map((_, i) => { const r = p.results[i]; return r ? (r.solved ? '🟩' : '🟥') : '⬜' }).join('')
+  const score = S.config.mode === 'marathon' || S.config.mode === 'blitz' ? `${p.points} pts` : `${p.solved}/${S.total} words`
+  const place = S.players.length > 1 ? `#${p.place} of ${S.players.length} · ` : ''
+  return `Word Race · ${mode}\n${place}${score}\n${squares}\nhttps://games.amittal.dev`
 }
 
 // ---------- events ----------
@@ -361,6 +392,11 @@ async function act(a) {
     const url = `${location.origin}/r/${S.code}`
     if (navigator.share) { try { await navigator.share({ title: 'Word Race', text: `Join my Word Race room ${S.code}`, url }); return } catch { /* cancelled */ } }
     try { await navigator.clipboard.writeText(url); toast('Link copied') } catch { prompt('Copy this link', url) }
+  }
+  else if (a === 'result') {
+    const text = resultText()
+    if (navigator.share) { try { await navigator.share({ text }); return } catch { /* cancelled */ } }
+    try { await navigator.clipboard.writeText(text); toast('Result copied') } catch { prompt('Copy your result', text) }
   }
   else if (a === 'start') send({ t: 'start' })
   else if (a === 'lobby') send({ t: 'lobby' })

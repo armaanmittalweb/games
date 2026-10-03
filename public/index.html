@@ -3,15 +3,150 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
+<title>Multiplayer Wordle with Friends, Free and Live | Word Race</title>
+<meta name="description" content="Play Wordle with friends in real time. Make a room, share the code and race through the same words in four modes. Free, no sign-up, works on any phone.">
+<link rel="canonical" href="https://games.amittal.dev/">
+<meta name="robots" content="index, follow, max-image-preview:large">
 <meta name="theme-color" content="#121213">
-<title>Word Race</title>
-<meta name="description" content="Wordle with friends: make a room, share the code, race through the same words.">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23538d4e'/%3E%3Ctext x='16' y='23' font-family='Arial' font-weight='700' font-size='20' text-anchor='middle' fill='white'%3EW%3C/text%3E%3C/svg%3E">
+<meta name="author" content="Armaan Mittal">
+<meta name="application-name" content="Word Race">
+<meta name="apple-mobile-web-app-title" content="Word Race">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Word Race">
+<meta property="og:url" content="https://games.amittal.dev/">
+<meta property="og:title" content="Word Race: multiplayer Wordle with friends">
+<meta property="og:description" content="Make a room, share the code, race your friends through the same words. Four modes, live leaderboard, free.">
+<meta property="og:image" content="https://games.amittal.dev/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Word Race: a Wordle board next to a live leaderboard of friends">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Word Race: multiplayer Wordle with friends">
+<meta name="twitter:description" content="Make a room, share the code, race your friends through the same words. Free, no sign-up.">
+<meta name="twitter:image" content="https://games.amittal.dev/og.png">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/icon-192.png" type="image/png" sizes="192x192">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="manifest" href="/manifest.webmanifest">
 <link rel="stylesheet" href="/style.css">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebSite",
+      "@id": "https://games.amittal.dev/#website",
+      "url": "https://games.amittal.dev/",
+      "name": "Word Race",
+      "alternateName": ["Word Race multiplayer Wordle", "Wordle with friends"],
+      "inLanguage": "en"
+    },
+    {
+      "@type": ["VideoGame", "WebApplication"],
+      "@id": "https://games.amittal.dev/#game",
+      "name": "Word Race",
+      "url": "https://games.amittal.dev/",
+      "description": "A free multiplayer word-guessing game in the style of Wordle. Friends join one room and guess the same five-letter words against a shared timer, with a live leaderboard.",
+      "genre": ["Word game", "Puzzle", "Party game"],
+      "gamePlatform": ["Web browser", "Android", "iOS", "Desktop"],
+      "playMode": ["MultiPlayer", "SinglePlayer"],
+      "numberOfPlayers": { "@type": "QuantitativeValue", "minValue": 1, "maxValue": 30 },
+      "applicationCategory": "GameApplication",
+      "operatingSystem": "Any",
+      "browserRequirements": "Requires JavaScript and a modern browser",
+      "isAccessibleForFree": true,
+      "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+      "image": "https://games.amittal.dev/og.png",
+      "screenshot": "https://games.amittal.dev/og.png",
+      "inLanguage": "en",
+      "author": { "@type": "Person", "name": "Armaan Mittal", "url": "https://www.amittal.dev/" }
+    },
+    {
+      "@type": "FAQPage",
+      "@id": "https://games.amittal.dev/#faq",
+      "mainEntity": [
+        { "@type": "Question", "name": "How do I play Wordle with friends online?", "acceptedAnswer": { "@type": "Answer", "text": "Open games.amittal.dev, enter your name and tap Create a room. Share the link or the five-character room code with your friends. When everyone has joined, the host picks a mode and starts the game. Everyone gets the same words in the same order." } },
+        { "@type": "Question", "name": "Is Word Race free?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. There is no sign-up, no download, no ads and no limit on how many games you play." } },
+        { "@type": "Question", "name": "How many people can play in one room?", "acceptedAnswer": { "@type": "Answer", "text": "Up to 30 players per room. You can also play alone to practise." } },
+        { "@type": "Question", "name": "Does it work on phones?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. The board and an on-screen keyboard fit on one screen on any phone, and a physical keyboard works on computers. Players on phones and laptops can share one room." } },
+        { "@type": "Question", "name": "How is the winner decided when two players tie?", "acceptedAnswer": { "@type": "Answer", "text": "Each mode has its own tie-breaks. In Marathon it is points, then words solved, then fewer guesses, then whoever solved their last word first. Players who are still level after every tie-break share the place." } },
+        { "@type": "Question", "name": "Can someone cheat by looking at the code?", "acceptedAnswer": { "@type": "Answer", "text": "No. The server picks the words and checks every guess, and a word is only sent to a player's browser after that player has finished it." } },
+        { "@type": "Question", "name": "Are the words hard?", "acceptedAnswer": { "@type": "Answer", "text": "No. Answers come from about 1,000 everyday words, such as smile, beach and pizza. Guesses must be real English words, and a rejected guess does not use up a try." } },
+        { "@type": "Question", "name": "Can I play more than one Wordle a day?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. Unlike the daily Wordle, you can start as many games as you like, with 1 to 50 words each." } }
+      ]
+    }
+  ]
+}
+</script>
 </head>
 <body>
-<div id="app"></div>
+<div id="app">
+  <div class="wrap stack" style="max-width:460px">
+    <div><h1>Multiplayer Wordle with friends</h1><p class="dim">Make a room, share the code, race through the same words.</p></div>
+    <noscript><p class="card">Word Race needs JavaScript to play. Everything below explains how it works.</p></noscript>
+  </div>
+</div>
+
+<main id="about" class="doc">
+  <section>
+    <h2>Play Wordle together, live</h2>
+    <p>Word Race is a free multiplayer word game in the style of Wordle. Everyone in a room guesses the same five-letter
+      words at the same time, against one timer, while a live leaderboard shows how far each friend has got and the
+      colours of their latest guess (never the letters). It runs in the browser on phones, tablets and computers, with
+      no app to install and no account to make.</p>
+    <ol class="steps">
+      <li><b>Create a room.</b> Enter your name and tap Create a room. You get a five-character code.</li>
+      <li><b>Invite friends.</b> Send the link or read out the code. Up to 30 people can join, even mid-game.</li>
+      <li><b>Pick a mode and start.</b> Choose how many words (15 by default) and the time limit, then go.</li>
+    </ol>
+  </section>
+
+  <section>
+    <h2>Four ways to play</h2>
+    <div class="cards">
+      <div class="card"><h3>Marathon</h3><p>The same pool of words for everyone, one timer. Solve in one guess for 6 points, down to 1 point on the sixth. Most points wins.</p></div>
+      <div class="card"><h3>Race</h3><p>First to clear the whole pool wins. Miss a word and you move on without it.</p></div>
+      <div class="card"><h3>Survival</h3><p>Miss one word and you are out. The last player standing with the most words wins.</p></div>
+      <div class="card"><h3>Blitz</h3><p>Everyone gets the same word at the same moment, round by round. Bonus points for the first three to solve it.</p></div>
+    </div>
+    <p><a href="/game-modes">Full rules, scoring and tie-breaks for each mode</a></p>
+  </section>
+
+  <section>
+    <h2>Why it works for a group</h2>
+    <ul>
+      <li><b>Fair.</b> The server picks the words and checks every guess, so nobody can find the answer in their browser.</li>
+      <li><b>Words people know.</b> Answers come from about 1,000 everyday words, not obscure ones. Guesses must be real English words, and a rejected guess costs nothing.</li>
+      <li><b>Clear winners.</b> Every mode has tie-breaks, and the results show every word and how each player did on it.</li>
+      <li><b>Unlimited.</b> Play as many games as you like, with 1 to 50 words each. Play alone to practise.</li>
+      <li><b>Any device.</b> The board and keyboard fit on one phone screen. A dropped connection or a refresh puts you back in the game.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Questions</h2>
+    <details><summary>How do I play Wordle with friends online?</summary><p>Open games.amittal.dev, enter your name and tap Create a room. Share the link or the five-character room code with your friends. When everyone has joined, the host picks a mode and starts the game. Everyone gets the same words in the same order.</p></details>
+    <details><summary>Is Word Race free?</summary><p>Yes. There is no sign-up, no download, no ads and no limit on how many games you play.</p></details>
+    <details><summary>How many people can play in one room?</summary><p>Up to 30 players per room. You can also play alone to practise.</p></details>
+    <details><summary>Does it work on phones?</summary><p>Yes. The board and an on-screen keyboard fit on one screen on any phone, and a physical keyboard works on computers. Players on phones and laptops can share one room.</p></details>
+    <details><summary>How is the winner decided when two players tie?</summary><p>Each mode has its own tie-breaks. In Marathon it is points, then words solved, then fewer guesses, then whoever solved their last word first. Players who are still level after every tie-break share the place.</p></details>
+    <details><summary>Can someone cheat by looking at the code?</summary><p>No. The server picks the words and checks every guess, and a word is only sent to a player's browser after that player has finished it.</p></details>
+    <details><summary>Are the words hard?</summary><p>No. Answers come from about 1,000 everyday words, such as smile, beach and pizza. Guesses must be real English words, and a rejected guess does not use up a try.</p></details>
+    <details><summary>Can I play more than one Wordle a day?</summary><p>Yes. Unlike the daily Wordle, you can start as many games as you like, with 1 to 50 words each.</p></details>
+  </section>
+
+  <nav class="more" aria-label="Guides">
+    <a href="/how-to-play">How to play</a>
+    <a href="/game-modes">Game modes</a>
+    <a href="/wordle-tips">Best starting words and tips</a>
+    <a href="/wordle-unlimited">Unlimited practice</a>
+  </nav>
+</main>
+
+<footer class="foot">
+  <p>Word Race is an independent game by <a href="https://www.amittal.dev/">Armaan Mittal</a>. It is not affiliated with Wordle or The New York Times.</p>
+</footer>
 <div id="toast" class="toast" hidden></div>
-<script src="/app.js"></script>
+<script src="/app.js" defer></script>
 </body>
 </html>

@@ -1,0 +1,328 @@
+{
+ "answers": 1016,
+ "guesses": 4860,
+ "letters": [
+  {
+   "letter": "e",
+   "share": 46.8
+  },
+  {
+   "letter": "a",
+   "share": 40.9
+  },
+  {
+   "letter": "r",
+   "share": 40.2
+  },
+  {
+   "letter": "t",
+   "share": 31.6
+  },
+  {
+   "letter": "o",
+   "share": 29.3
+  },
+  {
+   "letter": "s",
+   "share": 29.3
+  },
+  {
+   "letter": "i",
+   "share": 27.5
+  },
+  {
+   "letter": "l",
+   "share": 26.3
+  },
+  {
+   "letter": "n",
+   "share": 23.4
+  },
+  {
+   "letter": "c",
+   "share": 21.1
+  },
+  {
+   "letter": "h",
+   "share": 20.1
+  },
+  {
+   "letter": "u",
+   "share": 17
+  },
+  {
+   "letter": "d",
+   "share": 15.7
+  },
+  {
+   "letter": "y",
+   "share": 14.1
+  },
+  {
+   "letter": "p",
+   "share": 12.4
+  },
+  {
+   "letter": "b",
+   "share": 11.9
+  },
+  {
+   "letter": "g",
+   "share": 11
+  },
+  {
+   "letter": "m",
+   "share": 10.8
+  },
+  {
+   "letter": "f",
+   "share": 9.1
+  },
+  {
+   "letter": "k",
+   "share": 9.1
+  },
+  {
+   "letter": "w",
+   "share": 8.9
+  },
+  {
+   "letter": "v",
+   "share": 6.2
+  },
+  {
+   "letter": "z",
+   "share": 1.3
+  },
+  {
+   "letter": "j",
+   "share": 1.1
+  },
+  {
+   "letter": "q",
+   "share": 1
+  },
+  {
+   "letter": "x",
+   "share": 0.9
+  }
+ ],
+ "positions": [
+  [
+   {
+    "letter": "s",
+    "share": 18.1
+   },
+   {
+    "letter": "c",
+    "share": 9.3
+   },
+   {
+    "letter": "b",
+    "share": 8.5
+   }
+  ],
+  [
+   {
+    "letter": "r",
+    "share": 14.4
+   },
+   {
+    "letter": "o",
+    "share": 13.2
+   },
+   {
+    "letter": "a",
+    "share": 12.4
+   }
+  ],
+  [
+   {
+    "letter": "a",
+    "share": 15.7
+   },
+   {
+    "letter": "i",
+    "share": 13.6
+   },
+   {
+    "letter": "o",
+    "share": 10.7
+   }
+  ],
+  [
+   {
+    "letter": "e",
+    "share": 12.6
+   },
+   {
+    "letter": "c",
+    "share": 9.1
+   },
+   {
+    "letter": "n",
+    "share": 8.9
+   }
+  ],
+  [
+   {
+    "letter": "e",
+    "share": 20.6
+   },
+   {
+    "letter": "y",
+    "share": 12.4
+   },
+   {
+    "letter": "t",
+    "share": 11.8
+   }
+  ]
+ ],
+ "bestOpeners": [
+  {
+   "word": "orate",
+   "left": 23.8,
+   "patterns": 110
+  },
+  {
+   "word": "arise",
+   "left": 24.2,
+   "patterns": 102
+  },
+  {
+   "word": "raise",
+   "left": 24.6,
+   "patterns": 109
+  },
+  {
+   "word": "irate",
+   "left": 24.7,
+   "patterns": 108
+  },
+  {
+   "word": "arose",
+   "left": 25.2,
+   "patterns": 103
+  },
+  {
+   "word": "crate",
+   "left": 25.5,
+   "patterns": 130
+  },
+  {
+   "word": "trace",
+   "left": 26.2,
+   "patterns": 132
+  },
+  {
+   "word": "stare",
+   "left": 27,
+   "patterns": 120
+  },
+  {
+   "word": "taser",
+   "left": 27.7,
+   "patterns": 111
+  },
+  {
+   "word": "saner",
+   "left": 28.1,
+   "patterns": 104
+  }
+ ],
+ "bestCommonOpeners": [
+  {
+   "word": "arise",
+   "left": 24.2,
+   "patterns": 102
+  },
+  {
+   "word": "raise",
+   "left": 24.6,
+   "patterns": 109
+  },
+  {
+   "word": "crate",
+   "left": 25.5,
+   "patterns": 130
+  },
+  {
+   "word": "trace",
+   "left": 26.2,
+   "patterns": 132
+  },
+  {
+   "word": "stare",
+   "left": 27,
+   "patterns": 120
+  },
+  {
+   "word": "alert",
+   "left": 28.9,
+   "patterns": 116
+  },
+  {
+   "word": "crane",
+   "left": 29,
+   "patterns": 121
+  },
+  {
+   "word": "react",
+   "left": 29.3,
+   "patterns": 112
+  },
+  {
+   "word": "roast",
+   "left": 29.8,
+   "patterns": 110
+  },
+  {
+   "word": "store",
+   "left": 30,
+   "patterns": 104
+  }
+ ],
+ "popular": [
+  {
+   "word": "adieu",
+   "left": 59.3,
+   "patterns": 68
+  },
+  {
+   "word": "audio",
+   "left": 91.1,
+   "patterns": 71
+  },
+  {
+   "word": "crane",
+   "left": 29,
+   "patterns": 121
+  },
+  {
+   "word": "slate",
+   "left": 28.1,
+   "patterns": 130
+  },
+  {
+   "word": "stare",
+   "left": 27,
+   "patterns": 120
+  },
+  {
+   "word": "raise",
+   "left": 24.6,
+   "patterns": 109
+  },
+  {
+   "word": "arise",
+   "left": 24.2,
+   "patterns": 102
+  },
+  {
+   "word": "house",
+   "left": 51,
+   "patterns": 88
+  }
+ ]
+}
