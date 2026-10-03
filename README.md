@@ -26,9 +26,13 @@ hand the host role to someone else, or remove a player. Anyone can join mid-game
   them. Timers run on Durable Object alarms. Rooms delete themselves a day after the last activity.
 - Players are identified by a random id and secret kept in `localStorage`, so a refresh or a dropped connection
   rejoins as the same player.
-- Word lists: `data/answers.txt` (2,315 answer words) and `data/allowed.txt`, the guesses accepted: real English words only
-  (about 4,900), built by `scripts/build-words.mjs` from SCOWL (see `data/SCOWL-COPYRIGHT`). Anything else is rejected as
-  "Not a real English word" and costs no guess.
+- Word lists, built by `scripts/build-words.mjs`:
+  - `data/answers.txt`: the 1,016 words players are asked to guess. Wordle answers that are also among the 10,000 most
+    common words in film and TV subtitles, so they are words everyone knows ("smile", "crane"), not "parry" or "datum".
+    Frequencies from [hermitdave/FrequencyWords](https://github.com/hermitdave/FrequencyWords) (OpenSubtitles 2018,
+    CC BY-SA 4.0), saved as `data/subtitle-frequency.txt`.
+  - `data/allowed.txt`: the guesses accepted, real English words only (4,860), from SCOWL (see `data/SCOWL-COPYRIGHT`).
+    Anything else is rejected as "Not a real English word" and costs no guess.
 
 ## Run and deploy
 
