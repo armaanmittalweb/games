@@ -10,10 +10,17 @@ if (!keyFile) throw new Error('no public/<32 hex>.txt key file')
 const key = keyFile.slice(0, -4)
 const urlList = [...readFileSync('public/sitemap.xml', 'utf8').matchAll(/<loc>([^<]+)<\/loc>/g)].map(m => m[1])
 
-const res = await fetch('https://api.indexnow.org/indexnow', {
-  method: 'POST',
-  headers: { 'content-type': 'application/json; charset=utf-8' },
-  body: JSON.stringify({ host: HOST, key, keyLocation: `https://${HOST}/${keyFile}`, urlList }),
-})
-console.log(`IndexNow answered ${res.status} for ${urlList.length} URLs`)
-if (res.status >= 400) process.exitCode = 1
+// Engines share submissions with each other, but each is asked directly: api.indexnow.org, the shared address,
+// has been unreachable from some networks. 200 or 202 means accepted.
+const body = JSON.stringify({ host: HOST, key, keyLocation: `https://${HOST}/${keyFile}`, urlList })
+let accepted = 0
+for (const endpoint of ['https://www.bing.com/indexnow', 'https://yandex.com/indexnow', 'https://api.indexnow.org/indexnow']) {
+  try {
+    const res = await fetch(endpoint, { method: 'POST', headers: { 'content-type': 'application/json; charset=utf-8' }, body, signal: AbortSignal.timeout(30_000) })
+    console.log(`${endpoint} answered ${res.status} for ${urlList.length} URLs`)
+    if (res.ok) accepted++
+  } catch (e) {
+    console.log(`${endpoint} unreachable: ${e.cause?.code ?? e.message}`)
+  }
+}
+if (!accepted) process.exitCode = 1
