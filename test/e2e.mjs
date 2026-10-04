@@ -1,0 +1,138 @@
+// Four browsers join one room and play every game to its results screen, clicking whatever each screen offers.
+// Fails on any page error. Screenshots go to test/shots/.
+//   npm run dev   (in another terminal), then: node test/e2e.mjs [gameId] [--url=https://games.amittal.dev]
+import { chromium } from 'playwright'
+import { mkdirSync } from 'node:fs'
+
+const args = process.argv.slice(2)
+const BASE = (args.find(a => a.startsWith('--url=')) ?? '--url=http://localhost:8799').slice(6)
+const only = args.find(a => !a.startsWith('--'))
+const SHOTS = 'test/shots'
+mkdirSync(SHOTS, { recursive: true })
+
+// Short settings so every game finishes in a minute or two.
+const QUICK = {
+  draw: { rounds: 1, seconds: 30 }, telephone: { writeSeconds: 15, drawSeconds: 20 }, imposter: { rounds: 1, clues: 1, clueSeconds: 10, talkSeconds: 15 },
+  codewords: { timer: 60 }, wordle: { mode: 'blitz', words: 2, roundSeconds: 25 }, bluff: { rounds: 2, writeSeconds: 20, voteSeconds: 10 },
+  mindmeld: { rounds: 3, seconds: 10 }, mostlikely: { rounds: 3, seconds: 10 }, trivia: { rounds: 3, seconds: 6 }, wordgrid: { minutes: 1 },
+  lastcard: { hand: 4, turnSeconds: 10 }, liarsdice: { dice: 2, turnSeconds: 15 }, reaction: { rounds: 3 }, closest: { rounds: 3, seconds: 10 },
+}
+const TEXT = ['apple', 'mango', 'cricket', 'samosa', 'blue', 'tiger', '42', '1990', 'a small bird', 'crane']
+const NAMES = ['Asha', 'Bilal', 'Chen', 'Dev']
+
+const browser = await chromium.launch()
+const errors = []
+const pages = []
+for (let i = 0; i < NAMES.length; i++) {
+  const mobile = i === 3
+  const ctx = await browser.newContext(mobile ? { viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true } : { viewport: { width: 1280, height: 800 } })
+  await ctx.addInitScript(n => { try { localStorage.setItem('wr.name', n) } catch {} }, NAMES[i])
+  const page = await ctx.newPage()
+  page.on('pageerror', e => errors.push(`${NAMES[i]}: ${e.message}`))
+  page.on('console', m => { if (m.type() === 'error' && !/WebSocket|favicon|net::/.test(m.text())) errors.push(`${NAMES[i]} console: ${m.text()}`) })
+  page.on('dialog', d => d.accept())
+  pages.push(page)
+}
+const [host] = pages
+await host.goto(BASE + '/')
+await host.click('text=Create a room')
+await host.waitForURL(/\/r\/[A-Z0-9]{5}$/)
+const url = host.url()
+console.log('room', url)
+for (const p of pages.slice(1)) await p.goto(url)
+await host.waitForFunction(() => document.querySelectorAll('.plist li').length >= 4)
+
+const send = (page, m) => page.evaluate(async m => (await import('/js/core.js')).send(m), m)
+const visible = async (page, sel) => { try { return await page.locator(sel).first().isVisible() } catch { return false } }
+const rnd = a => a[Math.floor(Math.random() * a.length)]
+
+/** One move for one player: whatever the screen offers. */
+async function step(page, id) {
+  const tryClick = async sel => { const l = page.locator(sel); const n = await l.count(); if (!n) return false; try { await l.nth(Math.floor(Math.random() * n)).click({ timeout: 800 }); return true } catch { return false } }
+  if (await tryClick('.choose button')) return
+  if (await visible(page, 'canvas.edit')) {
+    const box = await page.locator('canvas.edit').boundingBox()
+    if (box) {
+      await page.mouse.move(box.x + box.width * Math.random(), box.y + box.height * Math.random())
+      await page.mouse.down()
+      for (let k = 0; k < 6; k++) await page.mouse.move(box.x + box.width * Math.random(), box.y + box.height * Math.random(), { steps: 3 })
+      await page.mouse.up()
+    }
+    if (id === 'telephone' && Math.random() < 0.5) await tryClick('button:has-text("Done")')
+    return
+  }
+  if (await tryClick('.rx.rx-go')) return
+  if (await tryClick('.target')) return
+  if (id === 'wordle' && await visible(page, '.kb')) { await page.keyboard.type(rnd(['crane', 'slate', 'smile', 'beach'])); await page.keyboard.press('Enter'); return }
+  if (await visible(page, '.clue-form')) { await page.fill('.clue-form input', 'zebra' + 'abcdefgh'[Math.floor(Math.random() * 8)]); await page.click('.clue-form button'); return }
+  if (id === 'codewords' && await tryClick('button:has-text("Start")')) return
+  if (await tryClick('.cwc:not([disabled])')) return
+  if (await tryClick('.lc.ok')) { await tryClick('.colbtn'); return }
+  if (await tryClick('.colbtn')) return
+  if (await tryClick('button:has-text("Draw a card"), button:has-text("Pass"), button:has-text("Draw ")')) return
+  if (id === 'liarsdice' && await tryClick(Math.random() < 0.3 ? '.bidder .danger' : '.bidder .primary:not([disabled])')) return
+  if (await tryClick('.who:not([disabled])')) return
+  if (await tryClick('.choice:not([disabled])')) return
+  if (await tryClick('.def:not([disabled])')) return
+  if (await tryClick('button:has-text("Ready to vote")')) return
+  if (await tryClick('button:has-text("Show next"), button:has-text("Next book"), button:has-text("Finish")')) return
+  if (id === 'telephone' && await tryClick('.like:not([disabled])')) return
+  if (id === 'wordgrid' && await visible(page, '.wg .answer input')) { await page.fill('.wg .answer input', rnd(['tea', 'set', 'rat', 'note', 'stone', 'are'])); await page.press('.wg .answer input', 'Enter'); return }
+  const input = page.locator('.game-area .answer input:not([disabled])')
+  if (await input.count()) {
+    const val = id === 'closest' ? String(Math.floor(Math.random() * 3000)) : rnd(TEXT) + (id === 'bluff' ? ' ' + Math.random().toString(36).slice(2, 6) : '')
+    try { await input.first().fill(val); await input.first().press('Enter') } catch { /* moved on */ }
+  }
+}
+
+async function play(id) {
+  const t0 = Date.now()
+  await send(host, { t: 'pick', id })
+  await send(host, { t: 'config', id, config: QUICK[id] })
+  await host.waitForTimeout(300)
+  await host.locator('.detail button.primary').click()
+  await host.waitForSelector('.game-area', { timeout: 8000 })
+  let shot = false
+  while (Date.now() - t0 < 240_000) {
+    if (await visible(host, '.results')) break
+    await Promise.all(pages.map(p => step(p, id).catch(() => {})))
+    if (!shot && Date.now() - t0 > 7000) {
+      shot = true
+      await host.screenshot({ path: `${SHOTS}/${id}-desktop.png` })
+      await pages[3].screenshot({ path: `${SHOTS}/${id}-phone.png` })
+    }
+    await host.waitForTimeout(250)
+  }
+  const done = await visible(host, '.results')
+  if (done) {
+    const rows = await host.locator('.results .tbl tr').count()
+    await host.screenshot({ path: `${SHOTS}/${id}-results.png`, fullPage: true })
+    console.log(`${done ? 'ok  ' : 'FAIL'} ${id}: ${Math.round((Date.now() - t0) / 1000)}s, ${rows - 1} rows in the standings`)
+    await send(host, { t: 'lobby' })
+  } else {
+    errors.push(`${id}: did not reach the results in time`)
+    await send(host, { t: 'abort' })
+  }
+  await host.waitForTimeout(500)
+}
+
+const ids = only ? only.split(',').filter(x => x !== 'night') : Object.keys(QUICK)
+for (const id of ids) await play(id)
+
+if (!only || only.includes('night')) {
+  // A game night: plan one, start it, check the banner, stop.
+  await host.click('text=🎲 Game night')
+  await host.click('text=Plan the night')
+  await host.waitForSelector('.plan li')
+  const planned = await host.locator('.plan li').count()
+  await host.click('text=Start the night')
+  await host.waitForSelector('.night-banner')
+  await host.screenshot({ path: `${SHOTS}/night.png` })
+  console.log(`ok   game night: ${planned} games planned, first one started`)
+  await send(host, { t: 'abort' })
+  await send(host, { t: 'nightEnd' })
+}
+
+await browser.close()
+if (errors.length) { console.log('ERRORS:\n' + [...new Set(errors)].join('\n')); process.exitCode = 1 }
+else console.log('no page errors')

@@ -1,103 +1,80 @@
 import { DurableObject } from 'cloudflare:workers'
 import type { Stats } from './stats'
-import { VALID, pickWords, score } from './words'
+import { GAMES } from './games'
+import { META, settings, type Mood } from './catalog'
+import { MOODS, LENGTHS, cuts, placePoints, plan, swap, type Length, type Night } from './night'
+import { rng, clean, type Ctx, type Standing } from './engine'
 
 interface Env { STATS: DurableObjectNamespace<Stats> }
 
-export type Mode = 'marathon' | 'race' | 'survival' | 'blitz'
+interface Member { id: string; secret: string; name: string; joinedAt: number; color: number }
 
-export interface Config {
-  mode: Mode
-  words: number // how many words in the pool (blitz: how many rounds)
-  minutes: number // whole-game timer (not used by blitz)
-  roundSeconds: number // blitz only
-}
-
-interface Result {
-  solved: boolean
-  tries: number
-  at: number // ms from the start of the game (blitz: from the start of the round)
-  pts: number
-  place?: number // blitz: 1 = first to solve the round
-}
-
-interface Player {
+interface Inst {
   id: string
-  secret: string
-  name: string
-  joinedAt: number
-  idx: number // the word this player is on
-  guesses: string[]
-  marks: number[][]
-  results: Result[] // by word index
-  points: number
-  solved: number
-  tries: number // guesses spent on solved words
-  lastSolveAt: number // ms from the start when the latest word was solved
-  firsts: number // blitz: rounds this player solved first
-  solveMs: number // blitz: summed time to solve
-  out: boolean // survival: missed a word
-  finishedAt: number | null
+  n: number
+  config: Record<string, string | number>
+  players: string[]
+  s: unknown
+  wake: number
+  startedAt: number
+  endedAt: number
+  standings: Standing[] | null
+  summary?: unknown
+  night: boolean
 }
 
 interface State {
+  v: 2
   code: string
   host: string | null
-  phase: 'lobby' | 'playing' | 'reveal' | 'done'
-  config: Config
-  words: string[]
-  game: number
-  startedAt: number
-  endsAt: number
-  round: number
-  roundStartedAt: number
-  roundEndsAt: number
-  revealUntil: number
-  endedAt: number
+  members: Record<string, Member>
   touched: number
-  players: Record<string, Player>
+  phase: 'lobby' | 'game' | 'results'
+  pick: string
+  configs: Record<string, Record<string, string | number>>
+  inst: Inst | null
+  seq: number
+  /** The room's leaderboard across every game played in it. */
+  totals: Record<string, { pts: number; wins: number; games: number }>
+  history: { id: string; at: number; winners: string[] }[]
+  night: Night | null
 }
 
-const DEFAULTS: Config = { mode: 'marathon', words: 15, minutes: 10, roundSeconds: 90 }
-const MAX_PLAYERS = 30
-const COUNTDOWN_MS = 3000
-const REVEAL_MS = 5000
+interface Chat { id: string; text: string; at: number }
+
+const MAX_MEMBERS = 30
 const KEEP_MS = 24 * 3600_000
-const BLITZ_BONUS = [3, 2, 1]
+const LAZY_MS = 4000
+const COLORS = 12
 
-const clamp = (v: unknown, lo: number, hi: number, d: number) => {
-  const n = Math.round(Number(v))
-  return Number.isFinite(n) ? Math.min(hi, Math.max(lo, n)) : d
-}
-
-function fresh(p: Player) {
-  Object.assign(p, { idx: 0, guesses: [], marks: [], results: [], points: 0, solved: 0, tries: 0, lastSolveAt: 0, firsts: 0, solveMs: 0, out: false, finishedAt: null })
-}
-
-/** Sort key per mode; lower sorts first. Players with equal keys share a place. */
-function key(p: Player, mode: Mode): number[] {
-  switch (mode) {
-    case 'marathon': return [-p.points, -p.solved, p.tries, p.lastSolveAt]
-    case 'race': return [-p.solved, p.lastSolveAt, p.tries]
-    case 'survival': return [-p.solved, p.tries, p.lastSolveAt]
-    case 'blitz': return [-p.points, -p.firsts, p.solveMs, p.tries]
-  }
-}
-
-function cmp(a: number[], b: number[]) {
-  for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return a[i] - b[i]
-  return 0
-}
+const attached = (ws: WebSocket) => (ws.deserializeAttachment() as { id?: string } | null)?.id
 
 export class Room extends DurableObject<Env> {
   s: State | null = null
-  /** Reports for the site-wide counts, sent after everyone has the new state. */
+  chat: Chat[] = []
+  blobs = new Map<string, unknown>()
+  dirtyBlobs = new Set<string>()
+  r = rng()
+  /** Per socket: the last game view sent, so an unchanged view is not sent again. */
+  sent = new WeakMap<WebSocket, string>()
   reports: ((stats: DurableObjectStub<Stats>) => Promise<unknown>)[] = []
+  // Set while handling one message:
+  emits: { msg: unknown; to?: string | string[] }[] = []
+  isQuiet = false
+  isLazy = false
+  ended: { standings: Standing[]; summary?: unknown } | null = null
+  dirty = false
+  lastSave = 0
 
   constructor(ctx: DurableObjectState, env: Env) {
     super(ctx, env)
     ctx.setWebSocketAutoResponse(new WebSocketRequestResponsePair('ping', 'pong'))
-    ctx.blockConcurrencyWhile(async () => { this.s = (await ctx.storage.get<State>('s')) ?? null })
+    ctx.blockConcurrencyWhile(async () => {
+      const s = await ctx.storage.get<State>('s')
+      this.s = s && s.v === 2 ? s : null
+      this.chat = (await ctx.storage.get<Chat[]>('chat')) ?? []
+      for (const [k, v] of await ctx.storage.list({ prefix: 'b:' })) this.blobs.set(k.slice(2), v)
+    })
   }
 
   async fetch(req: Request): Promise<Response> {
@@ -105,9 +82,11 @@ export class Room extends DurableObject<Env> {
     if (url.pathname === '/init') {
       if (this.s) return new Response('taken', { status: 409 })
       const now = Date.now()
+      // A room from before game nights (one Wordle room per object) is replaced.
+      await this.ctx.storage.deleteAll()
       this.s = {
-        code: url.searchParams.get('code') ?? '', host: null, phase: 'lobby', config: { ...DEFAULTS }, words: [], game: 0,
-        startedAt: 0, endsAt: 0, round: 0, roundStartedAt: 0, roundEndsAt: 0, revealUntil: 0, endedAt: 0, touched: now, players: {},
+        v: 2, code: url.searchParams.get('code') ?? '', host: null, members: {}, touched: now, phase: 'lobby', pick: 'draw',
+        configs: {}, inst: null, seq: 0, totals: {}, history: [], night: null,
       }
       const code = this.s.code
       this.reports.push(st => st.roomCreated(code))
@@ -122,232 +101,338 @@ export class Room extends DurableObject<Env> {
     return new Response(null, { status: 101, webSocket: pair[0] })
   }
 
+  // ---------- game plumbing ----------
+
+  ctxFor(inst: Inst, now: number): Ctx {
+    const s = this.s!
+    const names: Record<string, string> = {}, colors: Record<string, number> = {}
+    for (const m of Object.values(s.members)) { names[m.id] = m.name; colors[m.id] = m.color }
+    // Players removed from the room keep their name in a game they were part of.
+    for (const id of inst.players) names[id] ??= 'Someone'
+    return {
+      now, config: inst.config, players: inst.players, names, colors, online: this.online(),
+      ...this.r,
+      wake: at => { inst.wake = at },
+      end: (standings, summary) => { this.ended = { standings, summary } },
+      emit: (msg, to) => { this.emits.push({ msg, to }) },
+      quiet: () => { this.isQuiet = true },
+      lazy: () => { this.isLazy = true },
+      put: (k, v) => { this.blobs.set(k, v); this.dirtyBlobs.add(k) },
+      get: <T>(k: string) => this.blobs.get(k) as T | undefined,
+    }
+  }
+
+  /** Runs a game function and applies the ending if it produced one. */
+  run<T>(fn: (g: Ctx) => T, now: number): T | undefined {
+    const s = this.s!
+    const inst = s.inst
+    if (!inst || s.phase !== 'game') return
+    const out = fn(this.ctxFor(inst, now))
+    if (this.ended) {
+      const e = this.ended
+      this.ended = null
+      this.finish(inst, e.standings, e.summary, now)
+      this.isQuiet = false
+      this.isLazy = false
+    }
+    return out
+  }
+
+  /** Lets due deadlines fire. Returns whether any did. */
+  due(now: number) {
+    const s = this.s!
+    let fired = false
+    for (let i = 0; i < 20; i++) {
+      const inst = s.inst
+      if (!inst || s.phase !== 'game' || !inst.wake || now < inst.wake) break
+      inst.wake = 0
+      fired = true
+      const game = GAMES[inst.id]
+      this.run(g => game.tick?.(g, inst.s), now)
+    }
+    return fired
+  }
+
+  start(id: string, config: Record<string, string | number>, seats: string[], now: number, night: boolean) {
+    const s = this.s!
+    const game = GAMES[id]
+    for (const k of this.blobs.keys()) this.dirtyBlobs.add(k)
+    this.blobs.clear()
+    const inst: Inst = { id, n: ++s.seq, config, players: seats.slice(), s: null, wake: 0, startedAt: now, endedAt: 0, standings: null, night }
+    s.inst = inst
+    s.phase = 'game'
+    inst.s = game.setup(this.ctxFor(inst, now))
+    if (this.ended) { const e = this.ended; this.ended = null; this.finish(inst, e.standings, e.summary, now) }
+    const code = s.code, count = seats.length
+    this.reports.push(st => st.started(code, id, count))
+  }
+
+  finish(inst: Inst, standings: Standing[], summary: unknown, now: number) {
+    const s = this.s!
+    inst.standings = standings
+    inst.summary = summary
+    inst.endedAt = now
+    inst.wake = 0
+    s.phase = 'results'
+    for (const st of standings) {
+      const t = (s.totals[st.id] ??= { pts: 0, wins: 0, games: 0 })
+      t.pts += placePoints(st.place)
+      t.games++
+      if (st.place === 1) t.wins++
+    }
+    s.history.unshift({ id: inst.id, at: now, winners: standings.filter(x => x.place === 1).map(x => x.id) })
+    s.history.length = Math.min(s.history.length, 20)
+    const n = s.night
+    if (inst.night && n && !n.done) {
+      const pts: Record<string, number> = {}
+      for (const st of standings) { pts[st.id] = placePoints(st.place); n.points[st.id] = (n.points[st.id] ?? 0) + pts[st.id] }
+      const round = { id: inst.id, points: pts, out: [] as string[] }
+      n.rounds.push(round)
+      const last = n.idx >= n.plan.length - 1
+      if (n.length === 'tournament') {
+        if (last) {
+          n.champions = standings.filter(x => x.place === 1).map(x => x.id)
+          n.done = true
+        } else {
+          // Keep the top of the night's table; anyone level with the last place kept stays in too.
+          const target = cuts(n.alive.length)[1] ?? 2
+          const sorted = n.alive.slice().sort((a, b) => (n.points[b] ?? 0) - (n.points[a] ?? 0))
+          const bar = n.points[sorted[target - 1]] ?? 0
+          const keep = sorted.filter((id, i) => i < target || (n.points[id] ?? 0) === bar)
+          round.out = n.alive.filter(id => !keep.includes(id))
+          n.alive = n.alive.filter(id => keep.includes(id))
+        }
+      } else if (last && n.length !== 'endless') {
+        n.done = true
+        const best = Math.max(...Object.values(n.points))
+        n.champions = Object.keys(n.points).filter(id => n.points[id] === best)
+      }
+    }
+    const stats = (summary as { stats?: { guesses?: number; solved?: number } } | undefined)?.stats
+    const code = s.code
+    this.reports.push(st => st.finished(code, stats?.guesses ?? 0, stats?.solved ?? 0))
+  }
+
+  seatsFor(id: string): string[] | string {
+    const s = this.s!
+    const meta = META[id]
+    const online = this.online()
+    let seats = Object.values(s.members).filter(m => online.has(m.id)).sort((a, b) => a.joinedAt - b.joinedAt).map(m => m.id)
+    const n = s.night
+    if (n && !n.done && n.length === 'tournament' && n.idx >= 0) seats = seats.filter(id => n.alive.includes(id))
+    if (seats.length < meta.min) return `${meta.name} needs at least ${meta.min} players`
+    return seats.slice(0, meta.max)
+  }
+
+  /** Starts the night's next game, swapping it for one that fits if the room has changed size. */
+  nightNext(now: number): string | void {
+    const s = this.s!
+    const n = s.night!
+    if (n.done) return
+    n.idx++
+    if (n.length === 'endless' && n.idx >= n.plan.length) n.plan.push(...plan(this.online().size, 'endless', n.moods, this.r.rand, n.plan.slice(-6)))
+    if (n.idx >= n.plan.length) { n.done = true; return }
+    let id = n.plan[n.idx]
+    let seats = this.seatsFor(id)
+    const count = typeof seats === 'string' ? this.online().size : seats.length
+    if (typeof seats === 'string' || count > META[id].max) {
+      const alt = swap(n, n.idx, count, this.r.rand)
+      if (alt) { n.plan[n.idx] = alt; id = alt; seats = this.seatsFor(id) }
+    }
+    if (typeof seats === 'string') { n.idx--; return seats }
+    this.start(id, settings(id, META[id].night), seats, now, true)
+  }
+
+  // ---------- messages ----------
+
+  reset() {
+    this.emits = []
+    this.isQuiet = false
+    this.isLazy = false
+  }
+
   async webSocketMessage(ws: WebSocket, raw: string | ArrayBuffer) {
     const s = this.s
-    if (!s || typeof raw !== 'string' || raw.length > 2000) return
+    if (!s || typeof raw !== 'string' || raw.length > 64_000) return
     let m: Record<string, unknown>
     try { m = JSON.parse(raw) } catch { return }
     const now = Date.now()
     s.touched = now
-    const me = (ws.deserializeAttachment() as { id?: string } | null)?.id
-    const err = (msg: string) => ws.send(JSON.stringify({ t: 'error', msg }))
+    this.reset()
+    const me = attached(ws)
+    const err = (msg: string) => { try { ws.send(JSON.stringify({ t: 'error', msg })) } catch { /* closed */ } }
+    const fired = this.due(now)
 
     if (m.t === 'join') {
       const id = String(m.id ?? '').slice(0, 40), secret = String(m.secret ?? '').slice(0, 80)
-      let name = String(m.name ?? '').replace(/\s+/g, ' ').trim().slice(0, 16)
+      let name = clean(m.name, 16)
       if (!id || !secret) return err('Missing player id')
-      let p = s.players[id]
+      let p = s.members[id]
       if (p && p.secret !== secret) return err('That player id is taken')
       if (!p) {
         if (!name) return err('Pick a name')
-        if (Object.keys(s.players).length >= MAX_PLAYERS) return err(`Room is full (${MAX_PLAYERS} players)`)
-        const taken = new Set(Object.values(s.players).map(q => q.name.toLowerCase()))
-        for (let n = 2; taken.has(name.toLowerCase()); n++) name = `${name.slice(0, 13)} ${n}`
-        p = { id, secret, name, joinedAt: now } as Player
-        fresh(p)
-        if (s.config.mode === 'blitz' && s.phase !== 'lobby') p.idx = s.round
-        s.players[id] = p
-      } else if (name && name !== p.name) {
+        if (Object.keys(s.members).length >= MAX_MEMBERS) return err(`Room is full (${MAX_MEMBERS} players)`)
+        const taken = new Set(Object.values(s.members).map(q => q.name.toLowerCase()))
+        for (let k = 2; taken.has(name.toLowerCase()); k++) name = `${name.slice(0, 13)} ${k}`
+        const used = new Set(Object.values(s.members).map(q => q.color))
+        let color = 0
+        while (used.has(color) && color < COLORS) color++
+        p = { id, secret, name, joinedAt: now, color: color % COLORS }
+        s.members[id] = p
+      } else if (name && name !== p.name && !Object.values(s.members).some(q => q.id !== id && q.name.toLowerCase() === name.toLowerCase())) {
         p.name = name
       }
-      // One live socket per player: close the older tab.
       for (const other of this.ctx.getWebSockets()) {
-        if (other !== ws && (other.deserializeAttachment() as { id?: string } | null)?.id === id) {
-          try { other.close(4000, 'opened elsewhere') } catch { /* already closed */ }
-        }
+        if (other !== ws && attached(other) === id) try { other.close(4000, 'opened elsewhere') } catch { /* closed */ }
       }
       ws.serializeAttachment({ id })
-      if (!s.host || !s.players[s.host]) s.host = id
-      const count = Object.keys(s.players).length
-      this.reports.push(st => st.joined(s.code, id, count))
+      this.sent.delete(ws)
+      if (!s.host || !s.members[s.host]) s.host = id
+      // Someone arriving mid-game is seated if the game takes late joiners (never in a tournament).
+      const inst = s.inst
+      if (inst && s.phase === 'game' && !inst.players.includes(id) && inst.players.length < META[inst.id].max) {
+        const game = GAMES[inst.id]
+        const tourney = inst.night && s.night?.length === 'tournament'
+        if (game.join && !tourney) this.run(g => { if (game.join!(g, inst.s, id)) inst.players.push(id) }, now)
+      }
+      const count = Object.keys(s.members).length, code = s.code
+      this.reports.push(st => st.joined(code, id, count))
+      try { ws.send(JSON.stringify({ t: 'chat', all: this.chat })) } catch { /* closed */ }
       return this.commit()
     }
 
-    if (!me || !s.players[me]) return err('Join first')
-    const p = s.players[me]
+    if (!me || !s.members[me]) return err('Join first')
     const isHost = s.host === me
+    const hostOnly = () => { if (!isHost) err('Only the host can do that'); return isHost }
+    const bail = () => fired ? this.commit() : undefined
 
     switch (m.t) {
+      case 'g': {
+        const inst = s.inst
+        if (!inst || s.phase !== 'game') { err('No game is running'); return bail() }
+        if (!inst.players.includes(me)) { err('You are watching this game'); return bail() }
+        const game = GAMES[inst.id]
+        const e = this.run(g => game.act(g, inst.s, me, m), now)
+        if (typeof e === 'string') { err(e); if (!this.emits.length && !fired) return }
+        break
+      }
+      case 'chat': {
+        const text = clean(m.text, 200)
+        if (!text) return bail()
+        const c = { id: me, text, at: now }
+        this.chat.push(c)
+        if (this.chat.length > 80) this.chat.splice(0, this.chat.length - 80)
+        if (!fired) this.isQuiet = true
+        this.isLazy = true
+        this.emits.push({ msg: { t: 'chat', m: c } })
+        break
+      }
+      case 'pick': {
+        if (!hostOnly()) return bail()
+        const id = String(m.id)
+        if (!GAMES[id] || s.phase === 'game') return bail()
+        s.pick = id
+        s.phase = 'lobby'
+        break
+      }
       case 'config': {
-        if (!isHost) return err('Only the host can change settings')
-        if (s.phase !== 'lobby' && s.phase !== 'done') return
-        const c = (m.config ?? {}) as Partial<Config>
-        s.config = {
-          mode: (['marathon', 'race', 'survival', 'blitz'] as Mode[]).includes(c.mode as Mode) ? (c.mode as Mode) : s.config.mode,
-          words: clamp(c.words, 1, 50, s.config.words),
-          minutes: clamp(c.minutes, 1, 60, s.config.minutes),
-          roundSeconds: clamp(c.roundSeconds, 20, 300, s.config.roundSeconds),
-        }
-        return this.commit()
+        if (!hostOnly()) return bail()
+        const id = String(m.id)
+        if (!GAMES[id]) return bail()
+        s.configs[id] = settings(id, m.config, s.configs[id])
+        break
       }
       case 'start': {
-        if (!isHost) return err('Only the host can start')
-        if (s.phase === 'playing' || s.phase === 'reveal') return
-        const c = s.config
-        s.words = pickWords(c.words)
-        s.game++
-        s.phase = 'playing'
-        s.startedAt = now + COUNTDOWN_MS
-        s.endsAt = c.mode === 'blitz' ? 0 : s.startedAt + c.minutes * 60_000
-        s.round = 0
-        s.roundStartedAt = s.startedAt
-        s.roundEndsAt = c.mode === 'blitz' ? s.startedAt + c.roundSeconds * 1000 : 0
-        s.endedAt = 0
-        for (const q of Object.values(s.players)) fresh(q)
-        const count = Object.keys(s.players).length
-        this.reports.push(st => st.started(s.code, c.mode, count))
-        return this.commit()
+        if (!hostOnly() || s.phase === 'game') return bail()
+        const id = GAMES[String(m.id)] ? String(m.id) : s.pick
+        const seats = this.seatsFor(id)
+        if (typeof seats === 'string') { err(seats); return bail() }
+        s.pick = id
+        this.start(id, settings(id, s.configs[id]), seats, now, false)
+        break
       }
-      case 'end': {
-        if (!isHost) return err('Only the host can end the game')
-        if (s.phase === 'playing' || s.phase === 'reveal') this.finish(now)
-        return this.commit()
+      case 'abort': {
+        if (!hostOnly() || s.phase !== 'game' || !s.inst) return bail()
+        if (s.inst.night && s.night && !s.night.done) s.night.idx--
+        s.inst = null
+        s.phase = 'lobby'
+        break
       }
       case 'lobby': {
-        if (!isHost) return err('Only the host can do that')
-        if (s.phase !== 'done') return
+        if (!hostOnly()) return bail()
+        if (s.phase === 'results') s.phase = 'lobby'
+        break
+      }
+      case 'night': {
+        if (!hostOnly() || s.phase === 'game') return bail()
+        const length = (Object.keys(LENGTHS) as Length[]).includes(m.length as Length) ? (m.length as Length) : 'standard'
+        const moods = (Array.isArray(m.moods) ? m.moods : []).filter((x): x is Mood => MOODS.includes(x as Mood)).slice(0, 4)
+        const n = this.online().size
+        const games = plan(n, length, moods, this.r.rand)
+        if (!games.length) { err('No games fit this many players'); return bail() }
+        s.night = { length, moods, plan: games, idx: -1, alive: [], points: {}, rounds: [], done: false, champions: [] }
         s.phase = 'lobby'
-        for (const q of Object.values(s.players)) fresh(q)
-        return this.commit()
+        break
+      }
+      case 'nightSwap': {
+        if (!hostOnly()) return bail()
+        const n = s.night
+        const i = Number(m.i)
+        if (!n || n.done || !(i > n.idx && i < n.plan.length)) return bail()
+        const alt = swap(n, i, n.length === 'tournament' && n.idx >= 0 ? n.alive.length : this.online().size, this.r.rand)
+        if (!alt) { err('No other game fits'); return bail() }
+        n.plan[i] = alt
+        break
+      }
+      case 'nightDrop': {
+        if (!hostOnly()) return bail()
+        const n = s.night
+        const i = Number(m.i)
+        if (!n || n.done || n.length === 'tournament' || !(i > n.idx && i < n.plan.length) || n.plan.length < 2) return bail()
+        n.plan.splice(i, 1)
+        break
+      }
+      case 'nightGo': {
+        if (!hostOnly()) return bail()
+        const n = s.night
+        if (!n || n.done || s.phase === 'game') return bail()
+        if (n.idx === -1) {
+          const online = this.online()
+          n.alive = Object.values(s.members).filter(x => online.has(x.id)).map(x => x.id)
+          if (n.length === 'tournament' && n.alive.length < 2) { err('A tournament needs at least 2 players'); return bail() }
+        }
+        const e = this.nightNext(now)
+        if (e) { err(e); return bail() }
+        break
+      }
+      case 'nightEnd': {
+        if (!hostOnly() || s.phase === 'game') return bail()
+        s.night = null
+        s.phase = 'lobby'
+        break
       }
       case 'host': {
         const to = String(m.id ?? '')
-        if (!isHost || !s.players[to]) return
+        if (!isHost || !s.members[to]) return bail()
         s.host = to
-        return this.commit()
+        break
       }
       case 'kick': {
         const to = String(m.id ?? '')
-        if (!isHost || to === me || !s.players[to]) return
-        delete s.players[to]
-        for (const w of this.ctx.getWebSockets()) {
-          if ((w.deserializeAttachment() as { id?: string } | null)?.id === to) try { w.close(4001, 'removed by host') } catch { /* closed */ }
+        if (!isHost || to === me || !s.members[to]) return bail()
+        delete s.members[to]
+        for (const w of this.ctx.getWebSockets()) if (attached(w) === to) try { w.close(4001, 'removed by host') } catch { /* closed */ }
+        const inst = s.inst
+        if (inst && s.phase === 'game' && inst.players.includes(to)) {
+          const game = GAMES[inst.id]
+          this.run(g => game.leave?.(g, inst.s, to), now)
         }
-        this.settle(now)
-        return this.commit()
+        break
       }
-      case 'guess':
-      case 'skip': {
-        if (s.phase !== 'playing') return err(s.phase === 'reveal' ? 'Next word is coming' : 'The game is not running')
-        if (now < s.startedAt) return err('Wait for the countdown')
-        if (this.expired(now)) { this.tick(now); return this.commit() }
-        if (p.out || p.finishedAt !== null) return err('You are done. Wait for the others')
-        const blitz = s.config.mode === 'blitz'
-        if (blitz && p.results[s.round]) return err('You are done with this word')
-        const answer = s.words[p.idx]
-        const since = blitz ? s.roundStartedAt : s.startedAt
-        if (m.t === 'skip') {
-          if (blitz) return err('No skipping in blitz')
-          this.close(p, false, now - since, now)
-        } else {
-          const g = String(m.word ?? '').toLowerCase()
-          if (!/^[a-z]{5}$/.test(g)) return ws.send(JSON.stringify({ t: 'bad', msg: 'Five letters' }))
-          if (!VALID.has(g)) return ws.send(JSON.stringify({ t: 'bad', msg: 'Not a real English word' }))
-          const marks = score(g, answer)
-          p.guesses.push(g)
-          p.marks.push(marks)
-          if (g === answer) this.close(p, true, now - since, now)
-          else if (p.guesses.length >= 6) this.close(p, false, now - since, now)
-        }
-        this.settle(now)
-        return this.commit()
-      }
+      default:
+        return bail()
     }
-  }
-
-  /** Finishes the player's current word. */
-  close(p: Player, solved: boolean, at: number, now: number) {
-    const s = this.s!
-    const tries = p.guesses.length
-    const r: Result = { solved, tries, at, pts: 0 }
-    if (solved) {
-      r.pts = 7 - tries
-      if (s.config.mode === 'blitz') {
-        const place = Object.values(s.players).filter(q => q.results[s.round]?.solved).length + 1
-        r.place = place
-        r.pts += BLITZ_BONUS[place - 1] ?? 0
-        if (place === 1) p.firsts++
-        p.solveMs += at
-      }
-      p.points += r.pts
-      p.solved++
-      p.tries += tries
-      p.lastSolveAt = s.config.mode === 'blitz' ? p.lastSolveAt : at
-    } else if (s.config.mode === 'survival') {
-      p.out = true
-    }
-    if (s.config.mode === 'blitz') {
-      p.results[s.round] = r
-    } else {
-      p.results[p.idx] = r
-      p.idx++
-      p.guesses = []
-      p.marks = []
-      if (p.out || p.idx >= s.words.length) p.finishedAt = now
-    }
-  }
-
-  expired(now: number) {
-    const s = this.s!
-    return s.config.mode === 'blitz' ? now >= s.roundEndsAt : now >= s.endsAt
-  }
-
-  /** Moves the game on when everyone is done with the word (blitz) or with the game. */
-  settle(now: number) {
-    const s = this.s!
-    if (s.phase !== 'playing') return
-    const players = Object.values(s.players)
-    if (s.config.mode === 'blitz') {
-      const online = this.online()
-      const waiting = players.filter(q => !q.results[s.round] && (online.has(q.id) || q.guesses.length))
-      if (waiting.length === 0 && players.length) this.endRound(now)
-    } else if (players.length && players.every(q => q.finishedAt !== null)) {
-      this.finish(now)
-    }
-  }
-
-  endRound(now: number) {
-    const s = this.s!
-    for (const q of Object.values(s.players)) {
-      if (!q.results[s.round]) q.results[s.round] = { solved: false, tries: q.guesses.length, at: s.roundEndsAt - s.roundStartedAt, pts: 0 }
-    }
-    s.phase = 'reveal'
-    s.revealUntil = now + REVEAL_MS
-  }
-
-  finish(now: number) {
-    const s = this.s!
-    if (s.config.mode === 'blitz' && s.phase === 'playing') {
-      for (const q of Object.values(s.players)) if (!q.results[s.round]) q.results[s.round] = { solved: false, tries: q.guesses.length, at: now - s.roundStartedAt, pts: 0 }
-    }
-    if (s.config.mode !== 'blitz') {
-      for (const q of Object.values(s.players)) {
-        if (q.finishedAt === null && q.guesses.length && q.idx < s.words.length) q.results[q.idx] = { solved: false, tries: q.guesses.length, at: now - s.startedAt, pts: 0 }
-      }
-    }
-    s.phase = 'done'
-    s.endedAt = now
-    const players = Object.values(s.players)
-    const guesses = players.reduce((a, q) => a + q.results.reduce((b, r) => b + (r?.tries ?? 0), 0), 0)
-    const solved = players.reduce((a, q) => a + q.solved, 0)
-    this.reports.push(st => st.finished(s.code, guesses, solved))
-  }
-
-  /** Applies whatever time has made due. */
-  tick(now: number) {
-    const s = this.s!
-    if (s.phase === 'playing') {
-      if (s.config.mode === 'blitz' && now >= s.roundEndsAt) this.endRound(now)
-      else if (s.config.mode !== 'blitz' && now >= s.endsAt) this.finish(now)
-    }
-    if (s.phase === 'reveal' && now >= s.revealUntil) {
-      if (s.round + 1 >= s.words.length) return this.finish(now)
-      s.round++
-      s.phase = 'playing'
-      s.roundStartedAt = now
-      s.roundEndsAt = now + s.config.roundSeconds * 1000
-      for (const q of Object.values(s.players)) { q.idx = s.round; q.guesses = []; q.marks = [] }
-    }
+    await this.commit()
   }
 
   async alarm() {
@@ -359,8 +444,10 @@ export class Room extends DurableObject<Env> {
       await this.ctx.storage.deleteAll()
       return
     }
-    this.tick(now)
-    await this.commit()
+    this.reset()
+    if (this.due(now)) return this.commit()
+    if (this.dirty) await this.save()
+    await this.schedule()
   }
 
   async webSocketClose(ws: WebSocket) { await this.left(ws) }
@@ -369,14 +456,14 @@ export class Room extends DurableObject<Env> {
   async left(ws: WebSocket) {
     const s = this.s
     if (!s) return
-    const id = (ws.deserializeAttachment() as { id?: string } | null)?.id
+    const id = attached(ws)
     const online = this.online(ws)
-    // Hand the room to someone who is still here.
     if (id && id === s.host && !online.has(id)) {
-      const next = Object.values(s.players).filter(q => online.has(q.id)).sort((a, b) => a.joinedAt - b.joinedAt)[0]
+      const next = Object.values(s.members).filter(q => online.has(q.id)).sort((a, b) => a.joinedAt - b.joinedAt)[0]
       if (next) s.host = next.id
     }
-    this.settle(Date.now())
+    this.reset()
+    this.isLazy = true
     await this.commit()
   }
 
@@ -384,19 +471,53 @@ export class Room extends DurableObject<Env> {
     const ids = new Set<string>()
     for (const w of this.ctx.getWebSockets()) {
       if (w === except || w.readyState !== WebSocket.OPEN) continue
-      const id = (w.deserializeAttachment() as { id?: string } | null)?.id
+      const id = attached(w)
       if (id) ids.add(id)
     }
     return ids
   }
 
-  async save() { if (this.s) await this.ctx.storage.put('s', this.s) }
+  // ---------- saving and sending ----------
+
+  async save() {
+    if (!this.s) return
+    const puts: Record<string, unknown> = { s: this.s, chat: this.chat }
+    const dels: string[] = []
+    for (const k of this.dirtyBlobs) {
+      if (this.blobs.has(k)) puts['b:' + k] = this.blobs.get(k)
+      else dels.push('b:' + k)
+    }
+    this.dirtyBlobs.clear()
+    await this.ctx.storage.put(puts)
+    if (dels.length) await this.ctx.storage.delete(dels)
+    this.dirty = false
+    this.lastSave = Date.now()
+  }
 
   async commit() {
-    await this.save()
+    const now = Date.now()
+    // Pen strokes and chat lines arrive many times a second; they are written at most every few seconds.
+    if (this.isLazy && now - this.lastSave < LAZY_MS) this.dirty = true
+    else await this.save()
     await this.schedule()
-    this.broadcast()
+    if (!this.isQuiet) this.broadcast()
+    this.sendEmits()
     await this.flush()
+  }
+
+  sendEmits() {
+    if (!this.emits.length) return
+    const socks = this.ctx.getWebSockets()
+    for (const { msg, to } of this.emits) {
+      const wire = JSON.stringify((msg as { t?: string }).t === 'chat' ? msg : { t: 'ev', ev: msg })
+      const targets = to === undefined ? null : new Set(Array.isArray(to) ? to : [to])
+      for (const ws of socks) {
+        const id = attached(ws)
+        if (!id || (targets && !targets.has(id))) continue
+        try { ws.send(wire) } catch { /* closing */ }
+      }
+    }
+    this.emits = []
   }
 
   async flush() {
@@ -411,8 +532,8 @@ export class Room extends DurableObject<Env> {
     const s = this.s
     if (!s) return
     let at = s.touched + KEEP_MS + 60_000
-    if (s.phase === 'playing') at = s.config.mode === 'blitz' ? s.roundEndsAt : s.endsAt
-    if (s.phase === 'reveal') at = s.revealUntil
+    if (s.phase === 'game' && s.inst?.wake) at = Math.min(at, s.inst.wake)
+    if (this.dirty) at = Math.min(at, this.lastSave + LAZY_MS)
     await this.ctx.storage.setAlarm(at)
   }
 
@@ -421,33 +542,29 @@ export class Room extends DurableObject<Env> {
     if (!s) return
     const now = Date.now()
     const online = this.online()
-    const mode = s.config.mode
-    const ranked = Object.values(s.players).sort((a, b) => cmp(key(a, mode), key(b, mode)) || a.joinedAt - b.joinedAt)
-    const places: number[] = []
-    ranked.forEach((p, i) => { places[i] = i > 0 && cmp(key(p, mode), key(ranked[i - 1], mode)) === 0 ? places[i - 1] : i + 1 })
-    const done = s.phase === 'done'
-    const players = ranked.map((p, i) => ({
-      id: p.id, name: p.name, online: online.has(p.id), place: places[i],
-      idx: p.idx, solved: p.solved, points: p.points, tries: p.tries, lastSolveAt: p.lastSolveAt, firsts: p.firsts, solveMs: p.solveMs,
-      out: p.out, finished: p.finishedAt !== null, marks: p.marks,
-      results: (done || mode === 'blitz') ? p.results.map(r => r && { solved: r.solved, tries: r.tries, at: r.at, pts: r.pts, place: r.place }) : p.results.map(r => r && { solved: r.solved, tries: r.tries }),
-    }))
-    const base = {
-      t: 'state', now, code: s.code, host: s.host, phase: s.phase, config: s.config, game: s.game, total: s.words.length,
-      startedAt: s.startedAt, endsAt: s.endsAt, round: s.round, roundStartedAt: s.roundStartedAt, roundEndsAt: s.roundEndsAt, revealUntil: s.revealUntil,
-      endedAt: s.endedAt, players,
-      words: done ? s.words : undefined,
-      reveal: s.phase === 'reveal' ? s.words[s.round] : undefined,
+    const inst = s.inst
+    const room = {
+      code: s.code, host: s.host, phase: s.phase, pick: s.pick, configs: s.configs, history: s.history.slice(0, 10),
+      members: Object.values(s.members).sort((a, b) => a.joinedAt - b.joinedAt).map(m => ({
+        id: m.id, name: m.name, color: m.color, online: online.has(m.id), ...(s.totals[m.id] ?? { pts: 0, wins: 0, games: 0 }),
+      })),
+      inst: inst && { id: inst.id, n: inst.n, config: inst.config, players: inst.players, startedAt: inst.startedAt, endedAt: inst.endedAt, standings: inst.standings, summary: inst.summary, night: inst.night },
+      night: s.night,
     }
+    const game = inst ? GAMES[inst.id] : null
+    const ctx = inst ? this.ctxFor(inst, now) : null
     for (const ws of this.ctx.getWebSockets()) {
-      const id = (ws.deserializeAttachment() as { id?: string } | null)?.id
-      if (!id || !s.players[id]) continue
-      const p = s.players[id]
-      // Only words this player is finished with are sent to them.
-      const seen = s.words.map((w, i) => (done || (mode === 'blitz' ? (i < s.round || p.results[i] || (i === s.round && s.phase === 'reveal')) : i < p.idx)) ? w : null)
-      try {
-        ws.send(JSON.stringify({ ...base, you: id, me: { idx: p.idx, guesses: p.guesses, marks: p.marks, words: seen } }))
-      } catch { /* closing */ }
+      const id = attached(ws)
+      if (!id || !s.members[id]) continue
+      const base = JSON.stringify({ t: 's', now, you: id, room })
+      let wire = base
+      if (inst && game && ctx) {
+        let v: string
+        try { v = JSON.stringify({ n: inst.n, v: game.view(ctx, inst.s, id) }) } catch (e) { console.error('view', inst.id, e); v = JSON.stringify({ n: inst.n, v: null }) }
+        // Only send the game view when it changed for this player.
+        if (this.sent.get(ws) !== v) { this.sent.set(ws, v); wire = base.slice(0, -1) + ',"game":' + v + '}' }
+      }
+      try { ws.send(wire) } catch { /* closing */ }
     }
   }
 }

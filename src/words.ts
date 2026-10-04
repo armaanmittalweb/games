@@ -1,25 +1,13 @@
 import answersText from '../data/answers.txt'
 import allowedText from '../data/allowed.txt'
+import dictText from '../data/dict.txt'
 
 const split = (s: string) => s.split(/\s+/).map(w => w.trim().toLowerCase()).filter(w => /^[a-z]{5}$/.test(w))
 
 export const ANSWERS = split(answersText)
 export const VALID = new Set([...ANSWERS, ...split(allowedText)])
-
-/** `n` different answers in random order. */
-export function pickWords(n: number): string[] {
-  const pool = ANSWERS.slice()
-  const out: string[] = []
-  const r = new Uint32Array(n)
-  crypto.getRandomValues(r)
-  for (let i = 0; i < n && pool.length; i++) {
-    const j = r[i] % pool.length
-    out.push(pool[j])
-    pool[j] = pool[pool.length - 1]
-    pool.pop()
-  }
-  return out
-}
+/** Every accepted word from 3 to 16 letters, for Word Grid. */
+export const DICT = new Set(dictText.split(/\s+/).filter(Boolean))
 
 /** Wordle colours: 2 = right place, 1 = in the word elsewhere, 0 = not in it. Repeated letters count once each. */
 export function score(guess: string, answer: string): number[] {

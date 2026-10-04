@@ -4,6 +4,7 @@
 //   data/allowed.txt  the guesses accepted: real English words only. SCOWL up to size 55 (the everyday part of the
 //                     list spell checkers use) in shared, American and British spellings, lower-case so names are
 //                     left out, plus every Wordle answer.
+//   data/dict.txt     the same SCOWL words at every length from 3 to 16 letters, for Word Grid.
 //   node scripts/build-words.mjs
 import { readFileSync, writeFileSync, copyFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
@@ -24,13 +25,16 @@ writeFileSync('data/answers.txt', answers.join('\n') + '\n')
 const require = createRequire(import.meta.url)
 const dir = require.resolve('wordlist-english/package.json').replace(/package\.json$/, '')
 const allowed = new Set(wordle)
+const dict = new Set()
 for (const size of [10, 20, 35, 40, 50, 55]) {
   for (const variant of ['english', 'american', 'british']) {
     for (const w of JSON.parse(readFileSync(`${dir}${variant}-words-${size}.json`, 'utf8'))) {
       if (/^[a-z]{5}$/.test(w)) allowed.add(w)
+      if (/^[a-z]{3,16}$/.test(w)) dict.add(w)
     }
   }
 }
 writeFileSync('data/allowed.txt', [...allowed].sort().join('\n') + '\n')
+writeFileSync('data/dict.txt', [...dict].sort().join('\n') + '\n')
 copyFileSync(`${dir}Copyright`, 'data/SCOWL-COPYRIGHT')
-console.log(`${answers.length} answers, ${allowed.size} accepted guesses`)
+console.log(`${answers.length} answers, ${allowed.size} accepted guesses, ${dict.size} words for Word Grid`)

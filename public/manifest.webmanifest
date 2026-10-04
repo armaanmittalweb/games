@@ -1,7 +1,7 @@
 {
-  "name": "Word Race: multiplayer Wordle",
-  "short_name": "Word Race",
-  "description": "Play Wordle with friends in real time: make a room, share the code, race through the same words.",
+  "name": "Game Night: party games with friends",
+  "short_name": "Game Night",
+  "description": "Free multiplayer party games for friends: drawing, word, trivia, card and deception games in one room.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

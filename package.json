@@ -3,16 +3,20 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "wrangler dev",
-    "deploy": "wrangler deploy",
+    "dev": "node scripts/build-site.mjs && wrangler dev",
+    "build": "node scripts/build-site.mjs",
+    "deploy": "node scripts/build-site.mjs && wrangler deploy",
     "check": "tsc --noEmit",
+    "test": "esbuild test/sim.ts --bundle --platform=node --format=esm --loader:.txt=text --outfile=node_modules/.cache/sim.mjs --log-level=warning && node node_modules/.cache/sim.mjs",
     "words": "node scripts/build-words.mjs",
+    "trivia": "node scripts/fetch-trivia.mjs && node scripts/build-trivia.mjs",
     "word-stats": "node scripts/word-stats.mjs > data/word-stats.json",
     "images": "node scripts/make-images.mjs",
     "indexnow": "node scripts/indexnow.mjs"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^5.20260929.1",
+    "htm": "^3.1.1",
     "playwright": "^1.63.0",
     "typescript": "^7.0.2",
     "wordlist-english": "^1.2.1",
