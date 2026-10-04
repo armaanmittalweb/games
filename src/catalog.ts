@@ -271,6 +271,21 @@ export const CATALOG: Meta[] = [
     seo: { title: 'Reaction Time Test Game Multiplayer with Friends', description: 'Test your reaction time against friends: wait for green, tap first, avoid false starts and decoys. Free multiplayer reflex game, any device.', about: 'a multiplayer reaction time game' },
   },
   {
+    id: 'stopwatch', name: 'Stop the Clock', emoji: '⏱️', cat: 'Reflex',
+    blurb: 'Start a hidden stopwatch and stop it at exactly 7.30 seconds, by feel. Closest wins.',
+    min: 1, max: 30, minutes: [2, 0],
+    dna: { skill: 4, luck: 2, social: 2, brain: 2, chaos: 3, replay: 5 }, moods: ['fast', 'competitive', 'chaos'],
+    options: [rounds(5, 3, 12)],
+    night: { rounds: 4 },
+    rules: [
+      'Each round shows a target time, like 7.30 seconds.',
+      'Tap Start whenever you are ready, count in your head, and tap Stop when you think exactly that much time has passed. The stopwatch is never shown while it runs.',
+      'Your real time appears the moment you stop. All the times are shown once everyone has stopped.',
+      'The closest stop scores 10 points, then 7, 5, 4, 3, 2 and 1. Within a hundredth of a second is a perfect stop: 3 bonus points.',
+    ],
+    seo: { title: 'Stop the Clock: Stopwatch Timing Game with Friends', description: 'Start a hidden stopwatch and stop it at exactly the target time, by feel. A free multiplayer timing game for friends: closest wins.', about: 'a stopwatch timing challenge' },
+  },
+  {
     id: 'closest', name: 'Closest Wins', emoji: '🎯', cat: 'Trivia',
     blurb: 'How tall is the Burj Khalifa? Nobody knows. Closest guess wins.',
     min: 2, max: 30, minutes: [4, 0],

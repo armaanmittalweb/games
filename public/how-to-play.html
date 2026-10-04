@@ -7,6 +7,7 @@
 <meta name="description" content="Rules of multiplayer Wordle: green, yellow and grey tiles, repeated letters, rooms and timers, scoring in each mode, and how ties are broken.">
 <link rel="canonical" href="https://games.amittal.dev/how-to-play">
 <meta name="theme-color" content="#121213">
+<script>/* Light or dark: the saved choice, else the system setting. Runs before the page draws. */(function(){var d=document.documentElement;function set(t){d.dataset.theme=t;var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==='light'?'#f6f6f4':'#121213'}var t;try{t=localStorage.getItem('gn.theme')}catch(e){}set(t||(matchMedia('(prefers-color-scheme: light)').matches?'light':'dark'));window.toggleTheme=function(){var n=d.dataset.theme==='light'?'dark':'light';set(n);try{localStorage.setItem('gn.theme',n)}catch(e){}}})()</script>
 <meta property="og:type" content="article">
 <meta property="og:site_name" content="Game Night">
 <meta property="og:url" content="https://games.amittal.dev/how-to-play">
@@ -49,7 +50,7 @@
 <body>
 <header class="site-nav">
   <a class="brand" href="/">🎲 Game Night</a>
-  <nav aria-label="Main"><a href="/how-to-play" aria-current="page">How to play</a><a href="/game-modes">Modes</a><a href="/wordle-tips">Tips</a><a href="/games">All games</a><a class="play" href="/?play=wordle">Play</a></nav>
+  <nav aria-label="Main"><a href="/how-to-play" aria-current="page">How to play</a><a href="/game-modes">Modes</a><a href="/wordle-tips">Tips</a><a href="/games">All games</a><a class="play" href="/?play=wordle">Play</a><button class="theme-btn" type="button" onclick="toggleTheme()" aria-label="Switch between light and dark mode" title="Light or dark"></button></nav>
 </header>
 <main class="doc">
   <p class="crumbs"><a href="/">Game Night</a> › <a href="/games/wordle">Word Race</a> › How to play</p>

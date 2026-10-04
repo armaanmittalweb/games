@@ -56,6 +56,12 @@ function standings(s: S): Standing[] {
 
 function afterShow(g: Ctx<C>, s: S) {
   const loser = s.call!.loser
+  // The loser was removed from the room during the reveal: nobody else pays for it.
+  if (!s.alive.includes(loser)) {
+    if (s.alive.length <= 1) return g.end(standings(s), { dice: g.config.dice })
+    if (s.turn >= s.alive.length) s.turn = 0
+    return roll(g, s)
+  }
   s.dice[loser].pop()
   let next = s.alive.indexOf(loser)
   if (!s.dice[loser].length) {

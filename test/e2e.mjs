@@ -15,7 +15,7 @@ const QUICK = {
   draw: { rounds: 1, seconds: 30 }, telephone: { writeSeconds: 15, drawSeconds: 20 }, imposter: { rounds: 1, clues: 1, clueSeconds: 10, talkSeconds: 15 },
   codewords: { timer: 60 }, wordle: { mode: 'blitz', words: 2, roundSeconds: 25 }, bluff: { rounds: 2, writeSeconds: 20, voteSeconds: 10 },
   mindmeld: { rounds: 3, seconds: 10 }, mostlikely: { rounds: 3, seconds: 10 }, trivia: { rounds: 3, seconds: 6 }, wordgrid: { minutes: 1 },
-  lastcard: { hand: 4, turnSeconds: 10 }, liarsdice: { dice: 2, turnSeconds: 15 }, reaction: { rounds: 3 }, closest: { rounds: 3, seconds: 10 },
+  lastcard: { hand: 4, turnSeconds: 10 }, stopwatch: { rounds: 3 }, liarsdice: { dice: 2, turnSeconds: 15 }, reaction: { rounds: 3 }, closest: { rounds: 3, seconds: 10 },
 }
 const TEXT = ['apple', 'mango', 'cricket', 'samosa', 'blue', 'tiger', '42', '1990', 'a small bird', 'crane']
 const NAMES = ['Asha', 'Bilal', 'Chen', 'Dev']
@@ -61,6 +61,7 @@ async function step(page, id) {
     if (id === 'telephone' && Math.random() < 0.5) await tryClick('button:has-text("Done")')
     return
   }
+  if (id === 'stopwatch' && Math.random() < 0.3 && await tryClick('.sw-btn:not([disabled])')) return
   if (await tryClick('.rx.rx-go')) return
   if (await tryClick('.target')) return
   if (id === 'wordle' && await visible(page, '.kb')) { await page.keyboard.type(rnd(['crane', 'slate', 'smile', 'beach'])); await page.keyboard.press('Enter'); return }

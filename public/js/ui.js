@@ -5,6 +5,8 @@ import { S, ME, now, onEvent } from './core.js'
 export { html, useState, useEffect, useRef }
 
 export const PLAYER_COLORS = ['#ff6b6b', '#4dabf7', '#69db7c', '#ffd43b', '#da77f2', '#ff922b', '#38d9a9', '#f783ac', '#a9e34b', '#748ffc', '#e599f7', '#ffa94d']
+/** The same colours, dark enough to read as text on the light theme. */
+export const PLAYER_INK = ['#c92a2a', '#1864ab', '#2b8a3e', '#946c00', '#9c36b5', '#c2410c', '#0c7a6b', '#c2255c', '#5c940d', '#3b5bdb', '#ae3ec9', '#b45309']
 export const INK = ['#111111', '#868e96', '#ffffff', '#e03131', '#f76707', '#fcc419', '#2f9e44', '#8ce99a', '#74c0fc', '#1971c2', '#7048e8', '#f06595', '#8b5a2b', '#f1c9a5', '#a61e4d', '#1b2a6b']
 export const PEN = [3, 6, 12, 24, 48]
 
@@ -17,10 +19,11 @@ export function useTick(ms = 250) {
 export const member = id => S.room?.members.find(m => m.id === id)
 export const nameOf = id => member(id)?.name ?? 'Someone'
 export const colorOf = id => PLAYER_COLORS[(member(id)?.color ?? 0) % PLAYER_COLORS.length]
+const inkOf = id => PLAYER_INK[(member(id)?.color ?? 0) % PLAYER_INK.length]
 export const plural = (n, one, many = one + 's') => `${n} ${n === 1 ? one : many}`
 
 export function Name({ id, you = true }) {
-  return html`<b class="nm" style=${`color:${colorOf(id)}`}>${nameOf(id)}${you && id === ME ? html`<span class="dim"> (you)</span>` : ''}</b>`
+  return html`<b class="nm" style=${`--c:${colorOf(id)};--cd:${inkOf(id)}`}>${nameOf(id)}${you && id === ME ? html`<span class="dim"> (you)</span>` : ''}</b>`
 }
 
 export function Avatar({ id, size = 28 }) {

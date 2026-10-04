@@ -20,7 +20,7 @@ const MOOD = { think: 'thinking', chaos: 'chaos', competitive: 'competitive', de
 
 const nav = current => `<header class="site-nav">
   <a class="brand" href="/">🎲 Game Night</a>
-  <nav aria-label="Main"><a href="/games"${current === 'games' ? ' aria-current="page"' : ''}>All games</a><a href="/how-to-play">Word Race rules</a><a class="play" href="/">Play</a></nav>
+  <nav aria-label="Main"><a href="/games"${current === 'games' ? ' aria-current="page"' : ''}>All games</a><a href="/how-to-play">Word Race rules</a><a class="play" href="/">Play</a><button class="theme-btn" type="button" onclick="toggleTheme()" aria-label="Switch between light and dark mode" title="Light or dark"></button></nav>
 </header>`
 const foot = `<footer class="foot">
   <nav aria-label="Games">${CATALOG.map(m => `<a href="/games/${m.id}">${esc(m.name)}</a>`).join('')}</nav>
@@ -35,6 +35,7 @@ const head = ({ title, description, path, type = 'website', ld }) => `<!doctype 
 <meta name="description" content="${esc(description)}">
 <link rel="canonical" href="${SITE}${path}">
 <meta name="theme-color" content="#121213">
+<script>/* Light or dark: the saved choice, else the system setting. Runs before the page draws. */(function(){var d=document.documentElement;function set(t){d.dataset.theme=t;var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==='light'?'#f6f6f4':'#121213'}var t;try{t=localStorage.getItem('gn.theme')}catch(e){}set(t||(matchMedia('(prefers-color-scheme: light)').matches?'light':'dark'));window.toggleTheme=function(){var n=d.dataset.theme==='light'?'dark':'light';set(n);try{localStorage.setItem('gn.theme',n)}catch(e){}}})()</script>
 <meta property="og:type" content="${type}">
 <meta property="og:site_name" content="Game Night">
 <meta property="og:url" content="${SITE}${path}">

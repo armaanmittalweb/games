@@ -4,10 +4,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
 <title>Game Night: Free Online Party Games to Play with Friends</title>
-<meta name="description" content="14 multiplayer party games in one room: Draw & Guess, Imposter, Code Words, Wordle, Trivia, an Uno-style card game and more. Free, no sign-up, any phone.">
+<meta name="description" content="15 multiplayer party games in one room: Draw & Guess, Imposter, Code Words, Wordle, Trivia, an Uno-style card game and more. Free, no sign-up, any phone.">
 <link rel="canonical" href="https://games.amittal.dev/">
 <meta name="robots" content="index, follow, max-image-preview:large">
 <meta name="theme-color" content="#121213">
+<script>/* Light or dark: the saved choice, else the system setting. Runs before the page draws. */(function(){var d=document.documentElement;function set(t){d.dataset.theme=t;var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==='light'?'#f6f6f4':'#121213'}var t;try{t=localStorage.getItem('gn.theme')}catch(e){}set(t||(matchMedia('(prefers-color-scheme: light)').matches?'light':'dark'));window.toggleTheme=function(){var n=d.dataset.theme==='light'?'dark':'light';set(n);try{localStorage.setItem('gn.theme',n)}catch(e){}}})()</script>
 <meta name="author" content="Armaan Mittal">
 <meta name="application-name" content="Game Night">
 <meta name="apple-mobile-web-app-title" content="Game Night">
@@ -15,14 +16,14 @@
 <meta property="og:site_name" content="Game Night">
 <meta property="og:url" content="https://games.amittal.dev/">
 <meta property="og:title" content="Game Night: party games to play with friends online">
-<meta property="og:description" content="One room, 14 games, one leaderboard. Drawing, word, trivia, card and deception games for 2 to 30 friends. Free, no sign-up.">
+<meta property="og:description" content="One room, 15 games, one leaderboard. Drawing, word, trivia, card and deception games for 2 to 30 friends. Free, no sign-up.">
 <meta property="og:image" content="https://games.amittal.dev/og.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="Game Night: a room of friends playing party games with a shared leaderboard">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Game Night: party games to play with friends online">
-<meta name="twitter:description" content="One room, 14 games, one leaderboard. Free, no sign-up, works on any phone.">
+<meta name="twitter:description" content="One room, 15 games, one leaderboard. Free, no sign-up, works on any phone.">
 <meta name="twitter:image" content="https://games.amittal.dev/og.png">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="icon" href="/icon-192.png" type="image/png" sizes="192x192">
@@ -80,8 +81,8 @@
 <body>
 <div id="app">
   <div class="wrap home">
-    <div class="brandline"><span>🎲 Game Night</span><a href="/games">All games</a></div>
-    <section class="hero"><div class="hero-text"><h1>Game night with your friends, in the browser</h1><p class="lead">14 party games for 2 to 30 people. Make a room, share the code, play on any phone or laptop. Free, no sign-up.</p></div></section>
+    <div class="brandline"><span>🎲 Game Night</span><span class="row"><a href="/games">All games</a><button class="theme-btn" type="button" aria-label="Switch between light and dark mode" title="Light or dark"></button></span></div>
+    <section class="hero"><div class="hero-text"><h1>Game night with your friends, in the browser</h1><p class="lead">15 party games for 2 to 30 people. Make a room, share the code, play on any phone or laptop. Free, no sign-up.</p></div></section>
     <noscript><p class="card">Game Night needs JavaScript to play. Everything below explains how it works.</p></noscript>
   </div>
 </div>
@@ -115,6 +116,7 @@
       <a class="card gl" href="/games/lastcard"><h3>🃏 Last Card</h3><p>An Uno-style card game with skips, reverses, +2s, wilds and stacking.</p></a>
       <a class="card gl" href="/games/liarsdice"><h3>🎲 Liar's Dice</h3><p>Hidden dice, rising bids and one word: liar.</p></a>
       <a class="card gl" href="/games/reaction"><h3>⚡ Reaction</h3><p>Wait for green, tap first. Decoys and false starts make it harder than it sounds.</p></a>
+      <a class="card gl" href="/games/stopwatch"><h3>⏱️ Stop the Clock</h3><p>Stop the stopwatch at exactly 7.30 seconds. Sometimes the clock disappears halfway.</p></a>
       <a class="card gl" href="/games/closest"><h3>🎯 Closest Wins</h3><p>How tall is the Burj Khalifa? Nobody knows. The closest guess wins.</p></a>
     </div>
     <p><a href="/games">Rules and settings for every game</a></p>

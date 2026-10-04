@@ -104,7 +104,7 @@ function Home() {
   }
   const list = CATALOG.filter(m => cat === 'All' || m.cat === cat)
   return html`<div class="wrap home">
-    <div class="brandline"><span>🎲 Game Night</span><a href="/games">All games</a></div>
+    <div class="brandline"><span>🎲 Game Night</span><span class="row"><a href="/games">All games</a><${ThemeButton} /></span></div>
     <section class="hero">
       <div class="hero-text">
         <h1>Game night with your friends, in the browser</h1>
@@ -173,6 +173,7 @@ function Room() {
       ${s.status !== 'open' ? html`<span class="pill warn">reconnecting</span>` : ''}
       ${inGame ? html`<button class="icon" onClick=${() => setRules(room.inst.id)} aria-label="How to play" title="How to play">?</button>` : ''}
       ${inGame && isHost ? html`<button class="icon" onClick=${() => confirm('End this game for everyone? No points are given.') && send({ t: 'abort' })} aria-label="End the game" title="End the game">✕</button>` : ''}
+      <${ThemeButton} />
       <button class="icon chat-btn" onClick=${toggleChat} aria-label="Chat" title="Chat">💬${s.unread ? html`<i>${s.unread}</i>` : ''}</button>
     </header>
     <div class="room-body">
@@ -186,6 +187,11 @@ function Room() {
     </div>
     ${rules && html`<${RulesModal} id=${rules} onClose=${() => setRules(null)} />`}
   </div>`
+}
+
+/** Light or dark. The page's head script owns the setting; the icon comes from CSS. */
+function ThemeButton() {
+  return html`<button class="theme-btn" type="button" onClick=${() => window.toggleTheme?.()} aria-label="Switch between light and dark mode" title="Light or dark"></button>`
 }
 
 function toggleChat() {

@@ -3,7 +3,7 @@
 Party games for a group of friends, in the browser: https://games.amittal.dev
 
 One person makes a room and shares the 5-letter code; everyone joins from their own phone or laptop. The host picks a
-game, or plans a whole game night, and the room keeps one leaderboard across every game played in it.
+game, or plans a whole game night, and the room keeps one leaderboard across every game played in it. There is a light and a dark theme (the switch is in the top bar).
 
 ## Games
 
@@ -22,6 +22,7 @@ game, or plans a whole game night, and the room keeps one leaderboard across eve
 | Last Card | 2–10 | Uno-style card game with stacking and Last Card calls. |
 | Liar's Dice | 2–8 | Hidden dice, rising bids, calls of "liar". |
 | Reaction | 1–30 | Wait for green and tap; decoys and moving targets. |
+| Stop the Clock | 1–30 | Stop a stopwatch on a target time; the clock may vanish. Closest wins. |
 | Closest Wins | 2–30 | Number questions; the nearest guess scores. |
 
 Every game's rules, settings, player range, length and Game DNA (skill, luck, social, brain, chaos and replay, 1 to 5)
