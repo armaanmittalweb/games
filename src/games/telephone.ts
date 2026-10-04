@@ -41,7 +41,7 @@ function close(g: Ctx<C>, s: S) {
     const b = bookFor(s, seat)
     if (kind === 'text') {
       let text = s.texts[id]
-      if (!text) text = s.step === 0 ? g.pick(TELEPHONE_STARTS) : '(no idea)'
+      if (!text) text = s.step === 0 ? g.deal('telephone', TELEPHONE_STARTS, 1)[0] : '(no idea)'
       s.books[b].push({ by: id, kind, text })
     } else {
       s.books[b].push({ by: id, kind })

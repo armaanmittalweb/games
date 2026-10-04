@@ -29,6 +29,10 @@ for (const q of opentdb) {
   out.push({ c, d: q.difficulty, q: q.question, a: q.answer, w: q.type === 'boolean' ? [q.answer === 'True' ? 'False' : 'True'] : q.wrong })
 }
 for (const [d, q, a, w] of india) out.push({ c: 'india', d, q, a, w })
+// The same question asked twice (the database has a few, and some overlap the India set): keep the last, so ours wins.
+const key = q => q.q.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim()
+const last = new Map(out.map((q, i) => [key(q), i]))
+out.splice(0, out.length, ...out.filter((q, i) => last.get(key(q)) === i))
 writeFileSync('src/content/trivia.json', JSON.stringify(out))
 const by = {}
 for (const q of out) by[q.c] = (by[q.c] ?? 0) + 1

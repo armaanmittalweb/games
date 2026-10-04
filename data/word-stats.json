@@ -1,117 +1,117 @@
 {
- "answers": 1016,
+ "answers": 1466,
  "guesses": 4860,
  "letters": [
   {
    "letter": "e",
-   "share": 46.8
+   "share": 45
   },
   {
    "letter": "a",
-   "share": 40.9
+   "share": 40.4
   },
   {
    "letter": "r",
-   "share": 40.2
-  },
-  {
-   "letter": "t",
-   "share": 31.6
+   "share": 38.1
   },
   {
    "letter": "o",
-   "share": 29.3
+   "share": 30.3
+  },
+  {
+   "letter": "t",
+   "share": 29.1
   },
   {
    "letter": "s",
-   "share": 29.3
+   "share": 27.7
   },
   {
    "letter": "i",
-   "share": 27.5
+   "share": 27.4
   },
   {
    "letter": "l",
-   "share": 26.3
+   "share": 27.2
   },
   {
    "letter": "n",
-   "share": 23.4
+   "share": 24.4
   },
   {
    "letter": "c",
-   "share": 21.1
+   "share": 20.9
   },
   {
    "letter": "h",
-   "share": 20.1
+   "share": 18.3
   },
   {
    "letter": "u",
-   "share": 17
+   "share": 17.9
   },
   {
    "letter": "d",
-   "share": 15.7
+   "share": 16
   },
   {
    "letter": "y",
-   "share": 14.1
+   "share": 15.5
   },
   {
    "letter": "p",
-   "share": 12.4
-  },
-  {
-   "letter": "b",
-   "share": 11.9
+   "share": 13.2
   },
   {
    "letter": "g",
-   "share": 11
+   "share": 12.6
   },
   {
    "letter": "m",
-   "share": 10.8
+   "share": 11.7
   },
   {
-   "letter": "f",
-   "share": 9.1
+   "letter": "b",
+   "share": 11.5
   },
   {
    "letter": "k",
    "share": 9.1
   },
   {
+   "letter": "f",
+   "share": 9
+  },
+  {
    "letter": "w",
-   "share": 8.9
+   "share": 8.7
   },
   {
    "letter": "v",
-   "share": 6.2
+   "share": 6.5
   },
   {
    "letter": "z",
-   "share": 1.3
+   "share": 1.5
   },
   {
    "letter": "j",
-   "share": 1.1
+   "share": 1.2
   },
   {
    "letter": "q",
-   "share": 1
+   "share": 1.2
   },
   {
    "letter": "x",
-   "share": 0.9
+   "share": 1
   }
  ],
  "positions": [
   [
    {
     "letter": "s",
-    "share": 18.1
+    "share": 17
    },
    {
     "letter": "c",
@@ -119,210 +119,210 @@
    },
    {
     "letter": "b",
-    "share": 8.5
+    "share": 7.6
    }
   ],
   [
    {
     "letter": "r",
-    "share": 14.4
+    "share": 13.1
    },
    {
     "letter": "o",
-    "share": 13.2
+    "share": 12.8
    },
    {
     "letter": "a",
-    "share": 12.4
+    "share": 12.6
    }
   ],
   [
    {
     "letter": "a",
-    "share": 15.7
+    "share": 15
    },
    {
     "letter": "i",
-    "share": 13.6
+    "share": 11.9
    },
    {
     "letter": "o",
-    "share": 10.7
+    "share": 11.3
    }
   ],
   [
    {
     "letter": "e",
-    "share": 12.6
-   },
-   {
-    "letter": "c",
-    "share": 9.1
+    "share": 12.1
    },
    {
     "letter": "n",
-    "share": 8.9
+    "share": 8.7
+   },
+   {
+    "letter": "c",
+    "share": 8.3
    }
   ],
   [
    {
     "letter": "e",
-    "share": 20.6
+    "share": 19.6
    },
    {
     "letter": "y",
-    "share": 12.4
+    "share": 13.5
    },
    {
     "letter": "t",
-    "share": 11.8
+    "share": 10.6
    }
   ]
  ],
  "bestOpeners": [
   {
+   "word": "raise",
+   "left": 37.7,
+   "patterns": 116
+  },
+  {
    "word": "orate",
-   "left": 23.8,
-   "patterns": 110
+   "left": 38.1,
+   "patterns": 115
   },
   {
    "word": "arise",
-   "left": 24.2,
-   "patterns": 102
-  },
-  {
-   "word": "raise",
-   "left": 24.6,
-   "patterns": 109
-  },
-  {
-   "word": "irate",
-   "left": 24.7,
+   "left": 38.2,
    "patterns": 108
   },
   {
+   "word": "irate",
+   "left": 39.1,
+   "patterns": 116
+  },
+  {
    "word": "arose",
-   "left": 25.2,
-   "patterns": 103
+   "left": 39.6,
+   "patterns": 109
   },
   {
    "word": "crate",
-   "left": 25.5,
-   "patterns": 130
+   "left": 41.6,
+   "patterns": 139
   },
   {
    "word": "trace",
-   "left": 26.2,
-   "patterns": 132
+   "left": 42,
+   "patterns": 143
   },
   {
-   "word": "stare",
-   "left": 27,
-   "patterns": 120
-  },
-  {
-   "word": "taser",
-   "left": 27.7,
-   "patterns": 111
+   "word": "snare",
+   "left": 43.6,
+   "patterns": 114
   },
   {
    "word": "saner",
-   "left": 28.1,
-   "patterns": 104
+   "left": 43.9,
+   "patterns": 113
+  },
+  {
+   "word": "stare",
+   "left": 43.9,
+   "patterns": 123
   }
  ],
  "bestCommonOpeners": [
   {
-   "word": "arise",
-   "left": 24.2,
-   "patterns": 102
+   "word": "raise",
+   "left": 37.7,
+   "patterns": 116
   },
   {
-   "word": "raise",
-   "left": 24.6,
+   "word": "arise",
+   "left": 38.2,
+   "patterns": 108
+  },
+  {
+   "word": "arose",
+   "left": 39.6,
    "patterns": 109
   },
   {
    "word": "crate",
-   "left": 25.5,
-   "patterns": 130
+   "left": 41.6,
+   "patterns": 139
   },
   {
    "word": "trace",
-   "left": 26.2,
-   "patterns": 132
+   "left": 42,
+   "patterns": 143
   },
   {
    "word": "stare",
-   "left": 27,
-   "patterns": 120
-  },
-  {
-   "word": "alert",
-   "left": 28.9,
-   "patterns": 116
+   "left": 43.9,
+   "patterns": 123
   },
   {
    "word": "crane",
-   "left": 29,
-   "patterns": 121
+   "left": 44.5,
+   "patterns": 134
   },
   {
-   "word": "react",
-   "left": 29.3,
-   "patterns": 112
+   "word": "alert",
+   "left": 45.1,
+   "patterns": 123
   },
   {
-   "word": "roast",
-   "left": 29.8,
-   "patterns": 110
+   "word": "slate",
+   "left": 45.2,
+   "patterns": 135
   },
   {
-   "word": "store",
-   "left": 30,
-   "patterns": 104
+   "word": "later",
+   "left": 46,
+   "patterns": 123
   }
  ],
  "popular": [
   {
    "word": "adieu",
-   "left": 59.3,
-   "patterns": 68
+   "left": 84.3,
+   "patterns": 72
   },
   {
    "word": "audio",
-   "left": 91.1,
-   "patterns": 71
+   "left": 124.6,
+   "patterns": 80
   },
   {
    "word": "crane",
-   "left": 29,
-   "patterns": 121
+   "left": 44.5,
+   "patterns": 134
   },
   {
    "word": "slate",
-   "left": 28.1,
-   "patterns": 130
+   "left": 45.2,
+   "patterns": 135
   },
   {
    "word": "stare",
-   "left": 27,
-   "patterns": 120
+   "left": 43.9,
+   "patterns": 123
   },
   {
    "word": "raise",
-   "left": 24.6,
-   "patterns": 109
+   "left": 37.7,
+   "patterns": 116
   },
   {
    "word": "arise",
-   "left": 24.2,
-   "patterns": 102
+   "left": 38.2,
+   "patterns": 108
   },
   {
    "word": "house",
-   "left": 51,
-   "patterns": 88
+   "left": 77.6,
+   "patterns": 98
   }
  ]
 }

@@ -19,6 +19,7 @@ export class Stats extends DurableObject {
       CREATE TABLE IF NOT EXISTS days (day TEXT PRIMARY KEY, rooms INTEGER DEFAULT 0, games INTEGER DEFAULT 0, finished INTEGER DEFAULT 0,
         seats INTEGER DEFAULT 0, guesses INTEGER DEFAULT 0, solved INTEGER DEFAULT 0, newPlayers INTEGER DEFAULT 0);
       CREATE TABLE IF NOT EXISTS modes (mode TEXT PRIMARY KEY, games INTEGER DEFAULT 0);
+      CREATE TABLE IF NOT EXISTS decks (key TEXT PRIMARY KEY, at INTEGER NOT NULL);
     `)
   }
 
@@ -54,6 +55,18 @@ export class Stats extends DurableObject {
     this.day('finished')
     this.day('guesses', guesses)
     this.day('solved', solved)
+  }
+
+  /** How far the site has dealt into each content pool (questions, prompts, words), so no room repeats an item early. */
+  async decks(): Promise<Record<string, number>> {
+    return Object.fromEntries(this.sql.exec('SELECT key, at FROM decks').toArray().map(r => [r.key as string, r.at as number]))
+  }
+
+  async dealt(moved: Record<string, number>) {
+    for (const [key, at] of Object.entries(moved)) {
+      if (typeof at !== 'number' || !Number.isFinite(at) || key.length > 80) continue
+      this.sql.exec('INSERT INTO decks (key, at) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET at = MAX(at, excluded.at)', key, Math.floor(at))
+    }
   }
 
   async alarm() {

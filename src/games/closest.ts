@@ -60,7 +60,7 @@ function reveal(g: Ctx<C>, s: S) {
 
 export const closest: Game<S, C> = {
   setup(g) {
-    const s: S = { qs: g.shuffle(ESTIMATES.slice()).slice(0, g.config.rounds), round: 0, phase: 'answer', until: 0, answers: {}, result: [], pts: {}, bulls: {} }
+    const s: S = { qs: g.deal('closest', ESTIMATES, g.config.rounds), round: 0, phase: 'answer', until: 0, answers: {}, result: [], pts: {}, bulls: {} }
     open(g, s)
     return s
   },

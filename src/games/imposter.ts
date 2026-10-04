@@ -23,7 +23,6 @@ interface S {
   guessed: boolean
   gained: Record<string, number>
   pts: Record<string, number>
-  used: number[]
 }
 
 const VOTE_MS = 30_000
@@ -36,10 +35,7 @@ const wordOf = (g: Ctx<C>, s: S, id: string) => id === s.imposter ? (g.config.mo
 const same = (a: string, b: string) => singular(norm(a)).replace(/ /g, '') === singular(norm(b)).replace(/ /g, '')
 
 function start(g: Ctx<C>, s: S) {
-  let idx = g.int(IMPOSTER_PAIRS.length)
-  for (let i = 0; i < 20 && s.used.includes(idx); i++) idx = g.int(IMPOSTER_PAIRS.length)
-  s.used.push(idx)
-  s.pair = IMPOSTER_PAIRS[idx]
+  s.pair = g.deal('imposter', IMPOSTER_PAIRS, 1)[0]
   s.flip = g.rand() < 0.5
   const shift = s.round % g.players.length
   s.order = [...g.players.slice(shift), ...g.players.slice(0, shift)]
@@ -100,7 +96,7 @@ function settle(g: Ctx<C>, s: S) {
 
 export const imposter: Game<S, C> = {
   setup(g) {
-    const s = { round: 0, last: [], pts: {}, used: [] } as unknown as S
+    const s = { round: 0, last: [], pts: {} } as unknown as S
     start(g, s)
     return s
   },

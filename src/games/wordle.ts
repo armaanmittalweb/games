@@ -131,10 +131,9 @@ function settle(g: Parameters<Game['view']>[0], s: S) {
 export const wordle: Game<S, C> = {
   setup(g) {
     const c = g.config
-    const pool = g.shuffle(ANSWERS.slice())
     const start = g.now + COUNTDOWN_MS
     const s: S = {
-      words: pool.slice(0, c.words), phase: 'playing', startedAt: start,
+      words: g.deal('wordle', ANSWERS, c.words), phase: 'playing', startedAt: start,
       endsAt: blitz(c) ? 0 : start + c.minutes * 60_000,
       round: 0, roundStartedAt: start, roundEndsAt: blitz(c) ? start + c.roundSeconds * 1000 : 0, revealUntil: 0,
       p: Object.fromEntries(g.players.map(id => [id, fresh()])),

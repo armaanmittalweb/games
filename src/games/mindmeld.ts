@@ -52,7 +52,7 @@ function reveal(g: Ctx<C>, s: S) {
 
 export const mindmeld: Game<S, C> = {
   setup(g) {
-    const s: S = { prompts: g.shuffle(MIND_MELD.slice()).slice(0, g.config.rounds), round: 0, phase: 'answer', until: 0, answers: {}, groups: [], pts: {}, matches: {} }
+    const s: S = { prompts: g.deal('mindmeld', MIND_MELD, g.config.rounds), round: 0, phase: 'answer', until: 0, answers: {}, groups: [], pts: {}, matches: {} }
     open(g, s)
     return s
   },

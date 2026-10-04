@@ -42,7 +42,7 @@ function reveal(g: Ctx<C>, s: S) {
 
 export const mostlikely: Game<S, C> = {
   setup(g) {
-    const s: S = { prompts: g.shuffle(MOST_LIKELY.slice()).slice(0, g.config.rounds), round: 0, phase: 'vote', until: 0, votes: {}, top: [], pts: {}, crowns: {}, titles: [] }
+    const s: S = { prompts: g.deal('mostlikely', MOST_LIKELY, g.config.rounds), round: 0, phase: 'vote', until: 0, votes: {}, top: [], pts: {}, crowns: {}, titles: [] }
     open(g, s)
     return s
   },

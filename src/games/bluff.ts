@@ -58,7 +58,7 @@ function reveal(g: Ctx<C>, s: S) {
 
 export const bluff: Game<S, C> = {
   setup(g) {
-    const s: S = { words: g.shuffle(BLUFF_WORDS.slice()).slice(0, g.config.rounds), round: 0, phase: 'write', until: 0, fakes: {}, options: [], votes: {}, gained: {}, pts: {}, fooled: {} }
+    const s: S = { words: g.deal('bluff', BLUFF_WORDS, g.config.rounds), round: 0, phase: 'write', until: 0, fakes: {}, options: [], votes: {}, gained: {}, pts: {}, fooled: {} }
     write(g, s)
     return s
   },

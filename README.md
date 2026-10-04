@@ -58,14 +58,31 @@ place kept stays in) until two play a final; knocked-out players watch.
 
 All content is in plain English for friend groups in India.
 
-- Word lists (`scripts/build-words.mjs`): Word Race answers are Wordle answers that are also among the 10,000 most
+- Word lists (`scripts/build-words.mjs`): Word Race answers are Wordle answers that are also among the 20,000 most
   common subtitle words ([hermitdave/FrequencyWords](https://github.com/hermitdave/FrequencyWords), CC BY-SA 4.0);
   accepted guesses and Word Grid's dictionary come from SCOWL (see `data/SCOWL-COPYRIGHT`).
 - Trivia (`scripts/build-trivia.mjs`): the [Open Trivia Database](https://opentdb.com) (CC BY-SA 4.0), minus anime,
-  comics, US sports and politics, plus 80 questions about India in `data/india-trivia.mjs`. "Mixed" difficulty leaves
-  out the hard questions. `npm run trivia` downloads the bank again.
+  comics, US sports and politics, plus about 500 questions about India in `data/india-trivia.mjs`. "Mixed" difficulty
+  leaves out the hard questions. `npm run trivia` downloads the bank again.
 - Prompts, word pairs, drawing words, Code Words boards, Dictionary Bluff words and Closest Wins questions are in
   `src/content/`. Closest Wins answers note any rounding or date.
+
+Content is dealt, not drawn at random (`Ctx.deal`). Each pool is walked in one fixed shuffled order, and every room
+on the site shares its place in it through the Stats object, so a question, prompt or word comes back only after the
+whole pool has been used. `npm test` fails if a pool holds the same item twice and prints each pool's size:
+
+| Pool | Items | Per game (default) |
+|---|---|---|
+| Trivia | 4,940 (517 about India) | 10 |
+| Word Race answers | 1,466 | 5 to 15 |
+| Imposter pairs | 871 | 3 |
+| Code Words board words | 766, plus 217 desi | 25 |
+| Mind Meld prompts | 633 | 8 |
+| Dictionary Bluff words | 559 | 5 |
+| Closest Wins questions | 532 | 8 |
+| Most Likely To prompts | 521 | 8 |
+| Draw & Guess words | about 200 per theme, 1,452 mixed | 3 shown per turn |
+| Telephone starting lines | 221 | only when someone writes nothing |
 
 ## Search
 

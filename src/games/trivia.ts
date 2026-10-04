@@ -24,9 +24,10 @@ export function pickQuestions(g: Ctx<C>, n: number): S['qs'] {
   const c = g.config
   // "Everything" leaves out video games (a category of its own) and "Mixed" leaves out the hard questions.
   const cat = (q: Question) => (c.category === 'any' ? q.c !== 'games' : q.c === c.category)
+  let key = `trivia:${c.category}:${c.difficulty}`
   let pool = TRIVIA.filter(q => cat(q) && (c.difficulty === 'any' ? q.d !== 'hard' : q.d === c.difficulty))
-  if (pool.length < n) pool = TRIVIA.filter(cat)
-  return g.shuffle(pool.slice()).slice(0, n).map((q: Question) => {
+  if (pool.length < n) { key = `trivia:${c.category}`; pool = TRIVIA.filter(cat) }
+  return g.deal(key, pool, n).map((q: Question) => {
     // True or false stays in that order; four choices are shuffled.
     const choices = q.w.length === 1 ? ['True', 'False'] : g.shuffle([q.a, ...q.w])
     return { q: q.q, choices, right: choices.indexOf(q.a), cat: q.c }

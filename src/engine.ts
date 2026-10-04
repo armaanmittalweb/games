@@ -21,6 +21,12 @@ export interface Ctx<C = Record<string, unknown>> {
   int(n: number): number
   pick<T>(a: readonly T[]): T
   shuffle<T>(a: T[]): T[]
+  /**
+   * n items from a content pool, never repeating until the whole pool has been used. Every room on the site walks the
+   * pool in one fixed shuffled order and shares its place in it, so a group meets each item once per lap of the pool.
+   * key names the pool, and must change with any filter applied to items.
+   */
+  deal<T>(key: string, items: readonly T[], n: number): T[]
   /** When the game next needs a tick (a deadline). 0 clears it. Each call replaces the last. */
   wake(at: number): void
   /** Ends the game. Standings must include every seated player. */
@@ -95,4 +101,34 @@ export function rng() {
     pick: <T>(a: readonly T[]) => a[int(a.length)],
     shuffle: <T>(a: T[]) => { for (let j = a.length - 1; j > 0; j--) { const k = int(j + 1); [a[j], a[k]] = [a[k], a[j]] } return a },
   }
+}
+
+// ---------- dealing ----------
+
+const orders = new Map<string, number[]>()
+
+function hash(s: string) {
+  let h = 0x811c9dc5
+  for (let i = 0; i < s.length; i++) h = Math.imul(h ^ s.charCodeAt(i), 0x01000193)
+  h ^= h >>> 16; h = Math.imul(h, 0x85ebca6b); h ^= h >>> 13; h = Math.imul(h, 0xc2b2ae35); h ^= h >>> 16
+  return h >>> 0
+}
+
+/** The fixed shuffled order a pool is dealt in: by a hash of each item, so adding items keeps the rest in the same order. */
+export function dealOrder(key: string, items: readonly unknown[]): number[] {
+  const memo = `${key}:${items.length}`
+  let o = orders.get(memo)
+  if (!o) {
+    o = items.map((t, i) => [hash(`${key}|${typeof t === 'string' ? t : JSON.stringify(t)}`), i]).sort((a, b) => a[0] - b[0] || a[1] - b[1]).map(x => x[1])
+    orders.set(memo, o)
+  }
+  return o
+}
+
+/** Items at positions at, at+1, … of a pool's order (wrapping round). */
+export function dealAt<T>(key: string, items: readonly T[], n: number, at: number): T[] {
+  const o = dealOrder(key, items)
+  const out: T[] = []
+  for (let i = 0; i < Math.min(n, o.length); i++) out.push(items[o[(at + i) % o.length]])
+  return out
 }

@@ -3,7 +3,7 @@ import type { Stats } from './stats'
 import { GAMES } from './games'
 import { META, settings, type Mood } from './catalog'
 import { MOODS, LENGTHS, cuts, placePoints, plan, swap, type Length, type Night } from './night'
-import { rng, clean, type Ctx, type Standing } from './engine'
+import { dealAt, rng, clean, type Ctx, type Standing } from './engine'
 
 interface Env { STATS: DurableObjectNamespace<Stats> }
 
@@ -38,6 +38,8 @@ interface State {
   totals: Record<string, { pts: number; wins: number; games: number }>
   history: { id: string; at: number; winners: string[] }[]
   night: Night | null
+  /** How far into each content pool this room has dealt (see Ctx.deal). */
+  decks?: Record<string, number>
 }
 
 interface Chat { id: string; text: string; at: number }
@@ -58,6 +60,9 @@ export class Room extends DurableObject<Env> {
   /** Per socket: the last game view sent, so an unchanged view is not sent again. */
   sent = new WeakMap<WebSocket, string>()
   reports: ((stats: DurableObjectStub<Stats>) => Promise<unknown>)[] = []
+  /** The site's place in each content pool, read when a game starts, and the places this room has moved to since. */
+  site: Record<string, number> = {}
+  moved: Record<string, number> = {}
   // Set while handling one message:
   emits: { msg: unknown; to?: string | string[] }[] = []
   isQuiet = false
@@ -112,6 +117,12 @@ export class Room extends DurableObject<Env> {
     return {
       now, config: inst.config, players: inst.players, names, colors, online: this.online(),
       ...this.r,
+      deal: <T>(key: string, items: readonly T[], n: number) => {
+        const d = (s.decks ??= {})
+        const at = Math.max(d[key] ?? 0, this.site[key] ?? 0)
+        d[key] = this.site[key] = this.moved[key] = at + Math.min(n, items.length)
+        return dealAt(key, items, n, at)
+      },
       wake: at => { inst.wake = at },
       end: (standings, summary) => { this.ended = { standings, summary } },
       emit: (msg, to) => { this.emits.push({ msg, to }) },
@@ -256,6 +267,7 @@ export class Room extends DurableObject<Env> {
     if (!s || typeof raw !== 'string' || raw.length > 64_000) return
     let m: Record<string, unknown>
     try { m = JSON.parse(raw) } catch { return }
+    if (m.t === 'start' || m.t === 'nightGo') await this.readDecks()
     const now = Date.now()
     s.touched = now
     this.reset()
@@ -520,7 +532,20 @@ export class Room extends DurableObject<Env> {
     this.emits = []
   }
 
+  /** The site's place in each content pool, so a new game carries on from where every other room got to. */
+  async readDecks() {
+    const stats = this.env.STATS.get(this.env.STATS.idFromName('global'))
+    const late = new Promise<null>(r => setTimeout(() => r(null), 1500))
+    const got = await Promise.race([stats.decks().catch(() => null), late])
+    if (got) this.site = got
+  }
+
   async flush() {
+    if (Object.keys(this.moved).length) {
+      const moved = this.moved
+      this.moved = {}
+      this.reports.push(st => st.dealt(moved))
+    }
     if (!this.reports.length) return
     const stats = this.env.STATS.get(this.env.STATS.idFromName('global'))
     const todo = this.reports.splice(0)

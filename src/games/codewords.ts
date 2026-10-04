@@ -27,7 +27,7 @@ const other = (t: Team): Team => (t === 'red' ? 'blue' : 'red')
 const guessers = (s: S, t: Team) => Object.keys(s.team).filter(id => s.team[id] === t && s.spy[t] !== id)
 
 function deal(g: Ctx<C>, s: S) {
-  s.words = board(g.config.pack, g.shuffle)
+  s.words = board(g.config.pack, g.deal, g.shuffle)
   s.first = g.rand() < 0.5 ? 'red' : 'blue'
   const keys: Card[] = [...Array(9).fill(s.first), ...Array(8).fill(other(s.first)), ...Array(7).fill('neutral'), 'assassin']
   s.keys = g.shuffle(keys)

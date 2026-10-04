@@ -1,5 +1,5 @@
 // Builds the two word lists the game uses:
-//   data/answers.txt  the words players are asked to guess: Wordle answers that are also among the 10,000 most
+//   data/answers.txt  the words players are asked to guess: Wordle answers that are also among the 20,000 most
 //                     common words in film and TV subtitles, so everyday words like "smile", not "parry" or "datum".
 //   data/allowed.txt  the guesses accepted: real English words only. SCOWL up to size 55 (the everyday part of the
 //                     list spell checkers use) in shared, American and British spellings, lower-case so names are
@@ -9,9 +9,9 @@
 import { readFileSync, writeFileSync, copyFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
 
-const COMMON = 10_000
+const COMMON = 20_000
 // Crude words and proper adjectives that are on the Wordle list but make poor answers for a group.
-const SKIP = new Set(['sperm', 'fanny', 'booty', 'horny', 'pussy', 'fatty', 'dutch', 'welsh', 'slutty', 'bitch', 'penis', 'boobs'])
+const SKIP = new Set(['sperm', 'fanny', 'booty', 'horny', 'pussy', 'fatty', 'dutch', 'welsh', 'slutty', 'bitch', 'penis', 'boobs', 'harem'])
 
 const lines = f => readFileSync(f, 'utf8').split(/\r?\n/).filter(Boolean)
 const wordle = lines('data/wordle-answers.txt').map(w => w.trim())

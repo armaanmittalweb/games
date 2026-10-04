@@ -17,7 +17,6 @@ interface S {
   guessed: Record<string, number> // points gained this turn, in guessing order
   turnPts: Record<string, number>
   pts: Record<string, number>
-  used: string[]
 }
 
 const CHOOSE_MS = 15_000
@@ -27,8 +26,7 @@ function next(g: Ctx<C>, s: S) {
   // Skip turns of drawers who have left.
   while (s.turn < s.order.length && !g.players.includes(s.order[s.turn])) s.turn++
   if (s.turn >= s.order.length) return g.end(byPoints(s.pts, g.players))
-  const pool = drawWords(g.config.theme).filter(w => !s.used.includes(w))
-  s.choices = g.shuffle(pool.slice()).slice(0, 3)
+  s.choices = g.deal(`draw:${g.config.theme}`, drawWords(g.config.theme), 3)
   s.phase = 'choose'
   s.word = ''
   s.shown = []
@@ -41,7 +39,6 @@ function next(g: Ctx<C>, s: S) {
 
 function begin(g: Ctx<C>, s: S, word: string) {
   s.word = word
-  s.used.push(word)
   s.phase = 'draw'
   s.started = g.now
   s.until = g.now + g.config.seconds * 1000
@@ -79,7 +76,7 @@ export const draw: Game<S, C> = {
   setup(g) {
     const order: string[] = []
     for (let r = 0; r < g.config.rounds; r++) order.push(...g.players)
-    const s: S = { order, turn: 0, phase: 'choose', until: 0, started: 0, choices: [], word: '', shown: [], strokes: [], guessed: {}, turnPts: {}, pts: {}, used: [] }
+    const s: S = { order, turn: 0, phase: 'choose', until: 0, started: 0, choices: [], word: '', shown: [], strokes: [], guessed: {}, turnPts: {}, pts: {} }
     next(g, s)
     return s
   },

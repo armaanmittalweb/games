@@ -2,7 +2,8 @@
 // that each game ends with sane standings and never throws. Run: npm test
 import { GAMES } from '../src/games'
 import { CATALOG, settings } from '../src/catalog'
-import { rng, type Ctx, type Standing } from '../src/engine'
+import { checkContent } from './content'
+import { dealAt, rng, type Ctx, type Standing } from '../src/engine'
 
 const r = rng()
 let failures = 0
@@ -16,8 +17,10 @@ function play(id: string, n: number, config: Record<string, string | number>, la
   let now = 1_700_000_000_000
   let ended: { standings: Standing[]; summary?: unknown } | null = null
   const blobs = new Map<string, unknown>()
+  const decks: Record<string, number> = {}
   const ctx = (): Ctx => ({
     now, config, players, names, colors: {}, online, ...r,
+    deal: (key, items, n) => { const at = decks[key] ?? r.int(1000); decks[key] = at + n; return dealAt(key, items, n, at) },
     wake: at => { inst.wake = at },
     end: (standings, summary) => { if (ended) throw new Error('ended twice'); ended = { standings, summary } },
     emit: () => {}, quiet: () => {}, lazy: () => {},
@@ -81,5 +84,6 @@ for (const meta of CATALOG) {
     for (const [v] of o.choices!) play(meta.id, Math.max(meta.min, 4), settings(meta.id, { ...meta.night, [o.key]: v }), `${meta.id} ${o.key}=${v}`)
   }
 }
+if (!only) failures += checkContent()
 console.log(failures ? `${failures} failures` : 'all games ended cleanly')
 process.exitCode = failures ? 1 : 0
