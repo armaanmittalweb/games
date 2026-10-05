@@ -86,13 +86,24 @@ async function step(page, id) {
   }
 }
 
+let introShot = false, rated = false
 async function play(id) {
   const t0 = Date.now()
   await send(host, { t: 'pick', id })
   await send(host, { t: 'config', id, config: QUICK[id] })
   await host.waitForTimeout(300)
   await host.locator('.detail button.primary').click()
-  await host.waitForSelector('.game-area', { timeout: 8000 })
+  await host.waitForSelector('.intro-wait', { timeout: 8000 })
+  // The rules come up first. Three players press Got it; the phone taps outside the box. The game starts once all have.
+  await Promise.all(pages.map(p => p.waitForSelector('.intro-card', { timeout: 8000 })))
+  if (!introShot) {
+    introShot = true
+    await host.screenshot({ path: `${SHOTS}/intro-desktop.png` })
+    await pages[3].screenshot({ path: `${SHOTS}/intro-phone.png` })
+  }
+  await Promise.all(pages.map((p, i) => i === 3 ? p.mouse.click(4, 120) : p.click('.intro-card button.primary')))
+  await Promise.all(pages.map(p => p.waitForSelector('.intro-card', { state: 'detached', timeout: 4000 })))
+  await host.waitForSelector('.intro-wait', { state: 'detached', timeout: 8000 })
   let shot = false
   while (Date.now() - t0 < 240_000) {
     if (await visible(host, '.results')) break
@@ -108,6 +119,14 @@ async function play(id) {
   if (done) {
     const rows = await host.locator('.results .tbl tr').count()
     await host.screenshot({ path: `${SHOTS}/${id}-results.png`, fullPage: true })
+    if (!rated) {
+      rated = true
+      await host.click('.fb .stars button:nth-child(4)')
+      await host.click('.fb button:has-text("Yes")')
+      await host.fill('.fb input', 'e2e: the timer felt short')
+      await host.click('.fb button:has-text("Send")')
+      await host.waitForSelector('.fb', { state: 'detached' })
+    }
     console.log(`${done ? 'ok  ' : 'FAIL'} ${id}: ${Math.round((Date.now() - t0) / 1000)}s, ${rows - 1} rows in the standings`)
     await send(host, { t: 'lobby' })
   } else {

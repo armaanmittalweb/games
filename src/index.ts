@@ -1,4 +1,5 @@
 import type { Stats } from './stats'
+import type { PageEvent } from './analytics'
 
 export { Room } from './room'
 export { Stats } from './stats'
@@ -9,6 +10,8 @@ interface Env {
   ASSETS: Fetcher
   /** Shared with the Switchboard, which reads /internal/stats through a service binding. */
   INTERNAL_KEY?: string
+  /** Caps /api/ev per address, so a script cannot flood the counts. */
+  EV_LIMIT?: RateLimit
 }
 
 /** Compares two strings in time that does not depend on where they differ. */
@@ -45,6 +48,29 @@ export default {
     if (m) {
       const c = m[1].toUpperCase()
       return env.ROOMS.get(env.ROOMS.idFromName(c)).fetch(new Request(`https://room/ws`, req))
+    }
+    // The page's own events for the Switchboard: page views, share taps, script errors (see src/analytics.ts).
+    if (url.pathname === '/api/ev' && req.method === 'POST') {
+      const ip = req.headers.get('cf-connecting-ip') ?? ''
+      if (env.EV_LIMIT && !(await env.EV_LIMIT.limit({ key: ip })).success) return new Response(null, { status: 204 })
+      const text = await req.text()
+      if (text.length > 2000) return new Response(null, { status: 413 })
+      let e: PageEvent
+      try { e = JSON.parse(text) } catch { return new Response(null, { status: 400 }) }
+      if (!e || typeof e !== 'object' || !['view', 'share', 'err'].includes(e.t)) return new Response(null, { status: 400 })
+      const ua = req.headers.get('user-agent') ?? ''
+      // Crawlers run scripts too; they are not visitors.
+      if (/bot|crawl|spider|slurp|lighthouse|headless|preview/i.test(ua)) e.x = true
+      e.country = String((req as { cf?: { country?: string } }).cf?.country ?? '')
+      e.device = /iPad|Tablet/i.test(ua) ? 'tablet' : /Mobi|Android|iPhone/i.test(ua) ? 'mobile' : 'desktop'
+      await env.STATS.get(env.STATS.idFromName('global')).event(e)
+      return new Response(null, { status: 204 })
+    }
+    if (url.pathname === '/internal/analytics') {
+      const key = req.headers.get('x-internal-key') ?? ''
+      if (!env.INTERNAL_KEY || !sameKey(key, env.INTERNAL_KEY)) return json({ error: 'not found' }, 404)
+      const days = Math.max(0, Math.min(365, Number(url.searchParams.get('days') ?? 30) || 0))
+      return json(await env.STATS.get(env.STATS.idFromName('global')).analytics(days))
     }
     if (url.pathname === '/internal/stats') {
       const key = req.headers.get('x-internal-key') ?? ''

@@ -21,7 +21,6 @@ export interface Dna { skill: number; luck: number; social: number; brain: numbe
 export interface Meta {
   id: string
   name: string
-  emoji: string
   cat: 'Word' | 'Drawing' | 'Party' | 'Deception' | 'Trivia' | 'Cards & dice' | 'Reflex'
   blurb: string
   min: number
@@ -44,7 +43,7 @@ const rounds = (def: number, min = 1, max = 20, label = 'Rounds'): Option => ({ 
 
 export const CATALOG: Meta[] = [
   {
-    id: 'draw', name: 'Draw & Guess', emoji: '🎨', cat: 'Drawing',
+    id: 'draw', name: 'Draw & Guess', cat: 'Drawing',
     blurb: 'One player draws, everyone else races to guess the word.',
     min: 3, max: 16, minutes: [1, 1.4],
     dna: { skill: 3, luck: 2, social: 5, brain: 2, chaos: 4, replay: 5 }, moods: ['creative', 'chaos', 'social', 'fast'],
@@ -63,7 +62,7 @@ export const CATALOG: Meta[] = [
     seo: { title: 'Draw and Guess Online with Friends, Free', description: 'A free online drawing and guessing game for friends: one draws, the rest guess. Private rooms, themed word packs, works on phones. No sign-up.', about: 'a Pictionary-style drawing and guessing game' },
   },
   {
-    id: 'imposter', name: 'Imposter', emoji: '🕵️', cat: 'Deception',
+    id: 'imposter', name: 'Imposter', cat: 'Deception',
     blurb: 'Everyone gets the same word except one. Give clues, then find the imposter.',
     min: 3, max: 16, minutes: [2, 0.8],
     dna: { skill: 3, luck: 2, social: 5, brain: 3, chaos: 3, replay: 5 }, moods: ['deception', 'social', 'think'],
@@ -84,7 +83,7 @@ export const CATALOG: Meta[] = [
     seo: { title: 'Imposter Word Game Online: Find the Spy', description: 'Play the imposter word game online with friends. Everyone gets the word except one player. Give clues, vote, catch the spy. Free, private rooms.', about: 'a social deduction word game in the style of Undercover and Spyfall' },
   },
   {
-    id: 'codewords', name: 'Code Words', emoji: '🧩', cat: 'Word', teams: true,
+    id: 'codewords', name: 'Code Words', cat: 'Word', teams: true,
     blurb: 'Two teams. Spymasters give one-word clues to lead teammates to their agents.',
     min: 4, max: 16, minutes: [12, 0],
     dna: { skill: 4, luck: 1, social: 4, brain: 5, chaos: 2, replay: 5 }, moods: ['think', 'social', 'strategic'],
@@ -102,7 +101,7 @@ export const CATALOG: Meta[] = [
     seo: { title: 'Codenames-Style Word Game Online for Teams', description: 'A free team word game in the style of Codenames: spymasters give one-word clues, teams find their agents and avoid the assassin. Private rooms.', about: 'a team word-association game in the style of Codenames' },
   },
   {
-    id: 'wordle', name: 'Word Race', emoji: '🟩', cat: 'Word',
+    id: 'wordle', name: 'Word Race', cat: 'Word',
     blurb: 'Multiplayer Wordle: the same five-letter words for everyone, one timer.',
     min: 1, max: 30, minutes: [7, 0],
     dna: { skill: 4, luck: 2, social: 2, brain: 4, chaos: 1, replay: 5 }, moods: ['think', 'competitive', 'fast'],
@@ -121,7 +120,7 @@ export const CATALOG: Meta[] = [
     seo: { title: 'Multiplayer Wordle with Friends, Free and Live', description: 'Play Wordle with friends in real time. Make a room, share the code and race through the same words in four modes. Free, no sign-up, works on any phone.', about: 'multiplayer Wordle' },
   },
   {
-    id: 'telephone', name: 'Telephone', emoji: '📞', cat: 'Drawing',
+    id: 'telephone', name: 'Telephone', cat: 'Drawing',
     blurb: 'Write a phrase, draw what you read, describe what you see. Watch it fall apart.',
     min: 3, max: 12, minutes: [4, 1.6],
     dna: { skill: 2, luck: 3, social: 5, brain: 2, chaos: 5, replay: 5 }, moods: ['creative', 'chaos', 'social'],
@@ -138,7 +137,7 @@ export const CATALOG: Meta[] = [
     seo: { title: 'Telephone Drawing Game Online (Like Gartic Phone)', description: 'Play the telephone drawing game online: write, draw, describe and watch the message fall apart. Free, private rooms for 3 to 12 friends.', about: 'a telephone drawing game in the style of Gartic Phone' },
   },
   {
-    id: 'bluff', name: 'Dictionary Bluff', emoji: '📖', cat: 'Word',
+    id: 'bluff', name: 'Dictionary Bluff', cat: 'Word',
     blurb: 'Invent a definition for a strange real word. Fool your friends, find the real one.',
     min: 3, max: 12, minutes: [1, 0.9],
     dna: { skill: 3, luck: 2, social: 5, brain: 3, chaos: 3, replay: 4 }, moods: ['creative', 'deception', 'social'],
@@ -152,7 +151,7 @@ export const CATALOG: Meta[] = [
     seo: { title: 'Dictionary Bluff: The Fake Definition Game Online', description: 'Play the dictionary game online: invent believable definitions for strange real words, fool your friends and spot the real one. Free, private rooms.', about: 'the dictionary bluffing game, also known as Fictionary' },
   },
   {
-    id: 'mindmeld', name: 'Mind Meld', emoji: '🧠', cat: 'Party',
+    id: 'mindmeld', name: 'Mind Meld', cat: 'Party',
     blurb: '"Name a fruit." Score by giving the same answer as everyone else.',
     min: 3, max: 20, minutes: [4, 0],
     dna: { skill: 2, luck: 3, social: 5, brain: 2, chaos: 3, replay: 5 }, moods: ['social', 'fast', 'chaos'],
@@ -166,7 +165,7 @@ export const CATALOG: Meta[] = [
     seo: { title: 'Mind Meld: Think Alike Party Game Online', description: 'A free party game where you score by matching your friends\' answers. Name a fruit, name a superhero: think like the group. Private rooms.', about: 'a think-alike party game' },
   },
   {
-    id: 'mostlikely', name: 'Most Likely To', emoji: '👉', cat: 'Party',
+    id: 'mostlikely', name: 'Most Likely To', cat: 'Party',
     blurb: 'Who is most likely to… Everyone points at once. Score by agreeing with the room.',
     min: 3, max: 20, minutes: [3, 0],
     dna: { skill: 1, luck: 2, social: 5, brain: 1, chaos: 4, replay: 4 }, moods: ['social', 'chaos', 'fast'],
@@ -180,7 +179,7 @@ export const CATALOG: Meta[] = [
     seo: { title: 'Most Likely To Questions Game Online with Friends', description: 'Play Most Likely To online: secret votes, live results and titles for your friends. Hundreds of questions, free private rooms.', about: 'the Most Likely To party game' },
   },
   {
-    id: 'trivia', name: 'Trivia', emoji: '❓', cat: 'Trivia',
+    id: 'trivia', name: 'Trivia', cat: 'Trivia',
     blurb: 'Quick-fire multiple choice. Right and fast beats right and slow.',
     min: 1, max: 30, minutes: [4, 0],
     dna: { skill: 4, luck: 2, social: 2, brain: 4, chaos: 1, replay: 4 }, moods: ['think', 'competitive', 'fast'],
@@ -199,7 +198,7 @@ export const CATALOG: Meta[] = [
     seo: { title: 'Multiplayer Trivia Quiz with Friends, Free', description: 'A free live trivia quiz for friends: same questions, a timer, speed bonuses and streaks. Pick a category and difficulty. Private rooms.', about: 'a live multiplayer trivia quiz' },
   },
   {
-    id: 'wordgrid', name: 'Word Grid', emoji: '🔤', cat: 'Word',
+    id: 'wordgrid', name: 'Word Grid', cat: 'Word',
     blurb: 'A grid of letters, a timer. Find words by chaining neighbouring letters.',
     min: 1, max: 20, minutes: [3, 0],
     dna: { skill: 4, luck: 2, social: 2, brain: 4, chaos: 1, replay: 5 }, moods: ['think', 'competitive'],
@@ -218,7 +217,7 @@ export const CATALOG: Meta[] = [
     seo: { title: 'Boggle-Style Word Grid Game Online, Multiplayer', description: 'Find words in a grid of letters against your friends, in the style of Boggle. 4×4 or 5×5, unique-word scoring. Free, private rooms.', about: 'a word search game in the style of Boggle' },
   },
   {
-    id: 'lastcard', name: 'Last Card', emoji: '🃏', cat: 'Cards & dice',
+    id: 'lastcard', name: 'Last Card', cat: 'Cards & dice',
     blurb: 'Match the colour or number, play action cards, and do not forget to call last card.',
     min: 2, max: 10, minutes: [5, 1],
     dna: { skill: 2, luck: 4, social: 4, brain: 2, chaos: 4, replay: 5 }, moods: ['chaos', 'social', 'competitive'],
@@ -238,7 +237,7 @@ export const CATALOG: Meta[] = [
     seo: { title: 'Uno-Style Card Game Online with Friends, Free', description: 'Play an Uno-style card game online with 2 to 10 friends: action cards, wilds, stacking and Last Card calls. Free, private rooms, no sign-up.', about: 'a colour-matching card game in the style of Uno' },
   },
   {
-    id: 'liarsdice', name: "Liar's Dice", emoji: '🎲', cat: 'Cards & dice',
+    id: 'liarsdice', name: "Liar's Dice", cat: 'Cards & dice',
     blurb: 'Hidden dice, rising bids, and one word: liar.',
     min: 2, max: 8, minutes: [3, 1.2],
     dna: { skill: 3, luck: 4, social: 4, brain: 3, chaos: 2, replay: 5 }, moods: ['deception', 'strategic', 'social'],
@@ -257,7 +256,7 @@ export const CATALOG: Meta[] = [
     seo: { title: "Liar's Dice Online with Friends, Free", description: "Play Liar's Dice online with 2 to 8 friends: hidden dice, bids and bluffs. Ones-wild option, turn timer, private rooms. Free, no sign-up.", about: "the bluffing dice game Liar's Dice" },
   },
   {
-    id: 'reaction', name: 'Reaction', emoji: '⚡', cat: 'Reflex',
+    id: 'reaction', name: 'Reaction', cat: 'Reflex',
     blurb: 'Wait for green. Tap. Fastest finger wins, false starts lose.',
     min: 1, max: 30, minutes: [2, 0],
     dna: { skill: 4, luck: 2, social: 2, brain: 1, chaos: 3, replay: 4 }, moods: ['fast', 'competitive', 'chaos'],
@@ -271,7 +270,7 @@ export const CATALOG: Meta[] = [
     seo: { title: 'Reaction Time Test Game Multiplayer with Friends', description: 'Test your reaction time against friends: wait for green, tap first, avoid false starts and decoys. Free multiplayer reflex game, any device.', about: 'a multiplayer reaction time game' },
   },
   {
-    id: 'stopwatch', name: 'Stop the Clock', emoji: '⏱️', cat: 'Reflex',
+    id: 'stopwatch', name: 'Stop the Clock', cat: 'Reflex',
     blurb: 'Start a hidden stopwatch and stop it at exactly 7.30 seconds, by feel. Closest wins.',
     min: 1, max: 30, minutes: [2, 0],
     dna: { skill: 4, luck: 2, social: 2, brain: 2, chaos: 3, replay: 5 }, moods: ['fast', 'competitive', 'chaos'],
@@ -286,7 +285,7 @@ export const CATALOG: Meta[] = [
     seo: { title: 'Stop the Clock: Stopwatch Timing Game with Friends', description: 'Start a hidden stopwatch and stop it at exactly the target time, by feel. A free multiplayer timing game for friends: closest wins.', about: 'a stopwatch timing challenge' },
   },
   {
-    id: 'closest', name: 'Closest Wins', emoji: '🎯', cat: 'Trivia',
+    id: 'closest', name: 'Closest Wins', cat: 'Trivia',
     blurb: 'How tall is the Burj Khalifa? Nobody knows. Closest guess wins.',
     min: 2, max: 30, minutes: [4, 0],
     dna: { skill: 2, luck: 3, social: 3, brain: 3, chaos: 2, replay: 4 }, moods: ['think', 'social', 'competitive'],

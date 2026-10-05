@@ -1,4 +1,5 @@
 // Connection, clock and shared state. The server owns every game; this file only carries messages both ways.
+import { VID, session, track } from './track.js'
 
 const store = {
   get(k, d) { try { return localStorage.getItem(k) ?? d } catch { return d } },
@@ -47,7 +48,7 @@ function open() {
   ws = sock
   sock.onopen = () => {
     retry = 0
-    sock.send(JSON.stringify({ t: 'join', id: ME, secret, name: getName() }))
+    sock.send(JSON.stringify({ t: 'join', id: ME, secret, name: getName(), vid: VID, sid: session() }))
     clearInterval(pingT)
     pingT = setInterval(() => { try { sock.send('ping') } catch { /* closed */ } }, 25000)
   }
@@ -98,7 +99,7 @@ export function disconnect() {
 }
 
 export function send(m) {
-  if (ws && ws.readyState === 1) ws.send(JSON.stringify(m))
+  if (ws && ws.readyState === 1) { ws.send(JSON.stringify(m)); session() }
   else toast('Reconnecting…')
 }
 /** A move in the current game. */
@@ -115,6 +116,8 @@ export function toast(msg, ms = 2000) {
 }
 
 export async function share(text, url) {
+  // A room link going out is an invite (counted for the Switchboard).
+  if (url?.includes('/r/')) track('share', { method: navigator.share ? 'native' : 'copy' })
   if (navigator.share) { try { await navigator.share({ text, url }); return } catch { /* cancelled */ } }
   try { await navigator.clipboard.writeText(url ? `${text} ${url}` : text); toast('Copied') } catch { prompt('Copy this', url ?? text) }
 }

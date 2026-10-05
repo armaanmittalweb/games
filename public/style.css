@@ -93,8 +93,12 @@ a { color: var(--accent); }
 .gcard p { margin: 0; color: var(--lead); flex: 1; }
 .gcard.pick.sel { border-color: var(--green); background: var(--tint-green); }
 .gc-top { display: flex; gap: 10px; align-items: center; }
-.emoji { font-size: 28px; line-height: 1; }
-.emoji.big { font-size: 42px; }
+.gicon { display: inline-flex; flex: none; width: 34px; height: 34px; vertical-align: middle; }
+.gicon svg { width: 100%; height: 100%; display: block; filter: drop-shadow(0 1px 1.5px rgb(0 0 0 / .18)); }
+.gicon.big { width: 52px; height: 52px; }
+.gicon.small { width: 1.25em; height: 1.25em; vertical-align: -.25em; }
+.gicon.small svg { filter: none; }
+.with-icon { display: flex; align-items: center; gap: 10px; }
 .gname { color: var(--text); font-weight: 700; text-decoration: none; }
 .gname:hover { text-decoration: underline; }
 .home > section + section { margin-top: 18px; }
@@ -117,6 +121,29 @@ a { color: var(--accent); }
 .modal { position: fixed; inset: 0; background: var(--shade); display: flex; align-items: center; justify-content: center; z-index: 40; padding: 16px; }
 .modal-card { max-width: 520px; width: 100%; max-height: 85dvh; overflow: auto; }
 .rules li { margin: 8px 0; }
+.gicon.huge { width: 76px; height: 76px; margin: 0 auto; }
+
+/* The rules before each game */
+.modal.intro { transition: background-color .35s ease; cursor: pointer; }
+.modal.intro.leaving { background-color: transparent; pointer-events: none; }
+.intro-card { cursor: default; transform-origin: center; animation: intro-in .28s ease-out; }
+@keyframes intro-in { from { transform: translateY(14px) scale(.96); opacity: 0; } }
+.intro-time { height: 4px; border-radius: 99px; background: var(--soft); overflow: hidden; }
+.intro-time i { display: block; height: 100%; background: var(--green); transition: width .25s linear; }
+.rules-btn { font-weight: 800; }
+.rules-btn.hint { background: var(--green); color: #fff; }
+.intro-wait { padding-top: 24px; }
+.ready-list { list-style: none; padding: 0; margin: 0; display: grid; gap: 6px; }
+.ready-list li { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 10px; background: var(--panel2); color: var(--dim); }
+.ready-list li.ok { color: var(--text); }
+.ready-list li.ok .small { color: var(--green); font-weight: 700; }
+
+/* Feedback after a game */
+.stars { display: inline-flex; }
+.stars button { background: none; border: 0; padding: 2px 4px; font-size: 26px; line-height: 1; color: var(--line); cursor: pointer; }
+.stars button.on { color: #fcc419; }
+.stars button:focus-visible { outline: 2px solid var(--green); border-radius: 6px; }
+@media (prefers-reduced-motion: reduce) { .intro-card { animation: none; } }
 .watch { background: var(--watch); text-align: center; padding: 6px; font-size: 14px; }
 
 /* Lobby */
@@ -149,9 +176,10 @@ a { color: var(--accent); }
 .plan li { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--soft); counter-increment: p; }
 .plan li::before { content: counter(p); color: var(--dim); width: 18px; text-align: right; }
 .night-banner { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding: 8px 14px; background: var(--banner); border-bottom: 1px solid var(--banner-line); font-size: 14px; }
-.plan-mini { display: flex; gap: 4px; font-size: 18px; }
+.plan-mini { display: flex; gap: 4px; font-size: 18px; align-items: center; }
 .plan-mini span { opacity: .4; }
 .plan-mini .past { opacity: .8; filter: grayscale(1); }
+.plan-mini span { display: inline-flex; }
 .plan-mini .now { opacity: 1; transform: scale(1.25); }
 
 /* Results */

@@ -1,5 +1,6 @@
 import { DurableObject } from 'cloudflare:workers'
 import type { Stats } from './stats'
+import type { GameEnd } from './analytics'
 import { GAMES } from './games'
 import { META, settings, type Mood } from './catalog'
 import { MOODS, LENGTHS, cuts, placePoints, plan, swap, type Length, type Night } from './night'
@@ -7,7 +8,11 @@ import { dealAt, rng, clean, type Ctx, type Standing } from './engine'
 
 interface Env { STATS: DurableObjectNamespace<Stats> }
 
-interface Member { id: string; secret: string; name: string; joinedAt: number; color: number }
+interface Member {
+  id: string; secret: string; name: string; joinedAt: number; color: number
+  /** For the Switchboard only, never sent to players: the browser's anonymous visitor id, and an id that means something in this room only. */
+  vid?: string; pid?: string
+}
 
 interface Inst {
   id: string
@@ -21,6 +26,12 @@ interface Inst {
   standings: Standing[] | null
   summary?: unknown
   night: boolean
+  /** When the host started it. startedAt is when play began, after the rules. */
+  chosen?: number
+  /** The rules, shown to everyone before play. The game is set up (and its clock starts) only once this ends. */
+  intro?: { until: number; ready: string[] }
+  /** Counted for the Switchboard: moves, errors, players whose connection dropped and players who came back. */
+  q?: { acts: number; errs: number; dropped: string[]; back: string[]; readyAll: boolean }
 }
 
 interface State {
@@ -40,6 +51,10 @@ interface State {
   night: Night | null
   /** How far into each content pool this room has dealt (see Ctx.deal). */
   decks?: Record<string, number>
+  /** A random id for this room, for the Switchboard. Codes are used again once a room closes; this never is. */
+  rid?: string
+  /** When each player's connection last dropped, to tell whether they came back. */
+  drops?: Record<string, number>
 }
 
 interface Chat { id: string; text: string; at: number }
@@ -48,6 +63,15 @@ const MAX_MEMBERS = 30
 const KEEP_MS = 24 * 3600_000
 const LAZY_MS = 4000
 const COLORS = 12
+/** How long the rules stay up before a game, unless everyone closes them first. */
+const INTRO_MS = 30_000
+/** A player back within this long after their connection dropped counts as reconnected. */
+const REJOIN_MS = 120_000
+// Close codes a player chooses (leaving, closing the tab, opened elsewhere, removed); anything else is a dropped line.
+const CHOSEN_CLOSE = new Set([1000, 1001, 1005, 4000, 4001])
+
+const hex = (bytes: number) => Array.from(crypto.getRandomValues(new Uint8Array(bytes)), b => b.toString(16).padStart(2, '0')).join('')
+const idOk = (x: unknown): x is string => typeof x === 'string' && /^[a-z0-9]{6,40}$/i.test(x)
 
 const attached = (ws: WebSocket) => (ws.deserializeAttachment() as { id?: string } | null)?.id
 
@@ -91,10 +115,10 @@ export class Room extends DurableObject<Env> {
       await this.ctx.storage.deleteAll()
       this.s = {
         v: 2, code: url.searchParams.get('code') ?? '', host: null, members: {}, touched: now, phase: 'lobby', pick: 'draw',
-        configs: {}, inst: null, seq: 0, totals: {}, history: [], night: null,
+        configs: {}, inst: null, seq: 0, totals: {}, history: [], night: null, rid: hex(8),
       }
-      const code = this.s.code
-      this.reports.push(st => st.roomCreated(code))
+      const code = this.s.code, rid = this.s.rid
+      this.reports.push(st => st.roomCreated(code, rid))
       await this.save()
       await this.flush()
       return new Response('ok')
@@ -138,7 +162,14 @@ export class Room extends DurableObject<Env> {
     const s = this.s!
     const inst = s.inst
     if (!inst || s.phase !== 'game') return
-    const out = fn(this.ctxFor(inst, now))
+    let out: T
+    try {
+      out = fn(this.ctxFor(inst, now))
+    } catch (e) {
+      console.error('game', inst.id, e)
+      if (inst.q) inst.q.errs++
+      return 'Something went wrong. Try that again.' as T
+    }
     if (this.ended) {
       const e = this.ended
       this.ended = null
@@ -158,24 +189,69 @@ export class Room extends DurableObject<Env> {
       if (!inst || s.phase !== 'game' || !inst.wake || now < inst.wake) break
       inst.wake = 0
       fired = true
+      if (inst.intro) { this.begin(inst, now); continue }
       const game = GAMES[inst.id]
       this.run(g => game.tick?.(g, inst.s), now)
     }
     return fired
   }
 
+  /** Picks the game and its players, then shows everyone the rules; begin() sets the game up after that. */
   start(id: string, config: Record<string, string | number>, seats: string[], now: number, night: boolean) {
     const s = this.s!
-    const game = GAMES[id]
     for (const k of this.blobs.keys()) this.dirtyBlobs.add(k)
     this.blobs.clear()
-    const inst: Inst = { id, n: ++s.seq, config, players: seats.slice(), s: null, wake: 0, startedAt: now, endedAt: 0, standings: null, night }
+    const inst: Inst = {
+      id, n: ++s.seq, config, players: seats.slice(), s: null, wake: now + INTRO_MS, startedAt: 0, chosen: now, endedAt: 0, standings: null, night,
+      intro: { until: now + INTRO_MS, ready: [] }, q: { acts: 0, errs: 0, dropped: [], back: [], readyAll: false },
+    }
     s.inst = inst
     s.phase = 'game'
-    inst.s = game.setup(this.ctxFor(inst, now))
-    if (this.ended) { const e = this.ended; this.ended = null; this.finish(inst, e.standings, e.summary, now) }
     const code = s.code, count = seats.length
-    this.reports.push(st => st.started(code, id, count))
+    const a = { rid: (s.rid ??= hex(8)), gid: `${s.rid}:${inst.n}`, game: id, seq: inst.n, players: count, night }
+    this.reports.push(st => st.started(code, id, count, a))
+  }
+
+  /** The rules are done (everyone closed them, or time ran out): the game starts now, with its full time. */
+  begin(inst: Inst, now: number) {
+    const s = this.s!
+    const intro = inst.intro
+    if (!intro || s.inst !== inst) return
+    delete inst.intro
+    inst.wake = 0
+    inst.players = inst.players.filter(id => s.members[id])
+    const meta = META[inst.id]
+    if (inst.players.length < meta.min) {
+      if (inst.night && s.night && !s.night.done) s.night.idx--
+      const a = this.endInfo(inst, 'aborted')
+      this.reports.push(st => st.aborted(a))
+      s.inst = null
+      s.phase = 'lobby'
+      const wire = JSON.stringify({ t: 'error', msg: `${meta.name} needs at least ${meta.min} players` })
+      for (const ws of this.ctx.getWebSockets()) try { ws.send(wire) } catch { /* closing */ }
+      return
+    }
+    if (inst.q) inst.q.readyAll = inst.players.every(id => intro.ready.includes(id))
+    inst.startedAt = now
+    inst.s = GAMES[inst.id].setup(this.ctxFor(inst, now))
+    if (this.ended) { const e = this.ended; this.ended = null; this.finish(inst, e.standings, e.summary, now) }
+  }
+
+  /** Starts the game early once every seated player who is here has closed the rules. */
+  readyCheck(inst: Inst, now: number, except?: WebSocket) {
+    if (!inst.intro) return
+    const online = this.online(except)
+    const here = inst.players.filter(id => online.has(id))
+    if (here.length && here.every(id => inst.intro!.ready.includes(id))) this.begin(inst, now)
+  }
+
+  endInfo(inst: Inst, outcome: GameEnd['outcome']): GameEnd {
+    const s = this.s!
+    const q = inst.q ?? { acts: 0, errs: 0, dropped: [], back: [], readyAll: false }
+    return {
+      gid: `${s.rid}:${inst.n}`, rid: s.rid ?? '', outcome, began: inst.startedAt, players: inst.players.length, readyAll: q.readyAll,
+      acts: q.acts, errs: q.errs, dropped: q.dropped.length, rejoined: q.back.length,
+    }
   }
 
   finish(inst: Inst, standings: Standing[], summary: unknown, now: number) {
@@ -220,8 +296,8 @@ export class Room extends DurableObject<Env> {
       }
     }
     const stats = (summary as { stats?: { guesses?: number; solved?: number } } | undefined)?.stats
-    const code = s.code
-    this.reports.push(st => st.finished(code, stats?.guesses ?? 0, stats?.solved ?? 0))
+    const code = s.code, a = this.endInfo(inst, 'done')
+    this.reports.push(st => st.finished(code, stats?.guesses ?? 0, stats?.solved ?? 0, a))
   }
 
   seatsFor(id: string): string[] | string {
@@ -267,7 +343,7 @@ export class Room extends DurableObject<Env> {
     if (!s || typeof raw !== 'string' || raw.length > 64_000) return
     let m: Record<string, unknown>
     try { m = JSON.parse(raw) } catch { return }
-    if (m.t === 'start' || m.t === 'nightGo') await this.readDecks()
+    if (s.phase === 'game' && s.inst?.intro && (m.t === 'ready' || m.t === 'kick' || Date.now() >= s.inst.wake)) await this.readDecks()
     const now = Date.now()
     s.touched = now
     this.reset()
@@ -289,7 +365,7 @@ export class Room extends DurableObject<Env> {
         const used = new Set(Object.values(s.members).map(q => q.color))
         let color = 0
         while (used.has(color) && color < COLORS) color++
-        p = { id, secret, name, joinedAt: now, color: color % COLORS }
+        p = { id, secret, name, joinedAt: now, color: color % COLORS, pid: hex(6) }
         s.members[id] = p
       } else if (name && name !== p.name && !Object.values(s.members).some(q => q.id !== id && q.name.toLowerCase() === name.toLowerCase())) {
         p.name = name
@@ -297,18 +373,30 @@ export class Room extends DurableObject<Env> {
       for (const other of this.ctx.getWebSockets()) {
         if (other !== ws && attached(other) === id) try { other.close(4000, 'opened elsewhere') } catch { /* closed */ }
       }
+      const first = !s.host && Object.keys(s.members).length === 1
+      if (idOk(m.vid)) p.vid = m.vid
+      p.pid ??= hex(6)
       ws.serializeAttachment({ id })
       this.sent.delete(ws)
       if (!s.host || !s.members[s.host]) s.host = id
-      // Someone arriving mid-game is seated if the game takes late joiners (never in a tournament).
+      // Someone arriving mid-game is seated if the game takes late joiners (never in a tournament). While the rules are
+      // up, anyone can still take a seat.
       const inst = s.inst
       if (inst && s.phase === 'game' && !inst.players.includes(id) && inst.players.length < META[inst.id].max) {
         const game = GAMES[inst.id]
         const tourney = inst.night && s.night?.length === 'tournament'
-        if (game.join && !tourney) this.run(g => { if (game.join!(g, inst.s, id)) inst.players.push(id) }, now)
+        if (inst.intro && !tourney) inst.players.push(id)
+        else if (game.join && !tourney) this.run(g => { if (game.join!(g, inst.s, id)) inst.players.push(id) }, now)
+      }
+      // Back after a dropped connection, in the same game.
+      const dropAt = s.drops?.[id]
+      if (dropAt !== undefined) {
+        delete s.drops![id]
+        if (now - dropAt < REJOIN_MS && inst?.q && inst.q.dropped.includes(id) && !inst.q.back.includes(id)) inst.q.back.push(id)
       }
       const count = Object.keys(s.members).length, code = s.code
-      this.reports.push(st => st.joined(code, id, count))
+      const a = { rid: (s.rid ??= hex(8)), code, pid: p.pid!, vid: p.vid ?? '', sid: idOk(m.sid) ? m.sid : '', first }
+      this.reports.push(st => st.joined(code, id, count, a))
       try { ws.send(JSON.stringify({ t: 'chat', all: this.chat })) } catch { /* closed */ }
       return this.commit()
     }
@@ -323,6 +411,8 @@ export class Room extends DurableObject<Env> {
         const inst = s.inst
         if (!inst || s.phase !== 'game') { err('No game is running'); return bail() }
         if (!inst.players.includes(me)) { err('You are watching this game'); return bail() }
+        if (inst.intro) { err('The game starts in a moment'); return bail() }
+        if (inst.q) inst.q.acts++
         const game = GAMES[inst.id]
         const e = this.run(g => game.act(g, inst.s, me, m), now)
         if (typeof e === 'string') { err(e); if (!this.emits.length && !fired) return }
@@ -337,6 +427,23 @@ export class Room extends DurableObject<Env> {
         if (!fired) this.isQuiet = true
         this.isLazy = true
         this.emits.push({ msg: { t: 'chat', m: c } })
+        break
+      }
+      case 'ready': {
+        const inst = s.inst
+        if (!inst?.intro || s.phase !== 'game') return bail()
+        if (!inst.intro.ready.includes(me)) inst.intro.ready.push(me)
+        this.readyCheck(inst, now)
+        break
+      }
+      case 'fb': {
+        // Feedback on the game just played: stars, would play again, and a line of text.
+        const inst = s.inst
+        if (!inst || s.phase !== 'results') return bail()
+        const f = { vid: s.members[me].vid ?? '', rid: s.rid ?? '', game: inst.id, rating: Number(m.rating) || undefined, again: typeof m.again === 'boolean' ? m.again : undefined, kind: m.kind === 'idea' ? 'idea' : 'fix', text: clean(m.text, 300) }
+        this.reports.push(st => st.feedback(f))
+        this.isQuiet = true
+        this.isLazy = true
         break
       }
       case 'pick': {
@@ -366,6 +473,8 @@ export class Room extends DurableObject<Env> {
       case 'abort': {
         if (!hostOnly() || s.phase !== 'game' || !s.inst) return bail()
         if (s.inst.night && s.night && !s.night.done) s.night.idx--
+        const a = this.endInfo(s.inst, 'aborted')
+        this.reports.push(st => st.aborted(a))
         s.inst = null
         s.phase = 'lobby'
         break
@@ -436,8 +545,11 @@ export class Room extends DurableObject<Env> {
         for (const w of this.ctx.getWebSockets()) if (attached(w) === to) try { w.close(4001, 'removed by host') } catch { /* closed */ }
         const inst = s.inst
         if (inst && s.phase === 'game' && inst.players.includes(to)) {
-          const game = GAMES[inst.id]
-          this.run(g => game.leave?.(g, inst.s, to), now)
+          if (inst.intro) { inst.players = inst.players.filter(x => x !== to); this.readyCheck(inst, now) }
+          else {
+            const game = GAMES[inst.id]
+            this.run(g => game.leave?.(g, inst.s, to), now)
+          }
         }
         break
       }
@@ -457,25 +569,41 @@ export class Room extends DurableObject<Env> {
       return
     }
     this.reset()
+    if (s.inst?.intro && now >= s.inst.wake) await this.readDecks()
     if (this.due(now)) return this.commit()
     if (this.dirty) await this.save()
     await this.schedule()
   }
 
-  async webSocketClose(ws: WebSocket) { await this.left(ws) }
-  async webSocketError(ws: WebSocket) { await this.left(ws) }
+  async webSocketClose(ws: WebSocket, code: number) { await this.left(ws, code) }
+  async webSocketError(ws: WebSocket) { await this.left(ws, 1006) }
 
-  async left(ws: WebSocket) {
+  async left(ws: WebSocket, code: number) {
     const s = this.s
     if (!s) return
     const id = attached(ws)
     const online = this.online(ws)
+    const now = Date.now()
+    const inst = s.phase === 'game' ? s.inst : null
+    // A seated player whose line dropped mid-game (not one who left on purpose).
+    if (id && inst?.q && inst.players.includes(id) && !online.has(id) && !CHOSEN_CLOSE.has(code)) {
+      s.drops ??= {}
+      for (const [k, at] of Object.entries(s.drops)) if (now - at > REJOIN_MS) delete s.drops[k]
+      s.drops[id] = now
+      if (!inst.q.dropped.includes(id)) inst.q.dropped.push(id)
+    }
     if (id && id === s.host && !online.has(id)) {
       const next = Object.values(s.members).filter(q => online.has(q.id)).sort((a, b) => a.joinedAt - b.joinedAt)[0]
       if (next) s.host = next.id
     }
     this.reset()
     this.isLazy = true
+    // Whoever is still here may all have closed the rules already.
+    if (inst?.intro) {
+      await this.readDecks()
+      this.readyCheck(inst, Date.now(), ws)
+      if (!inst.intro) this.isLazy = false
+    }
     await this.commit()
   }
 
@@ -573,7 +701,10 @@ export class Room extends DurableObject<Env> {
       members: Object.values(s.members).sort((a, b) => a.joinedAt - b.joinedAt).map(m => ({
         id: m.id, name: m.name, color: m.color, online: online.has(m.id), ...(s.totals[m.id] ?? { pts: 0, wins: 0, games: 0 }),
       })),
-      inst: inst && { id: inst.id, n: inst.n, config: inst.config, players: inst.players, startedAt: inst.startedAt, endedAt: inst.endedAt, standings: inst.standings, summary: inst.summary, night: inst.night },
+      inst: inst && {
+        id: inst.id, n: inst.n, config: inst.config, players: inst.players, startedAt: inst.startedAt, endedAt: inst.endedAt, standings: inst.standings,
+        summary: inst.summary, night: inst.night, intro: inst.intro ? { until: inst.intro.until, ready: inst.intro.ready } : null,
+      },
       night: s.night,
     }
     const game = inst ? GAMES[inst.id] : null
@@ -583,7 +714,7 @@ export class Room extends DurableObject<Env> {
       if (!id || !s.members[id]) continue
       const base = JSON.stringify({ t: 's', now, you: id, room })
       let wire = base
-      if (inst && game && ctx) {
+      if (inst && game && ctx && !inst.intro) {
         let v: string
         try { v = JSON.stringify({ n: inst.n, v: game.view(ctx, inst.s, id) }) } catch (e) { console.error('view', inst.id, e); v = JSON.stringify({ n: inst.n, v: null }) }
         // Only send the game view when it changed for this player.

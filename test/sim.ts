@@ -3,6 +3,7 @@
 import { GAMES } from '../src/games'
 import { CATALOG, settings } from '../src/catalog'
 import { checkContent } from './content'
+import { checkAnalytics } from './analytics'
 import { dealAt, rng, type Ctx, type Standing } from '../src/engine'
 
 const r = rng()
@@ -84,6 +85,6 @@ for (const meta of CATALOG) {
     for (const [v] of o.choices!) play(meta.id, Math.max(meta.min, 4), settings(meta.id, { ...meta.night, [o.key]: v }), `${meta.id} ${o.key}=${v}`)
   }
 }
-if (!only) failures += checkContent()
+if (!only) failures += checkContent() + checkAnalytics()
 console.log(failures ? `${failures} failures` : 'all games ended cleanly')
 process.exitCode = failures ? 1 : 0

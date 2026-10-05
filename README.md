@@ -25,6 +25,13 @@ game, or plans a whole game night, and the room keeps one leaderboard across eve
 | Stop the Clock | 1–30 | Stop a stopwatch on a target time; the clock may vanish. Closest wins. |
 | Closest Wins | 2–30 | Number questions; the nearest guess scores. |
 
+Each game has its own icon, drawn in `src/icons.ts` (a coloured tile with a white drawing); the build puts the SVGs
+into `public/catalog.js` and the guide pages.
+
+Before every game the rules are up for everyone for 30 seconds. Tapping anywhere closes them, and they shrink into the
+**?** button at the top, where they can be opened again. The game is set up only when every player here has closed
+them or the 30 seconds are over, so its clock starts then and nobody loses playing time.
+
 Every game's rules, settings, player range, length and Game DNA (skill, luck, social, brain, chaos and replay, 1 to 5)
 live in `src/catalog.ts`. That one file drives the room's settings checks, the game-night planner, the library on the
 page and the guide page for each game.
@@ -83,6 +90,23 @@ whole pool has been used. `npm test` fails if a pool holds the same item twice a
 | Most Likely To prompts | 521 | 8 |
 | Draw & Guess words | about 200 per theme, 1,452 mixed | 3 shown per turn |
 | Telephone starting lines | 221 | only when someone writes nothing |
+
+## Numbers for the Switchboard
+
+`src/analytics.ts` keeps the product numbers the Switchboard's Game Night page shows (acquisition, activation,
+engagement, retention, invites, quality, feedback). The page (`public/js/track.js`, on every page) and the rooms report
+to the Stats object, on this site's own domain:
+
+- Ids are random and anonymous: a visitor id per browser (localStorage), a session id per visit (30 idle minutes), a
+  room id per room (codes are used again; room ids never are) and a player id that only means something in one room.
+  No names, addresses or accounts are kept.
+- Page views, taps on share and script errors go to `POST /api/ev` (60 a minute per address). Joins, games, dropped
+  connections, reconnects and feedback come from the room itself.
+- Browsers driven by test tools, crawlers, and any browser opened once with `/?me=1` are left out of every number.
+- Days are Indian days. `GET /internal/analytics?days=N` (with `INTERNAL_KEY`) returns the report.
+
+`npm test` checks the numbers on a scenario spread over weeks (`test/analytics.ts`), and `node test/analytics-sim.mjs`
+plays a known night against `npm run dev` and checks every figure the page shows.
 
 ## Search
 

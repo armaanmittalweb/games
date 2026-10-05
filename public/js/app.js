@@ -1,7 +1,8 @@
 // Game Night: the page around the games. Home, rooms, the library, game nights, results and chat.
 import { html, render, useState, useEffect, useRef } from './preact.js'
-import { S, ME, connect, disconnect, send, subscribe, changed, toast, share, getName, setName } from './core.js'
-import { Avatar, Name, nameOf, plural } from './ui.js'
+import { S, ME, connect, disconnect, send, subscribe, changed, toast, share, getName, setName, now } from './core.js'
+import { Avatar, Name, nameOf, plural, useTick } from './ui.js'
+import { pageView } from './track.js'
 import { CATALOG } from '/catalog.js'
 
 const META = Object.fromEntries(CATALOG.map(m => [m.id, m]))
@@ -39,11 +40,13 @@ export function go(path) {
   countView()
 }
 
-// Anonymous page-view count for the Switchboard (api.amittal.dev/hit): page and referrer only, no cookies or ids.
+// Page views: the site's own count (track.js, for the Game Night page in the Switchboard), and the Switchboard's
+// traffic count across every amittal.dev site (api.amittal.dev/hit: page and referrer only, no cookies or ids).
 let viewed = ''
 function countView() {
-  if (!navigator.sendBeacon || navigator.webdriver || !location.hostname.endsWith('amittal.dev')) return
   const path = location.pathname.startsWith('/r/') ? '/r/' : location.pathname
+  pageView(path)
+  if (!navigator.sendBeacon || navigator.webdriver || !location.hostname.endsWith('amittal.dev')) return
   if (path === viewed) return
   const ref = viewed ? '' : document.referrer
   viewed = path
@@ -90,6 +93,7 @@ function Home() {
   // Links from the guide pages: /?play=<game> opens a room with that game picked; /?solo=1 starts a Word Race alone.
   useEffect(() => {
     const q = new URLSearchParams(location.search)
+    if (q.get('me') === '1') { history.replaceState(null, '', '/'); toast('This browser is now left out of the site\'s numbers', 3000); return }
     const play = q.get('play'), solo = q.get('solo') === '1'
     if (!play && !solo) return
     history.replaceState(null, '', '/')
@@ -120,7 +124,7 @@ function Home() {
     <section>
       <div class="row between"><h2>Games</h2><div class="chips">${['All', ...CATS].map(c => html`<button key=${c} class=${'chipbtn' + (cat === c ? ' sel' : '')} onClick=${() => setCat(c)}>${c}</button>`)}</div></div>
       <div class="lib">${list.map(m => html`<div key=${m.id} class="gcard">
-        <div class="gc-top"><span class="emoji">${m.emoji}</span><div><a class="gname" href=${'/games/' + m.id}>${m.name}</a><div class="dim small">${players(m)} players · ${m.cat}</div></div></div>
+        <div class="gc-top"><${GameIcon} m=${m} /><div><a class="gname" href=${'/games/' + m.id}>${m.name}</a><div class="dim small">${players(m)} players · ${m.cat}</div></div></div>
         <p class="small">${m.blurb}</p>
         <button class="primary" disabled=${busy} onClick=${() => make(m.id)}>Play</button>
       </div>`)}</div>
@@ -169,9 +173,9 @@ function Room() {
     <header class="bar">
       <button class="icon" onClick=${leave} aria-label="Leave the room" title="Leave">←</button>
       <button class="code" onClick=${() => share(`Join my game night room ${room.code}`, `${location.origin}/r/${room.code}`)} title="Share the room link">${room.code} <span class="small">share</span></button>
-      ${inGame ? html`<span class="bar-game ell">${meta.emoji} ${meta.name}</span>` : html`<span class="bar-game dim ell">${plural(room.members.filter(m => m.online).length, 'player')} here</span>`}
+      ${inGame ? html`<span class="bar-game ell"><${GameIcon} m=${meta} size="small" /> ${meta.name}</span>` : html`<span class="bar-game dim ell">${plural(room.members.filter(m => m.online).length, 'player')} here</span>`}
       ${s.status !== 'open' ? html`<span class="pill warn">reconnecting</span>` : ''}
-      ${inGame ? html`<button class="icon" onClick=${() => setRules(room.inst.id)} aria-label="How to play" title="How to play">?</button>` : ''}
+      ${inGame ? html`<button class="icon rules-btn" id="rules-btn" onClick=${() => setRules(room.inst.id)} aria-label="How to play" title="How to play">?</button>` : ''}
       ${inGame && isHost ? html`<button class="icon" onClick=${() => confirm('End this game for everyone? No points are given.') && send({ t: 'abort' })} aria-label="End the game" title="End the game">✕</button>` : ''}
       <${ThemeButton} />
       <button class="icon chat-btn" onClick=${toggleChat} aria-label="Chat" title="Chat">💬${s.unread ? html`<i>${s.unread}</i>` : ''}</button>
@@ -186,7 +190,13 @@ function Room() {
       ${s.chatOpen && html`<${Chat} />`}
     </div>
     ${rules && html`<${RulesModal} id=${rules} onClose=${() => setRules(null)} />`}
+    ${inGame && html`<${RulesIntro} key=${room.code + room.inst.n} inst=${room.inst} code=${room.code} />`}
   </div>`
+}
+
+/** A game's icon (an SVG made by scripts/build-site.mjs from src/icons.ts). */
+export function GameIcon({ m, size }) {
+  return html`<span class=${'gicon' + (size ? ' ' + size : '')} dangerouslySetInnerHTML=${{ __html: m?.icon ?? '' }} />`
 }
 
 /** Light or dark. The page's head script owns the setting; the icon comes from CSS. */
@@ -204,8 +214,87 @@ function toggleChat() {
 function RulesModal({ id, onClose }) {
   const m = META[id]
   return html`<div class="modal" onClick=${e => e.target === e.currentTarget && onClose()}>
-    <div class="card stack modal-card"><div class="row between"><h2>${m.emoji} ${m.name}</h2><button class="icon" onClick=${onClose} aria-label="Close">✕</button></div>
+    <div class="card stack modal-card"><div class="row between"><h2 class="with-icon"><${GameIcon} m=${m} />${m.name}</h2><button class="icon" onClick=${onClose} aria-label="Close">✕</button></div>
     <ul class="rules">${m.rules.map(r => html`<li>${r}</li>`)}</ul></div></div>`
+}
+
+// ---------- the rules before each game ----------
+
+const INTRO_S = 30
+const introClosed = new Set() // games whose rules this page has closed, so a reconnect does not show them again
+
+/**
+ * Before every game the rules are up for everyone. Tapping anywhere closes them: they shrink into the ? button at the
+ * top, where they can be opened again. The game (and its clock) starts when everyone has closed them, or after 30 s.
+ */
+function RulesIntro({ inst, code }) {
+  const key = code + ':' + inst.n
+  const [state, setState] = useState(() => inst.intro && !inst.intro.ready.includes(ME) && !introClosed.has(key) ? 'open' : 'closed')
+  const card = useRef()
+  useTick(250)
+  const close = (tell = true) => {
+    if (state !== 'open') return
+    introClosed.add(key)
+    if (tell && inst.intro) send({ t: 'ready' })
+    setState('leaving')
+    flyTo(card.current, document.getElementById('rules-btn')).then(() => setState('closed'))
+  }
+  // The game started while the rules were still up (time ran out): they go the same way.
+  useEffect(() => { if (!inst.intro) close(false) }, [!!inst.intro])
+  useEffect(() => {
+    if (state !== 'open') return
+    const onKey = e => { if (e.key === 'Escape' || e.key === 'Enter') close() }
+    addEventListener('keydown', onKey)
+    return () => removeEventListener('keydown', onKey)
+  }, [state])
+  if (state === 'closed') return null
+  const m = META[inst.id]
+  const left = inst.intro ? Math.max(0, (inst.intro.until - now()) / 1000) : 0
+  return html`<div class=${'modal intro' + (state === 'leaving' ? ' leaving' : '')} onClick=${() => close()} role="dialog" aria-modal="true" aria-labelledby="intro-title">
+    <div class="card stack modal-card intro-card" ref=${card}>
+      <div class="with-icon"><${GameIcon} m=${m} size="big" /><div><div class="dim small">How to play</div><h2 class="nomargin" id="intro-title">${m.name}</h2></div></div>
+      <ul class="rules">${m.rules.map(r => html`<li>${r}</li>`)}</ul>
+      <div class="intro-time" aria-hidden="true"><i style=${{ width: `${(left / INTRO_S) * 100}%` }}></i></div>
+      <div class="row between wrapgap">
+        <span class="dim small">The game starts in ${Math.ceil(left)} s, or when everyone has read this. Your time starts then.</span>
+        <button class="primary" onClick=${e => { e.stopPropagation(); close() }}>Got it</button>
+      </div>
+    </div>
+  </div>`
+}
+
+/** Shrinks an element into another (the rules into the ? button), then gives the button a nudge. */
+function flyTo(el, target) {
+  if (!el) return Promise.resolve()
+  if (!target || matchMedia('(prefers-reduced-motion: reduce)').matches) return el.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 160, fill: 'forwards' }).finished.catch(() => {})
+  const a = el.getBoundingClientRect(), b = target.getBoundingClientRect()
+  const dx = b.left + b.width / 2 - (a.left + a.width / 2), dy = b.top + b.height / 2 - (a.top + a.height / 2)
+  const s = Math.max(0.03, b.width / a.width)
+  return el.animate([
+    { transform: 'none', opacity: 1, borderRadius: '14px' },
+    { transform: `translate(${dx * 0.35}px, ${dy * 0.2}px) scale(.62)`, opacity: 0.95, borderRadius: '22px', offset: 0.35 },
+    { transform: `translate(${dx}px, ${dy}px) scale(${s})`, opacity: 0.35, borderRadius: '50%' },
+  ], { duration: 560, easing: 'cubic-bezier(.55,0,.7,.4)', fill: 'forwards' }).finished.then(() => {
+    target.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.5)', offset: 0.35 }, { transform: 'scale(1)' }], { duration: 650, easing: 'ease-out' })
+    target.classList.add('hint')
+    setTimeout(() => target.classList.remove('hint'), 2600)
+  }).catch(() => {})
+}
+
+/** The room while the rules are up: who has read them, and how long until the game starts. */
+function IntroWait({ inst }) {
+  useTick(250)
+  const m = META[inst.id]
+  const ready = inst.intro.ready
+  const online = new Set(S.room.members.filter(x => x.online).map(x => x.id))
+  const here = inst.players.filter(id => online.has(id))
+  const left = Math.max(0, Math.ceil((inst.intro.until - now()) / 1000))
+  return html`<div class="wrap narrow stack intro-wait">
+    <div class="center stack"><${GameIcon} m=${m} size="huge" /><h2 class="nomargin">${m.name}</h2>
+      <p class="dim">Starting in <b>${left} s</b>, or as soon as everyone has read the rules.</p></div>
+    <ul class="ready-list">${here.map(id => html`<li key=${id} class=${ready.includes(id) ? 'ok' : ''}><${Avatar} id=${id} /><span class="grow ell"><${Name} id=${id} /></span><span class="small">${ready.includes(id) ? 'ready' : 'reading…'}</span></li>`)}</ul>
+    <p class="dim small center">Need the rules again? They are behind the <b>?</b> at the top.</p>
+  </div>`
 }
 
 // ---------- lobby ----------
@@ -240,7 +329,7 @@ function Players({ isHost }) {
       ${menu === m.id ? html`<div class="pmenu"><button onClick=${() => { send({ t: 'host', id: m.id }); setMenu(null) }}>Make host</button><button onClick=${() => { if (confirm(`Remove ${m.name}?`)) send({ t: 'kick', id: m.id }); setMenu(null) }}>Remove</button></div>` : ''}
     </li>`)}</ul>
     <p class="dim small">Share the code <b class="code-sm">${room.code}</b> or tap it at the top. Room points: 10 for a win, then 7, 5, 4, 3, 2, 1.</p>
-    ${room.history.length ? html`<details class="hist"><summary class="small">Played here (${room.history.length})</summary><ul class="small">${room.history.map(h => html`<li>${META[h.id]?.emoji} ${META[h.id]?.name}: ${h.winners.map(nameOf).join(' & ')}</li>`)}</ul></details>` : ''}
+    ${room.history.length ? html`<details class="hist"><summary class="small">Played here (${room.history.length})</summary><ul class="small">${room.history.map(h => html`<li><${GameIcon} m=${META[h.id]} size="small" /> ${META[h.id]?.name}: ${h.winners.map(nameOf).join(' & ')}</li>`)}</ul></details>` : ''}
   </div>`
 }
 
@@ -258,7 +347,7 @@ function Library({ isHost, onRules }) {
       ${Object.entries(MOODS).map(([k, label]) => html`<button key=${k} class=${'chipbtn' + (mood === k ? ' sel' : '')} onClick=${() => setMood(mood === k ? null : k)}>${label}</button>`)}
     </div></div>
     <div class="lib small-cards">${list.map(m => html`<button key=${m.id} class=${'gcard pick' + (m.id === pick.id ? ' sel' : '')} disabled=${!isHost && m.id !== pick.id} onClick=${() => isHost && send({ t: 'pick', id: m.id })}>
-      <div class="gc-top"><span class="emoji">${m.emoji}</span><div><b>${m.name}</b><div class="dim small">${players(m)} · ~${estMinutes(m, Math.max(n, m.min))} min</div></div></div>
+      <div class="gc-top"><${GameIcon} m=${m} /><div><b>${m.name}</b><div class="dim small">${players(m)} · ~${estMinutes(m, Math.max(n, m.min))} min</div></div></div>
       <p class="small">${m.blurb}</p></button>`)}
       ${!list.length ? html`<p class="dim">No game fits these filters.</p>` : ''}</div>
     ${!isHost ? html`<p class="dim small">The host picks the game. You can browse the rules meanwhile.</p>` : ''}
@@ -276,7 +365,7 @@ function GameDetail({ meta, isHost, n, onRules }) {
   const set = (k, v) => send({ t: 'config', id: meta.id, config: { ...cfg, [k]: v } })
   const fits = n >= meta.min && n <= meta.max
   return html`<div class="card detail">
-    <div class="row between"><div class="gc-top"><span class="emoji big">${meta.emoji}</span><div><h2 class="nomargin">${meta.name}</h2><div class="dim small">${players(meta)} players · about ${estMinutes(meta, Math.max(n, meta.min))} min · ${meta.cat}</div></div></div>
+    <div class="row between"><div class="gc-top"><${GameIcon} m=${meta} size="big" /><div><h2 class="nomargin">${meta.name}</h2><div class="dim small">${players(meta)} players · about ${estMinutes(meta, Math.max(n, meta.min))} min · ${meta.cat}</div></div></div>
       <button class="link" onClick=${() => onRules(meta.id)}>How to play</button></div>
     <p>${meta.blurb}</p>
     <${DnaBars} dna=${meta.dna} />
@@ -313,7 +402,7 @@ function NightSetup({ isHost }) {
     </div>
     ${planned && html`<div class="card stack">
       <div class="row between"><h2 class="nomargin">Tonight's games</h2><span class="dim small">${night.length === 'endless' ? 'keeps going' : `about ${total} min`}</span></div>
-      <ol class="plan">${night.plan.map((id, i) => html`<li key=${i}><span class="emoji">${META[id].emoji}</span><span class="grow"><b>${META[id].name}</b><span class="dim small"> · ~${estMinutes(META[id], n)} min${night.length === 'tournament' && i === night.plan.length - 1 ? ' · final' : ''}</span></span>
+      <ol class="plan">${night.plan.map((id, i) => html`<li key=${i}><${GameIcon} m=${META[id]} /><span class="grow"><b>${META[id].name}</b><span class="dim small"> · ~${estMinutes(META[id], n)} min${night.length === 'tournament' && i === night.plan.length - 1 ? ' · final' : ''}</span></span>
         ${isHost ? html`<button class="link" onClick=${() => send({ t: 'nightSwap', i })}>swap</button>${night.length !== 'tournament' && night.plan.length > 1 ? html`<button class="link" onClick=${() => send({ t: 'nightDrop', i })}>remove</button>` : ''}` : ''}</li>`)}</ol>
       ${isHost ? html`<div class="row"><button class="primary big grow" onClick=${() => send({ t: 'nightGo' })}>Start the night</button><button onClick=${() => send({ t: 'nightEnd' })}>Cancel</button></div>` : html`<p class="dim center">Waiting for the host to start the night…</p>`}
     </div>`}
@@ -327,7 +416,7 @@ function NightBanner({ night, isHost }) {
   const out = night.length === 'tournament' ? room.members.filter(m => night.alive.length && !night.alive.includes(m.id)).map(m => m.id) : []
   return html`<div class="night-banner">
     <span>🎲 <b>${label} night</b> · game ${Math.min(night.idx + 1, night.plan.length)} of ${night.length === 'endless' ? '∞' : night.plan.length}</span>
-    <span class="plan-mini">${night.plan.map((id, i) => html`<span key=${i} class=${i < night.idx ? 'past' : i === night.idx ? 'now' : ''} title=${META[id].name}>${META[id].emoji}</span>`)}</span>
+    <span class="plan-mini">${night.plan.map((id, i) => html`<span key=${i} class=${i < night.idx ? 'past' : i === night.idx ? 'now' : ''} title=${META[id].name}><${GameIcon} m=${META[id]} size="small" /></span>`)}</span>
     ${out.includes(ME) ? html`<span class="pill">knocked out: watching</span>` : ''}
   </div>`
 }
@@ -337,7 +426,7 @@ function NightTable({ night }) {
   const last = night.rounds[night.rounds.length - 1]
   let place = 0
   return html`<div class="card"><h2>Game night table</h2><table class="tbl">
-    <tr><th>#</th><th>Player</th>${night.rounds.map(r => html`<th title=${META[r.id].name}>${META[r.id].emoji}</th>`)}<th>Total</th></tr>
+    <tr><th>#</th><th>Player</th>${night.rounds.map(r => html`<th title=${META[r.id].name}><${GameIcon} m=${META[r.id]} size="small" /></th>`)}<th>Total</th></tr>
     ${ids.map((id, i) => {
       if (i === 0 || night.points[id] !== night.points[ids[i - 1]]) place = i + 1
       const out = night.length === 'tournament' && !night.alive.includes(id)
@@ -357,6 +446,7 @@ function GameScreen() {
     if (mods[inst.id]) return setMod(mods[inst.id])
     import(`./games/${inst.id}.js`).then(m => { mods[inst.id] = m; setMod(m) }).catch(() => toast('Could not load the game. Refresh the page.'))
   }, [inst.id])
+  if (inst.intro) return html`<${IntroWait} inst=${inst} />`
   if (!mod || !s.game) return html`<div class="wrap"><p class="dim">Loading…</p></div>`
   const seated = inst.players.includes(ME)
   const Game = mod.default
@@ -384,7 +474,7 @@ function Results({ isHost }) {
   return html`<div class="wrap results stack">
     ${night?.done ? html`<div class="card champion"><div class="trophy">🏆</div><h1>${champs.map(nameOf).join(' & ')} ${champs.length > 1 ? 'share' : 'wins'} the night!</h1><p class="dim">${night.rounds.length} games played</p></div>` : ''}
     <div class="card">
-      <div class="row between"><h2 class="nomargin">${meta.emoji} ${meta.name}</h2><span class="dim small">${winners.length ? `${winners.map(nameOf).join(' & ')} ${winners.length > 1 ? 'tie' : 'wins'}` : ''}</span></div>
+      <div class="row between"><h2 class="nomargin with-icon"><${GameIcon} m=${meta} />${meta.name}</h2><span class="dim small">${winners.length ? `${winners.map(nameOf).join(' & ')} ${winners.length > 1 ? 'tie' : 'wins'}` : ''}</span></div>
       <div class="podium">${[2, 1, 3].map(p => {
         const at = st.filter(x => x.place === p)
         return at.length ? html`<div class=${'pod p' + p}><div class="pod-names">${at.map(x => html`<div key=${x.id}><${Avatar} id=${x.id} size=${p === 1 ? 44 : 34} /><div class="ell"><${Name} id=${x.id} /></div></div>`)}</div><div class="pod-block">${p}</div></div>` : html`<div class=${'pod p' + p + ' empty'}></div>`
@@ -394,13 +484,49 @@ function Results({ isHost }) {
       </table>
     </div>
     ${Summary && html`<${Summary} inst=${inst} summary=${inst.summary} />`}
+    ${inst.players.includes(ME) && html`<${Feedback} key=${room.code + inst.n} inst=${inst} code=${room.code} />`}
     ${night && html`<${NightTable} night=${night} />`}
     ${isHost ? html`<div class="row wrapgap">
-      ${night && !night.done && next ? html`<button class="primary big grow" onClick=${() => send({ t: 'nightGo' })}>Next: ${next === 'more' ? 'a new game' : `${META[next].emoji} ${META[next].name}`}</button>` : ''}
+      ${night && !night.done && next ? html`<button class="primary big grow" onClick=${() => send({ t: 'nightGo' })}>Next: ${next === 'more' ? 'a new game' : META[next].name}</button>` : ''}
       ${night && !night.done ? html`<button onClick=${() => confirm('End the game night now?') && send({ t: 'nightEnd' })}>End the night</button>` : ''}
       ${night?.done ? html`<button class="primary big grow" onClick=${() => send({ t: 'nightEnd' })}>Back to the lobby</button>` : ''}
       ${!night ? html`<button class="primary big grow" onClick=${() => send({ t: 'start', id: inst.id })}>Play again</button><button onClick=${() => send({ t: 'lobby' })}>Choose another game</button>` : ''}
     </div>` : html`<p class="dim center">${night && !night.done ? `Up next: ${next && next !== 'more' ? META[next].name : 'another game'}. Waiting for the host…` : 'Waiting for the host…'}</p>`}
+  </div>`
+}
+
+// ---------- feedback ----------
+
+const FB_KEY = 'gn.fb'
+const fbDone = () => { try { return JSON.parse(localStorage.getItem(FB_KEY) ?? '[]') } catch { return [] } }
+
+/** After a game: stars, would you play it again, and an optional line (something to fix, or a game to add). */
+function Feedback({ inst, code }) {
+  const key = code + ':' + inst.n
+  const [rating, setRating] = useState(0)
+  const [again, setAgain] = useState(null)
+  const [kind, setKind] = useState('fix')
+  const [text, setText] = useState('')
+  const [sent, setSent] = useState(() => fbDone().includes(key))
+  const m = META[inst.id]
+  if (sent) return null
+  const submit = () => {
+    send({ t: 'fb', rating: rating || undefined, again: again ?? undefined, kind, text: text.trim() })
+    try { localStorage.setItem(FB_KEY, JSON.stringify([...fbDone(), key].slice(-40))) } catch { /* private mode */ }
+    setSent(true)
+    toast('Thanks! That helps.')
+  }
+  return html`<div class="card stack fb">
+    <div class="row between wrapgap"><b>How was ${m.name}?</b>
+      <span class="stars" role="radiogroup" aria-label="Rating">${[1, 2, 3, 4, 5].map(i => html`<button key=${i} type="button" role="radio" aria-checked=${rating === i} aria-label=${`${i} star${i > 1 ? 's' : ''}`} class=${i <= rating ? 'on' : ''} onClick=${() => setRating(i)}>★</button>`)}</span></div>
+    ${rating ? html`<div class="row wrapgap"><span class="small">Would you play it again?</span>
+      <button type="button" class=${'chipbtn' + (again === true ? ' sel' : '')} onClick=${() => setAgain(true)}>Yes</button>
+      <button type="button" class=${'chipbtn' + (again === false ? ' sel' : '')} onClick=${() => setAgain(false)}>No</button></div>
+    <div class="row wrapgap"><span class="chips">
+      <button type="button" class=${'chipbtn' + (kind === 'fix' ? ' sel' : '')} onClick=${() => setKind('fix')}>Something to fix</button>
+      <button type="button" class=${'chipbtn' + (kind === 'idea' ? ' sel' : '')} onClick=${() => setKind('idea')}>A game you want</button></span></div>
+    <div class="row"><input class="grow" maxlength="300" value=${text} onInput=${e => setText(e.target.value)} onKeyDown=${e => e.key === 'Enter' && submit()} placeholder=${kind === 'fix' ? 'What went wrong or felt off? (optional)' : 'Which game should we add? (optional)'} aria-label="Feedback" />
+      <button class="primary" onClick=${submit}>Send</button></div>` : ''}
   </div>`
 }
 

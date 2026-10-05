@@ -8,6 +8,8 @@
   // site-wide counts the Switchboard reads at /internal/stats (secret: INTERNAL_KEY, the Switchboard's).
   "durable_objects": { "bindings": [{ "name": "ROOMS", "class_name": "Room" }, { "name": "STATS", "class_name": "Stats" }] },
   "migrations": [{ "tag": "v1", "new_sqlite_classes": ["Room"] }, { "tag": "v2", "new_sqlite_classes": ["Stats"] }],
+  // /api/ev (page views and errors for the Switchboard): 60 events a minute per address.
+  "ratelimits": [{ "name": "EV_LIMIT", "namespace_id": "4301", "simple": { "limit": 60, "period": 60 } }],
   "rules": [{ "type": "Text", "globs": ["**/*.txt"], "fallthrough": true }],
   "dev": { "port": 8799 }
 }

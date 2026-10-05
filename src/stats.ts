@@ -1,4 +1,5 @@
 import { DurableObject } from 'cloudflare:workers'
+import * as A from './analytics'
 
 /**
  * Site-wide counts for the Switchboard. One instance ("global"); every room reports to it when it is made, when
@@ -21,6 +22,7 @@ export class Stats extends DurableObject {
       CREATE TABLE IF NOT EXISTS modes (mode TEXT PRIMARY KEY, games INTEGER DEFAULT 0);
       CREATE TABLE IF NOT EXISTS decks (key TEXT PRIMARY KEY, at INTEGER NOT NULL);
     `)
+    this.sql.exec(A.SCHEMA)
   }
 
   private day(field: string, n = 1) {
@@ -28,34 +30,49 @@ export class Stats extends DurableObject {
     this.sql.exec(`INSERT INTO days (day, ${field}) VALUES (?, ?) ON CONFLICT(day) DO UPDATE SET ${field} = ${field} + excluded.${field}`, d, n)
   }
 
-  async roomCreated(code: string) {
+  async roomCreated(code: string, rid?: string) {
     const now = Date.now()
+    if (rid) A.roomMade(this.sql, rid, code, now)
     this.sql.exec('INSERT OR IGNORE INTO rooms (code, created, last, phase) VALUES (?, ?, ?, ?)', code, now, now, 'lobby')
     this.day('rooms')
     if ((await this.ctx.storage.getAlarm()) === null) await this.ctx.storage.setAlarm(now + DAY)
   }
 
-  async joined(code: string, player: string, players: number) {
+  async joined(code: string, player: string, players: number, a?: A.RoomJoin) {
     const now = Date.now()
+    if (a) A.joined(this.sql, a, now)
     const isNew = this.sql.exec('SELECT 1 FROM players WHERE id = ?', player).toArray().length === 0
     this.sql.exec('INSERT INTO players (id, first, last) VALUES (?, ?, ?) ON CONFLICT(id) DO UPDATE SET last = excluded.last', player, now, now)
     if (isNew) this.day('newPlayers')
     this.sql.exec('UPDATE rooms SET last = ?, players = ? WHERE code = ?', now, players, code)
   }
 
-  async started(code: string, mode: string, players: number) {
+  async started(code: string, mode: string, players: number, a?: A.GameStart) {
+    if (a) A.gameChosen(this.sql, a)
     this.sql.exec("UPDATE rooms SET last = ?, phase = 'playing', games = games + 1, players = ? WHERE code = ?", Date.now(), players, code)
     this.sql.exec('INSERT INTO modes (mode, games) VALUES (?, 1) ON CONFLICT(mode) DO UPDATE SET games = games + 1', mode)
     this.day('games')
     this.day('seats', players)
   }
 
-  async finished(code: string, guesses: number, solved: number) {
+  async finished(code: string, guesses: number, solved: number, a?: A.GameEnd) {
+    if (a) A.gameEnded(this.sql, a)
     this.sql.exec("UPDATE rooms SET last = ?, phase = 'done' WHERE code = ?", Date.now(), code)
     this.day('finished')
     this.day('guesses', guesses)
     this.day('solved', solved)
   }
+
+  /** A game the host ended before it finished. */
+  async aborted(a: A.GameEnd) { A.gameEnded(this.sql, a) }
+
+  async feedback(f: A.Feedback) { A.feedback(this.sql, f) }
+
+  /** Page views, share taps and script errors, sent by the page to /api/ev. */
+  async event(e: A.PageEvent) { A.pageEvent(this.sql, e) }
+
+  /** The Switchboard's Game Night page. */
+  async analytics(days: number) { return A.reportJson(this.sql, days) }
 
   /** How far the site has dealt into each content pool (questions, prompts, words), so no room repeats an item early. */
   async decks(): Promise<Record<string, number>> {
