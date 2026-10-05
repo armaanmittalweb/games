@@ -1,0 +1,21 @@
+// Most Likely To, spicy: more party energy.
+export default [
+  "turn a birthday dinner into a club night", "turn a quiet dinner into karaoke", "turn a family lunch into a dance party", "turn a farewell into a roast", "turn a work dinner into a party",
+  "know a party in every city", "know a guy at every club", "get the group on the guest list", "get free shots from the bartender", "get the DJ to shout their name",
+  "be the reason the party started", "be the reason the party ended", "be the reason the neighbours called the police", "be the reason the host cried", "be the reason the party was legendary",
+  "dance with a mop while cleaning up after a party", "fall asleep on a bean bag at a party", "fall asleep in the bathtub at a party", "fall asleep on a pile of coats", "wake up first and make everyone breakfast",
+  "throw a party with a dress code nobody follows", "throw a pyjama party for adults", "throw a 90s Bollywood party", "throw a murder mystery party", "throw a karaoke party",
+  "bring the most energy to a dull party", "make friends with everyone's parents at a party", "make the shy friend dance", "make the grumpy friend smile", "make everyone sing together",
+  "start a dance circle at a wedding", "start a train dance at a party", "start the 'Nagin' dance with a handkerchief", "start a slow dance at a fast song", "start the bhangra 'balle balle' at the wrong time",
+  "lead the group to the dance floor", "stay on the dance floor till the lights come on", "dance on a chair", "dance on a balcony", "dance on the beach till sunrise",
+  "sing 'Tujhe Dekha To' at every party", "sing 'Kal Ho Naa Ho' at every farewell", "sing 'Yeh Dosti' with their best friend at every party", "sing a Punjabi song with full energy", "sing an old Kishore song at 3 am",
+  "play DJ and play only their favourite songs", "play DJ and play the same song twice", "play DJ and stop the music for a speech", "play DJ and get booed", "play DJ and get the best reaction",
+  "make a signature party drink", "make the most famous punch at parties", "make the worst punch at parties", "bring a crate of soft drinks to every party", "bring snacks nobody else remembers",
+  "remember every song played at a party", "remember who danced with whom at every party", "remember who left early from every party", "remember who cried at every party", "remember nothing from the party",
+  "record the whole party on their phone", "make a party highlight reel", "post the party highlights before anyone wakes up", "make a party meme the next morning", "send a party recap in the group",
+  "be at every party in the city on New Year's Eve", "hop between three parties in one night", "start the countdown early by mistake", "miss the New Year countdown in the bathroom", "make ten resolutions at midnight and forget them by noon",
+  "throw the best New Year's party", "spend New Year's Eve at home in pyjamas happily", "spend New Year's Eve in Goa", "spend New Year's Eve at a hill station bonfire", "spend New Year's Eve on a terrace with fireworks",
+  "throw the best Holi party", "throw the best Diwali card party", "throw the best Christmas party", "throw the best Eid dinner", "throw the best Navratri dandiya night",
+  "win every round of cards at a Diwali party", "lose all their money at a Diwali card party", "bluff their way through teen patti", "go 'blind' every round in teen patti", "fold every hand and still win",
+  "take the best party photos", "be in every party photo", "be in no party photos", "ruin every party photo with a funny face", "make every party photo a boomerang",
+]

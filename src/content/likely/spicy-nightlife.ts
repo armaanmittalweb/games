@@ -1,0 +1,22 @@
+// Most Likely To, spicy: nights out, drinking games and the morning after.
+export default [
+  "make up the rules of a drinking game as they go", "lose at King's Cup every time", "draw the last king", "win beer pong without trying", "lose beer pong and blame the table",
+  "turn any card game into a drinking game", "make Ludo a drinking game", "make antakshari a drinking game", "drink every time someone says 'bro'", "play 'most likely to' and get picked every round",
+  "say 'I'm not drunk' with one eye closed", "text 'I'm home safe' and fall asleep in the lift", "take a selfie with the bouncer", "become best friends with a stranger in the club queue", "get a stranger's number in the club and save it as 'club'",
+  "order chicken lollipops at 2 am", "order a full meal at a bar and share nothing", "eat the bar snacks of the next table", "ask the DJ for a Bollywood song at a techno club", "start a bhangra circle at a techno club",
+  "take off their shoes on the dance floor", "lose a shoe on the dance floor", "lose a jacket at every club", "lose their keys in a cab", "leave their card at the bar",
+  "open a tab and forget to close it", "pay the whole bill by mistake", "split the bill and pay for someone else's cocktail", "get a free drink by flirting", "get a free drink because it is their birthday every week",
+  "fake their birthday at a restaurant for a free cake", "sing happy birthday to a stranger at the next table", "join a stranger's birthday party at a bar", "get adopted by another group at a club", "go home with a different group of friends",
+  "call their best friend at 3 am to say they love them", "call their mom at 3 am to say they love her", "send a voice note at 3 am and delete it at 9 am", "post a story at 3 am and delete it at 9 am", "comment on a celebrity's post at 3 am",
+  "wake up with a burger in their bed", "wake up with someone else's jacket", "wake up with a stamp from a club they do not remember", "wake up still wearing shoes", "wake up on the sofa with a blanket someone put on them",
+  "have the worst hangover in the group", "never get a hangover", "have a secret hangover cure", "eat parathas as a hangover cure", "drink nimbu pani for a hangover",
+  "swear never to drink again every Sunday", "be back at the bar by Friday", "go to brunch with a hangover and order more drinks", "fall asleep at brunch", "make plans for the next weekend during the hangover",
+  "go to a rooftop bar and talk about life", "go to a pub quiz and win", "go to a pub quiz for the free nachos", "go to ladies' night just for the free drinks", "go to a sports bar and support the other team",
+  "dance with the bartender", "climb on the bar to dance", "be asked to get down from the bar", "be asked to leave by the manager", "be thanked by the manager for the business",
+  "know every bartender in the city", "have a drink named after them at a bar", "invent a cocktail with Thums Up", "mix rum with Frooti", "ask for 'something strong but sweet'",
+  "drink only beer forever", "drink only mocktails and still dance the hardest", "be sober and still the craziest one", "be the designated driver who takes everyone for food", "drive everyone home and get no thanks",
+  "end a night out at a chai tapri", "end a night out at a dhaba on the highway", "end a night out at Marine Drive", "end a night out at India Gate", "end a night out watching the sunrise on a terrace",
+  "have the best night-out stories", "remember nothing of the night but tell the best story", "have the group retell the night to them", "deny everything that happened last night", "find photos from last night and want to move cities",
+  "go out on a Monday night", "go out on a school night", "go out the night before an exam", "go out the night before a wedding", "go out the night before a flight and miss it",
+  "plan a quiet night in that turns into a party", "invite three people and have thirty come", "host a party in a tiny flat", "make the neighbours join the party", "have the police knock and invite them in for chai",
+]

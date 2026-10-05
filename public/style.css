@@ -549,3 +549,114 @@ a.button.alt { background: var(--line); color: var(--text); }
 .sw-btn { width: 100%; padding: 26px; font-size: 28px; font-weight: 900; background: var(--btn); color: #fff; border-radius: 16px; letter-spacing: 2px; touch-action: manipulation; user-select: none; }
 .sw-btn.stop { background: var(--red); }
 .sw-btn:disabled { background: var(--line); color: var(--dim); opacity: 1; letter-spacing: 0; font-size: 20px; }
+
+/* 24 Game */
+.m24 { display: flex; flex-direction: column; gap: 14px; align-items: center; }
+.m24-cards { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; }
+.m24-card { width: 92px; height: 120px; border-radius: 14px; background: var(--panel); border: 2px solid var(--line); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; padding: 6px; }
+.m24-card.made { background: var(--tint-blue); }
+.m24-card.sel { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 35%, transparent); transform: translateY(-3px); }
+.m24-n { font-size: 36px; font-weight: 900; font-variant-numeric: tabular-nums; }
+.m24-from { font-size: 11px; color: var(--dim); text-align: center; }
+.m24-ops { display: flex; gap: 10px; }
+.m24-op { width: 58px; height: 58px; font-size: 28px; font-weight: 800; border-radius: 12px; }
+.m24-op.sel { background: var(--accent); color: #fff; }
+
+/* Mastermind */
+.mm-board { display: flex; flex-direction: column; gap: 6px; align-items: center; }
+.mm-row { display: flex; gap: 8px; align-items: center; justify-content: center; }
+.mm-row.cur { padding: 8px 10px; border-radius: 12px; background: var(--panel); border: 1px solid var(--line); }
+.mm-peg { width: 40px; height: 40px; border-radius: 50%; border: 2px solid rgb(0 0 0 / .25); color: #fff; font-weight: 800; font-size: 14px; padding: 0; text-shadow: 0 1px 1px rgb(0 0 0 / .5); }
+.mm-peg.sm { width: 30px; height: 30px; font-size: 11px; }
+.mm-peg.empty { background: var(--soft); border-style: dashed; border-color: var(--line); }
+.mm-peg:disabled { opacity: 1; cursor: default; }
+.mm-palette { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+.mm-marks { display: grid; grid-template-columns: repeat(var(--cols, 2), 10px); gap: 3px; }
+.mm-marks i { width: 10px; height: 10px; border-radius: 50%; border: 1.5px solid var(--line); }
+.mm-marks i.x { background: var(--text); border-color: var(--text); }
+.mm-marks i.n { border-color: var(--text); }
+.mm-says { min-width: 56px; }
+.mm-build { display: flex; flex-direction: column; gap: 10px; align-items: center; margin-top: 6px; }
+
+/* Territory */
+.tt-grid { display: grid; grid-template-columns: repeat(var(--w), 1fr); gap: 2px; width: min(100%, 560px); margin: 0 auto; aspect-ratio: 1; }
+.tt-cell { padding: 0; border-radius: 4px; background: var(--soft); border: 0; min-width: 0; font-size: 12px; font-weight: 900; color: var(--bad); }
+.tt-cell.rock { background: repeating-linear-gradient(45deg, var(--line) 0 3px, var(--panel2) 3px 6px); }
+.tt-cell.owned { background: var(--c); }
+.tt-cell.owned.me { box-shadow: inset 0 0 0 2px rgb(255 255 255 / .55); }
+.tt-cell.can { background: var(--soft); box-shadow: inset 0 0 0 2px var(--text); cursor: pointer; animation: tt-glow 1.6s ease-in-out infinite; }
+.tt-cell.can:hover { background: var(--panel2); }
+@keyframes tt-glow { 50% { box-shadow: inset 0 0 0 2px var(--dim); } }
+@media (prefers-reduced-motion: reduce) { .tt-cell.can { animation: none; } }
+.tt-cell.picked { background: var(--text); box-shadow: none; animation: none; }
+.tt-cell.new { animation: tt-pop .5s ease-out; }
+.tt-cell.walled { animation: tt-pop .8s ease-out; }
+.tt-cell.clash { background: var(--wrong-bg); }
+.tt-cell:disabled { opacity: 1; cursor: default; }
+@keyframes tt-pop { from { transform: scale(.6); filter: brightness(1.6); } }
+.tt-sw { display: inline-block; width: 12px; height: 12px; border-radius: 3px; background: var(--c); vertical-align: middle; }
+
+/* Auction */
+.au-lot { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; display: flex; flex-direction: column; gap: 4px; }
+.au-lot.big { padding: 18px; align-items: center; text-align: center; border-width: 2px; }
+.au-name { font-weight: 800; }
+.au-lot.big .au-name { font-size: clamp(20px, 4vw, 28px); }
+.au-pts b { font-size: 20px; color: var(--goldtext); }
+.au-bid { display: flex; justify-content: space-around; text-align: center; gap: 12px; }
+.au-raise { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+.au-raise > button { min-width: 64px; font-size: 18px; }
+.au-custom { display: flex; gap: 6px; }
+.au-custom input { width: 90px; }
+.au-log { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; font-size: 14px; text-align: center; }
+.au-next { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; }
+.au-next .au-lot { font-size: 14px; }
+.au-coll { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+.au-rules summary { cursor: pointer; }
+
+/* Connections */
+.cn { display: flex; flex-direction: column; gap: 8px; }
+.cn-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.cn-word { min-height: 64px; padding: 6px; border-radius: 10px; background: var(--panel2); border: 2px solid transparent; font-weight: 800; font-size: clamp(11px, 2.6vw, 15px); text-transform: uppercase; overflow-wrap: anywhere; }
+.cn-word.sel { background: var(--text); color: var(--bg); }
+.cn-word:disabled { opacity: 1; }
+.cn-group { border-radius: 10px; padding: 10px; text-align: center; display: flex; flex-direction: column; gap: 2px; color: #111; }
+.cn-group span { text-transform: uppercase; font-size: 14px; }
+.cn-group.l1 { background: #f9df6d; } .cn-group.l2 { background: #a0c35a; } .cn-group.l3 { background: #b0c4ef; } .cn-group.l4 { background: #ba81c5; }
+.cn-lives { display: inline-flex; gap: 5px; align-items: center; font-size: 14px; color: var(--dim); }
+.cn-lives i { width: 12px; height: 12px; border-radius: 50%; background: var(--soft); }
+.cn-lives i.on { background: var(--text); }
+
+/* Movie Guess */
+.mv-card { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 18px; display: flex; flex-direction: column; gap: 10px; }
+.mv-emoji { font-size: clamp(40px, 9vw, 64px); text-align: center; letter-spacing: 4px; line-height: 1.2; }
+.mv-story { font-size: 18px; text-align: center; margin: 0; }
+.mv-line { font-size: 20px; font-style: italic; text-align: center; margin: 0; color: var(--goldtext); }
+.mv-letters { font: 700 24px ui-monospace, Menlo, Consolas, monospace; letter-spacing: 3px; text-align: center; margin: 0; }
+.mv-feed { display: flex; flex-direction: column; gap: 2px; font-size: 14px; min-height: 20px; }
+
+/* Music Guess */
+.mg-player { display: flex; gap: 14px; align-items: center; justify-content: center; background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 14px; }
+.mg-play { width: 64px; height: 64px; border-radius: 50%; font-size: 26px; padding: 0; }
+
+/* GeoGuess */
+.geo-ask { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.geo-ask b { font-size: clamp(22px, 5vw, 32px); }
+.geo-map { position: relative; border-radius: 14px; overflow: hidden; border: 1px solid var(--line); }
+.geo-map svg { display: block; width: 100%; aspect-ratio: 2.5; touch-action: none; cursor: crosshair; user-select: none; }
+.geo-sea { fill: #1d3a52; }
+:root[data-theme="light"] .geo-sea { fill: #bcd9ee; }
+.geo-land { fill: #5f7d4f; stroke: #24331f; stroke-width: .7; }
+:root[data-theme="light"] .geo-land { fill: #ece6d2; stroke: #9a9480; }
+.geo-land.hit { fill: var(--gold); }
+.geo-pin { stroke: #fff; stroke-width: 2; }
+.geo-target { fill: none; stroke: var(--gold); stroke-width: 3; }
+.geo-line { stroke: #fff; stroke-width: 1.5; stroke-dasharray: 4 3; opacity: .8; }
+.geo-zoom { position: absolute; right: 8px; top: 8px; display: flex; flex-direction: column; gap: 4px; }
+.geo-zoom button { width: 36px; height: 36px; padding: 0; font-size: 20px; border-radius: 8px; background: var(--panel); }
+.geo-loading { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
+@media (max-width: 640px) {
+  .geo-map svg { aspect-ratio: 1.5; }
+  .cn-word { min-height: 56px; }
+  .m24-card { width: 74px; height: 100px; }
+  .m24-n { font-size: 30px; }
+}

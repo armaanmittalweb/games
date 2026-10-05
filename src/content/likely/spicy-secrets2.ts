@@ -1,0 +1,19 @@
+// Most Likely To, spicy: more secrets.
+export default [
+  "have a secret they have never told anyone in this room", "have a secret that would end a friendship", "have a secret talent they are embarrassed about", "have a secret fear they never admit", "have a secret habit nobody knows",
+  "have secretly cried at a friend's wedding for the wrong reasons", "have secretly hoped a friend's relationship would end", "have secretly been happy when a rival lost", "have secretly wanted a friend's life", "have secretly copied a friend's style",
+  "have secretly read a friend's chat over their shoulder", "have secretly seen a friend's phone notification and said nothing", "have secretly known about a friend's crush before the friend did", "have secretly set up two friends", "have secretly told a friend's crush",
+  "have a secret plan to move abroad", "have a secret plan to quit their job", "have a secret plan to start a business", "have a secret plan to propose", "have a secret plan to run away to the mountains",
+  "have a secret savings account for a dream trip", "have a secret stash of cash at home", "have secretly paid a friend's bill", "have secretly helped a friend with money", "have secretly bought a gift for themselves and said it was from someone",
+  "have a secret playlist for each friend", "have a secret nickname for each friend", "have a secret ranking of their friends", "have a secret favourite friend in this room", "have a secret least favourite friend in this room",
+  "have secretly liked a song they made fun of", "have secretly watched a film they called boring", "have secretly enjoyed a party they complained about", "have secretly loved a gift they said they hated", "have secretly liked someone they said was annoying",
+  "have secretly practised a dance for a wedding for months", "have secretly taken singing lessons", "have secretly gone to therapy and loved it", "have secretly gone to a palmist", "have secretly asked an astrologer about their love life",
+  "have a secret account to follow an ex", "have a secret account to comment on celebrity posts", "have a secret account for memes", "have a secret account for their pet", "have a secret account for their poetry",
+  "have secretly kept a diary about this group", "have secretly recorded a group call", "have secretly saved every funny voice note from the group", "have secretly made a video of the group's best moments", "have secretly kept embarrassing photos of everyone",
+  "have a secret crush they will take to the grave", "have a secret ex nobody knows about", "have had a secret relationship in college", "have had a secret date during an exam week", "have had a secret date during a family function",
+  "have secretly gone back to an ex", "have secretly texted an ex this year", "have secretly met an ex for coffee", "have secretly kept an ex's gift on their desk", "have secretly wished an ex happy birthday",
+  "have secretly broken something in a friend's house", "have secretly eaten a friend's birthday cake slice", "have secretly worn a friend's clothes", "have secretly used a friend's perfume", "have secretly borrowed a friend's book and lent it to someone else",
+  "have a secret recipe they never share", "have a secret food spot they never share", "have a secret travel spot they never share", "have a secret study trick they never share", "have a secret way to skip queues",
+  "keep a secret better than anyone in this room", "keep a secret for exactly one day", "let a secret slip when drunk", "let a secret slip when angry", "let a secret slip in a game like this",
+  "reveal a secret tonight", "be keeping a secret from someone in this room right now", "have a secret about tonight already", "make someone promise to keep a secret tonight", "have the biggest secret in this room",
+]

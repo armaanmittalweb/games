@@ -1,0 +1,23 @@
+// Most Likely To, clean: very Indian moments.
+export default [
+  "say 'adjust kar lo' in every situation", "find a jugaad for every problem", "fix something with a rubber band", "keep the TV remote in a plastic cover", "keep a steel tumbler at their desk",
+  "drink tea from a saucer", "eat with their right hand at a fancy restaurant", "ask for 'one by two' chai", "order 'cutting chai' everywhere", "carry achaar on every trip abroad",
+  "carry Maggi on every trip abroad", "carry theplas on every train journey", "carry poori-aloo on every train journey", "share their train food with the whole coach", "stand in a queue that is not a queue",
+  "push to get on the metro first", "save a seat with a handkerchief", "save a seat with a newspaper", "reserve a seat on the bus with a bag", "honk for no reason",
+  "use the horn to say hello", "drive with one hand on the horn", "know every road with a pothole", "know every speed breaker in the city", "say 'just two minutes' for twenty minutes",
+  "follow Indian Standard Time at every party", "arrive at a wedding when the food is served", "leave a wedding right after eating", "eat at a wedding buffet like a pro", "go to a wedding for the food only",
+  "rate every wedding by its food", "remember a wedding only for its dessert", "ask for extra gulab jamun at a wedding", "take a sweet box home from a wedding", "call every elder 'uncle' or 'aunty'",
+  "call every shopkeeper 'bhaiya'", "call every auto driver 'bhaiya'", "call their friends' parents 'mummy' and 'papa'", "be called 'beta' by everyone", "touch the feet of every elder at a function",
+  "get blessings and money from every relative", "get the most pocket money at Diwali", "give the best Diwali gifts", "send the most Diwali messages", "say 'kuch nahi' when asked what is wrong",
+  "say 'haan haan' without listening", "say 'theek hai' to everything", "say 'chalta hai' about everything", "say 'pakka' and then cancel", "keep the plastic on the new sofa",
+  "keep the new remote in a plastic cover", "keep shoes outside the house", "keep a separate pair of slippers for the bathroom", "have a shelf of steel utensils", "keep old newspapers to sell to the raddiwala",
+  "bargain with the raddiwala", "know the raddiwala's schedule", "keep old bottles for the kabadiwala", "reuse ice-cream boxes for leftovers", "keep a box of rubber bands from every packet",
+  "keep a bag full of plastic bags", "keep every gift-wrap paper", "keep the boxes of every gadget", "keep a drawer of old keys", "have a tiffin with three steel boxes",
+  "have a lunch box with a separate box for achaar", "carry a water bottle from home everywhere", "refill water bottles at every station", "drink only boiled water", "trust the local doctor more than a hospital",
+  "go to the chemist for every illness", "take Crocin for everything", "put Vicks on every problem", "put haldi on every cut", "say 'nazar lag jayegi' when complimented",
+  "put a kala tika on a baby", "hang lemon and chillies on a new shop", "break a coconut for a new car", "do puja for a new phone", "watch the Republic Day parade every year",
+  "stand for the national anthem at the cinema", "know the national song by heart", "cheer the loudest for India at any sport", "cry when the national anthem plays at the Olympics", "know the dialogues of every Bollywood film",
+  "sing film songs at every family function", "dance to Bollywood songs at every function", "do the 'Chaiyya Chaiyya' step at every party", "know the hook step of every new song", "make chai for every guest",
+  "offer food to every guest five times", "force guests to stay for dinner", "pack food for guests to take home", "never let a guest leave without a sweet", "know the best samosa in every city",
+  "know the best chaat in every city", "know the best lassi in every city", "know the best kulfi in every city", "know the best biryani in every city",
+]

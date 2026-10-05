@@ -1,0 +1,20 @@
+// Most Likely To, spicy: more roasts.
+export default [
+  "need three alarms and a phone call to wake up", "need two coffees before speaking", "be grumpy until lunch", "be grumpy when hungry", "be grumpy when sleepy",
+  "fall asleep while someone is telling them a secret", "zone out in the middle of a conversation", "ask 'what?' three times in one minute", "nod along without hearing anything", "say 'exactly' without listening",
+  "spend an hour choosing a reel to send", "spend an hour choosing a caption", "spend an hour choosing a restaurant and order the same thing", "spend an hour getting ready and wear the first outfit", "spend an hour packing and forget their toothbrush",
+  "argue about directions and be wrong", "argue about a film plot and be wrong", "argue about a cricket stat and be wrong", "argue about a song's singer and be wrong", "argue about a word's meaning and be wrong",
+  "lose their sunglasses on their head", "lose their phone in their hand", "lose their pen behind their ear", "lose their car in a parking lot", "lose their friends in a mall",
+  "start a diet after a big meal", "say 'just one bite' and eat half", "say 'I'm full' and order dessert", "eat a salad with extra cheese", "count the calories of a samosa and eat two",
+  "join the gym in January and leave in February", "go for a morning walk once and talk about it for a month", "buy a yoga mat and use it as a carpet", "do one sun salutation and post it", "get injured on their first day at the gym",
+  "say 'I'm an early bird' and wake up at ten", "say 'I'm a night owl' and sleep at ten", "say 'I hate drama' and watch every reality show", "say 'I don't care about likes' and check every minute", "say 'I'm a simple person' with a complicated order",
+  "order the most complicated coffee", "order off the menu at every restaurant", "send food back for being too hot", "complain that the AC is too cold and then too hot", "ask for the music to be changed everywhere",
+  "never like any plan but come anyway", "complain the whole trip and say it was the best trip", "say 'I'm not coming' and show up first", "say 'I'll come for ten minutes' and stay the night", "say 'last drink' five times",
+  "ask for a photo and then delete it", "ask for twenty retakes", "make everyone wait for a selfie", "make everyone pose for a boomerang", "make everyone jump for a photo",
+  "have a different excuse for being late every day", "blame traffic even when they walk", "blame the weather for everything", "blame the phone for everything", "blame their horoscope for a bad day",
+  "fall asleep the moment a film starts", "wake up only for the songs in a film", "ask what happened after sleeping through the film", "rate a film they slept through", "recommend a film they never finished",
+  "cry at a film and say it was dust", "scream at a horror film and blame someone else", "laugh at the wrong scene in a film", "talk loudly in a cinema", "explain the plot to everyone in the cinema",
+  "have the most dramatic sneeze", "have the most dramatic yawn", "have the most dramatic sigh", "make the most dramatic entry at a party", "make the most dramatic exit from a party",
+  "turn a cold into a three-day illness", "act brave with a fever and cry for soup", "call their mom when they have a headache", "google their symptoms and write a will", "take ten pills for a small cold",
+  "pretend to be good at cooking and burn rice", "pretend to know wine and order the cheapest", "pretend to know art and say 'nice colours'", "pretend to know cars and say 'good engine'", "pretend to know cricket and ask 'who's winning?'",
+]

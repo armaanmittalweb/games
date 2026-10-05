@@ -1,0 +1,23 @@
+// Most Likely To, spicy: more wild ideas.
+export default [
+  "book a flight on a whim at midnight", "book a one-way ticket and figure it out later", "go to the airport and take the cheapest flight anywhere", "take a train to the last station just to see it", "get on a bus without knowing where it goes",
+  "move to a new city without a job", "quit a job by text", "quit a job and start a food truck", "quit a job and become a trekking guide", "quit a job to become a full-time traveller",
+  "sell their car to fund a trip", "sell their gaming console to buy a guitar", "sell everything and live minimally", "give away all their clothes and start fresh", "shave their head to start fresh",
+  "get a tattoo in a foreign language they cannot read", "get a tattoo of their pet", "get a tattoo of a cricket score", "get a tattoo with a spelling mistake", "get a matching tattoo with a stranger",
+  "jump into a lake at a hill station", "jump off a boat into the sea", "swim in a river with a strong current", "walk across a rope bridge without holding on", "climb a water tank for the view",
+  "eat the hottest chilli at a mela", "eat ten momos in one minute", "eat a golgappa with chilli water challenge", "drink a whole jug of lassi", "eat a full plate of jalebis",
+  "say yes to a random stranger's invitation to a wedding", "dance with a band at a baraat they do not know", "join a protest they know nothing about", "join a flash mob on the street", "join a street play",
+  "start a business on a napkin", "invest their savings in a friend's idea", "buy a share in a racehorse", "buy a tiny island someday", "buy a houseboat",
+  "buy a vintage car that does not run", "buy a bike they cannot ride yet", "buy a drone and lose it on day one", "buy a boat with friends", "buy a farm with friends",
+  "drive through the night without stopping", "drive to the mountains after work", "drive to the beach at 2 am", "drive across three states in one day", "drive in a convoy with ten cars",
+  "camp on a beach without permission", "camp in the wild with no tent", "sleep under the stars in the desert", "sleep in a hammock in a forest", "sleep in a temple dharamshala on a trip",
+  "go to a rave in the forest", "go to a music festival for three days", "go to a full-moon party", "go to a silent disco", "go to a costume party in full makeup",
+  "challenge a stranger to a race", "challenge a stranger to arm wrestling", "challenge a stranger to a dance-off", "challenge a stranger to chess", "challenge a stranger to a rap battle",
+  "take a cold shower in winter on a bet", "sleep outside in the cold on a bet", "fast for a day on a bet", "walk barefoot for a day on a bet", "wear a suit to the beach on a bet",
+  "stay awake for a whole festival night", "dance for six hours straight at Garba", "play Holi from morning to night", "watch three films back to back in a theatre", "play a video game for a whole day",
+  "learn to fly a plane in a month", "learn to scuba dive in a week", "learn to surf in one trip", "learn a language in a month for a trip", "learn to dance for one wedding",
+  "join the circus for a summer", "work on a ship for a year", "work at a ski resort", "work at a beach shack in Goa for a season", "work on a farm abroad",
+  "have the most stamps on their passport", "have travelled to the most countries in this room", "have slept in the most cities", "have the most adventure stories", "have the most scars with stories",
+  "break a world record for fun", "enter a contest they have no chance of winning", "audition for a reality show and get selected", "go on a game show and win a car", "go on a TV show and become a meme",
+  "say 'let's do it' to every crazy idea", "be the first to jump in", "be the one who talks everyone into it", "be the one who talks everyone out of it", "regret nothing",
+]

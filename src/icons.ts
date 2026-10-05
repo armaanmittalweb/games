@@ -19,7 +19,7 @@ const ICONS: Record<string, { color: string; draw: (c: string) => string }> = {
   // Two rows of letter tiles: one letter in the wrong place, then the word.
   wordle: { color: '#2b8a3e', draw: () => box(8, 12, 10, '#fcc419') + box(19, 12, 10, null) + box(30, 12, 10, null) + box(8, 26, 10, W) + box(19, 26, 10, W) + box(30, 26, 10, W) },
   // Two tin cans on a string.
-  telephone: { color: '#0c8599', draw: () => fill('M7 15h9l-1.2 18H8.2z') + fill('M32 15h9l-1.2 18h-6.6z') + line('M15.5 20c4.5 9.5 12.5 9.5 17 0', ' stroke-width="2"') + line('M7 15h9M32 15h9', ' stroke="#0c8599" stroke-width="1.6"') },
+  telephone: { color: '#0c8599', draw: () => fill('M6 19.5l10-3v15l-10-3z') + fill('M42 19.5l-10-3v15l10-3z') + line('M16 24c5 7 11 7 16 0', ' stroke-width="2"') },
   // An open dictionary.
   bluff: { color: '#6741d9', draw: () => line('M24 15c-4-3-9-3.5-14-2.5v21c5-1 10-.5 14 2.5 4-3 9-3.5 14-2.5v-21c-5-1-10-.5-14 2.5z') + line('M24 15v21') + line('M14 19.5c2-.4 4-.3 6 .4M14 25c2-.4 4-.3 6 .4', ' stroke-width="2" opacity=".7"') },
   // Two minds, meeting in the middle.
@@ -40,6 +40,22 @@ const ICONS: Record<string, { color: string; draw: (c: string) => string }> = {
   stopwatch: { color: '#1864ab', draw: () => ring(24, 27, 12) + line('M20 8.5h8M24 8.5V15M35 15.5l2.5-2.5') + line('M24 27l5.5-5.5') + dot(24, 27, 2.2) },
   // A target with a dart near the middle.
   closest: { color: '#087f5b', draw: () => ring(22, 26, 12) + ring(22, 26, 6) + dot(22, 26, 2.2) + line('M24.5 23.5L37 11M33 9.5l4.5 1.5L39 15.5', ' stroke-width="2.6"') },
+  // Sixteen tiles; one row already grouped.
+  connections: { color: '#5f3dc4', draw: () => [0, 1, 2, 3].map(k => `<rect x="${8 + k * 8.4}" y="9" width="7" height="7" rx="1.6" fill="#fcc419"/>`).join('') + [1, 2, 3].flatMap(r => [0, 1, 2, 3].map(k => box(8 + k * 8.4, 9 + r * 8.4, 7, null, 1.6))).join('') },
+  // A globe with a pin in it.
+  geoguess: { color: '#0b7285', draw: c => ring(21, 27, 12) + line('M9 27h24M21 15c-5 6-5 18 0 24M21 15c5 6 5 18 0 24', ' stroke-width="2"') + fill('M34 6a7 7 0 0 1 7 7c0 5-7 12-7 12s-7-7-7-12a7 7 0 0 1 7-7z') + dot(34, 13, 2.6, c) },
+  // A music note with sound coming out.
+  musicguess: { color: '#d6336c', draw: () => fill('M19 12l14-4v20.5a5 5 0 1 1-3-4.6V14.3l-8 2.3v14.9a5 5 0 1 1-3-4.6z') + line('M38 18c2 2 2 6 0 8M41.5 15c3.5 4 3.5 10 0 14', ' stroke-width="2.2"') },
+  // A clapperboard.
+  movieguess: { color: '#343a40', draw: c => fill('M9 22h30v15a3 3 0 0 1-3 3H12a3 3 0 0 1-3-3z') + `<g transform="rotate(-12 9 20)">${fill('M9 13h30v7H9z')}${fill('M14 13l4 7h3l-4-7zM24 13l4 7h3l-4-7zM34 13l4 7h1v-1l-3.4-6z', c)}</g>` + line('M15 28h18M15 33h12', ` stroke="${c}" stroke-width="2.2"`) },
+  // A row of coloured pegs, and the score pegs beside it.
+  mastermind: { color: '#364fc7', draw: () => dot(10.5, 24, 4.5, '#ff6b6b') + dot(21, 24, 4.5, '#fcc419') + dot(31.5, 24, 4.5, '#69db7c') + dot(10.5, 13, 3, W) + dot(21, 13, 3, W) + dot(31.5, 13, 3, W) + ring(10.5, 35, 3) + ring(21, 35, 3) + dot(39.5, 21, 1.8) + dot(39.5, 27, 1.8) + `<circle cx="39.5" cy="33" r="1.6" fill="none" stroke="${W}" stroke-width="1.4"/>` },
+  // A flag planted on claimed ground.
+  territory: { color: '#2b8a3e', draw: () => box(8, 28, 10, W) + box(19, 28, 10, W) + box(30, 28, 10, null) + box(19, 17, 10, null) + line('M24 24V7') + fill('M25 7.5l11 4-11 4z') },
+  // An auction hammer.
+  auction: { color: '#e8590c', draw: () => `<g transform="rotate(-40 24 24)">${fill('M14 10h16a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H14a2 2 0 0 1-2-2v-6a2 2 0 0 1 2-2z')}${fill('M20.5 20h3v19h-3z')}</g>` + line('M26 40h14', ' stroke-width="3.5"') },
+  // The number to make.
+  make24: { color: '#1971c2', draw: () => `<text x="24" y="32.5" text-anchor="middle" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" font-size="23" font-weight="900" fill="${W}">24</text>` + line('M10 39h28', ' stroke-width="2" opacity=".6"') },
 }
 
 /** The finished SVG for a game, sized by CSS (1em by default). */

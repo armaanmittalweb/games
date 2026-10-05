@@ -1,0 +1,23 @@
+// Most Likely To, spicy: job hunts, interviews and the daily grind.
+export default [
+  "show up to an interview in sneakers", "show up to an interview an hour early and wait in the car", "show up to an online interview in pyjama bottoms", "google the answers during an online interview", "ask about leave policy in the first five minutes",
+  "ask about the salary in the first minute", "ask the interviewer for their Instagram", "make the interviewer laugh and get the job", "argue with the interviewer and get the job", "get a job offer and negotiate for a week",
+  "accept two job offers at once", "join a job and quit on day one", "quit after the free laptop arrives", "join a company for its canteen", "join a company for its office dog",
+  "send a resume with a spelling mistake in their own name", "send the wrong resume to a company", "send a cover letter addressed to another company", "put 'team player' on their resume and hate group work", "list 'Excel' as a skill after one video",
+  "say they are 'proficient in MS Word'", "write 'hobbies: travelling' and never travel", "list 'reading' as a hobby and read nothing", "write a resume three pages long", "have a resume with a photo in a suit",
+  "make a video resume", "post a 'looking for work' story every week", "change their LinkedIn headline every month", "call themselves 'founder' of a one-person company", "call themselves 'CEO' of their own blog",
+  "come in late and leave early every day", "come in early to eat the free breakfast", "eat the free lunch and leave", "know every free snack in the office", "take the office coffee home",
+  "nap in the office sleeping pod every day", "nap at their desk with a hoodie on", "hide in the washroom to scroll reels", "take a two-hour 'quick call'", "say 'I'm in a meeting' when they are not",
+  "join a meeting without listening and get asked a question", "say 'sorry, you were on mute' to cover not listening", "say 'can you repeat that, the network was bad'", "say 'great question' to buy time", "say 'let me get back to you' and never do",
+  "copy the boss's style", "laugh the loudest at the boss's jokes", "agree with the boss on everything", "argue with the boss in every meeting", "become friends with the boss",
+  "know the boss's coffee order", "bring the boss a gift for appraisal season", "get a gift from the boss", "have the boss on their close friends list", "accidentally post about the boss where the boss can see",
+  "start a WhatsApp group without the manager", "plan a team outing nobody goes to", "plan a team outing that becomes legendary", "be the team's party planner", "be the team's complaint box",
+  "know who is getting fired before they do", "know who is getting promoted before HR", "spread office news before the announcement", "be the HR team's favourite", "be HR's biggest headache",
+  "send a long email that nobody reads", "write 'thanks in advance' to make people do things", "write 'gentle reminder' with no gentleness", "write 'as discussed' about something never discussed", "write 'noted' and do nothing",
+  "use 'kindly revert' in every email", "use 'do the needful' in every email", "use 'PFA' and forget the attachment", "send a follow-up email five minutes after the first", "mark every email as urgent",
+  "put a calendar block called 'focus time' and sleep", "put a fake meeting on their calendar to leave early", "block lunch for two hours every day", "decline every meeting", "accept every meeting and attend none",
+  "work weekends and complain about it", "never work weekends and brag about it", "check emails on holiday", "turn off their phone on holiday", "come back from holiday to 500 emails and delete them all",
+  "be the first one at the office party and the last one to leave", "win the office talent show", "sing at the office party and go viral internally", "dress up the most for office ethnic day", "win the office's best-dressed award",
+  "be the office's secret Santa who gives the best gift", "give a terrible secret Santa gift", "find out who their secret Santa was and be angry", "keep the secret Santa budget exactly", "break the secret Santa budget by five times",
+  "make friends with every new joiner", "train the new joiner badly on purpose", "become the new joiner's mentor", "have their new joiner become their boss", "leave a farewell email that becomes legendary",
+]

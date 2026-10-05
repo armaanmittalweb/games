@@ -1,0 +1,22 @@
+// Most Likely To, clean: more good people.
+export default [
+  "notice when someone is left out and pull them in", "remember to call a friend after their exam", "check on a friend after a breakup", "bring food to a friend who is unwell", "drive across the city to help a friend",
+  "lend their car without a second thought", "lend their notes without asking for them back", "lend money and never remind", "give up their seat at a full table", "give the last piece to someone else",
+  "help a stranger push a stuck car", "help a stranger change a flat tyre", "help a stranger carry a heavy suitcase up the stairs", "help an old man cross a busy road", "help a lost child find their parents at a mall",
+  "help a delivery person find an address", "offer water to a delivery person in summer", "offer tea to the workers fixing the road", "give old clothes to the building watchman", "give a Diwali gift to the house help",
+  "remember the house help's children's names", "help the house help's children with homework", "pay the house help on time every month", "give the house help a holiday on festivals", "treat everyone with equal respect",
+  "be kind to waiters", "be kind to call-centre staff", "be kind to the person who gets their order wrong", "be patient with a slow cashier", "be polite to a rude person",
+  "stand up for a stranger being bullied", "report something wrong even when it is hard", "return a lost phone to its owner", "return a lost wallet with all the money", "hand in found jewellery to the police",
+  "pay for a stranger's coffee", "pay for a stranger's ticket when their card fails", "buy food for a hungry child", "buy all the flowers from a child selling them", "buy something from every small seller",
+  "support local shops over big stores", "buy handmade things at fairs", "tip street musicians", "share a small business on their story", "write good reviews for small shops",
+  "plant trees in their neighbourhood", "clean up a park with friends", "put up a bird bath in summer", "rescue a dog from the highway", "take an injured animal to the vet",
+  "foster kittens until they find a home", "volunteer at a blood bank", "sign up as an organ donor", "run a marathon for charity", "shave their head for a charity",
+  "teach an old person to use a phone", "read the newspaper aloud to their grandparents", "take their grandparents for a morning walk", "listen to the same story from their grandparents for the tenth time", "keep their grandparents' old letters safe",
+  "make a card for their parents' anniversary", "write a letter to their parents to say thank you", "take their parents to their favourite restaurant", "cook their mom's favourite dish for her", "massage their dad's tired feet",
+  "say 'I love you' to their parents often", "hug their parents every time they meet", "call their siblings just to chat", "remember their siblings' small wins", "cheer for their siblings at every event",
+  "make a new person feel at home", "help a new neighbour settle in", "invite a new colleague to lunch", "show a newcomer around the city", "teach a newcomer the local language",
+  "write a kind note for a stranger", "leave a kind comment on a stranger's post", "send a thank-you message to an old teacher", "visit an old teacher at home", "tell a friend how much they mean to them",
+  "forgive a friend before they say sorry", "say sorry even when it was half their fault", "keep a friendship alive for decades", "reconnect with an old friend", "stay in touch with every childhood friend",
+  "celebrate a friend's success more than their own", "share credit with the whole team", "praise someone in public", "correct someone in private", "make everyone feel heard",
+  "be the friend who listens at 3 am", "be the friend who shows up with ice cream", "be the friend who sends memes when you are sad", "be the friend who plans your birthday", "be the friend who remembers the little things",
+]

@@ -1,0 +1,20 @@
+// Most Likely To, clean: the last mixed bag.
+export default [
+  "be the calmest person in an exam hall", "be the calmest person on a delayed flight", "be the calmest person in a traffic jam", "be the calmest person in a power cut", "be the calmest person at a wedding with everything going wrong",
+  "make a to-do list and finish it", "finish their work before the deadline", "finish a book in a day", "finish a puzzle in an hour", "finish their plate every time",
+  "be up for anything at any time", "be up for a trip at an hour's notice", "be up for a game at midnight", "be up for a walk in the rain", "be up for street food at any hour",
+  "keep a calm head and a warm heart", "keep a smile on a bad day", "keep the group laughing on a long journey", "keep the conversation going at a dull party", "keep a secret for life",
+  "know the answer to random questions", "know the name of every cartoon character", "know the meaning of every word", "know the story behind every festival", "know the rules of every game",
+  "say the right thing at a funeral", "say the right thing at a wedding", "say the right thing to a nervous friend", "say the right thing to a crying child", "say the right thing to a worried parent",
+  "make tea for everyone without being asked", "make a sandwich for everyone at midnight", "make breakfast for a sleeping household", "make soup for a sick sibling", "make a cake for a neighbour",
+  "write the best birthday wishes", "write the best farewell messages", "write the best thank-you notes", "write the best wedding cards", "write the best captions for others",
+  "plan the perfect picnic", "plan the perfect birthday", "plan the perfect surprise", "plan the perfect road trip", "plan the perfect weekend",
+  "pick the perfect gift every time", "pick the perfect film for the mood", "pick the perfect song for the moment", "pick the perfect restaurant for a celebration", "pick the perfect spot for a photo",
+  "always have a spare umbrella", "always have a spare charger", "always have a spare pen", "always have spare change", "always have a spare snack",
+  "find the bright side of every problem", "find something funny in every situation", "find a shortcut in every city", "find a deal in every shop", "find a friend in every crowd",
+  "make every place feel like home", "make every meal feel like a feast", "make every trip feel like an adventure", "make every party feel like a festival", "make every day feel like a weekend",
+  "learn to cook a new dish every month", "learn to play a new song every month", "learn a new word every day", "learn a new fact every day", "learn something from everyone they meet",
+  "remember to water everyone's plants on holiday", "remember to feed everyone's pets on holiday", "remember to lock everyone's doors on holiday", "remember everyone's flight times", "remember everyone's train numbers",
+  "be the most loved person at their own farewell", "be the most missed person when they leave", "be the most welcomed person when they come back", "be the most remembered person at a reunion", "be the most talked-about person in a good way",
+  "become everyone's favourite neighbour", "become everyone's favourite colleague", "become everyone's favourite teacher", "become everyone's favourite cousin", "become everyone's favourite friend",
+]

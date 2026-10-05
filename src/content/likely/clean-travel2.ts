@@ -1,0 +1,22 @@
+// Most Likely To, clean: more trips and journeys.
+export default [
+  "know the best seat on every train", "book the upper berth every time", "book the side lower berth and regret it", "know which coach has the pantry", "make friends with the TT",
+  "carry a chain lock for their bag on trains", "carry a pillow from home on trains", "carry a bedsheet on trains", "carry a full meal for a two-hour journey", "share their food with the family in the next berth",
+  "play antakshari with strangers on a train", "teach a card game to strangers on a train", "solve a crossword on every train journey", "read a whole novel on one train journey", "watch the fields from the train window for hours",
+  "get excited when the train crosses a river", "throw a coin into every river from the train", "wave at children from the train", "buy toys from train vendors", "buy chikki at Lonavala station",
+  "fly only by window seat", "fly only by aisle seat", "eat everything served on a flight", "sleep through every flight", "watch three films on a long flight",
+  "talk to the pilot after landing", "visit the cockpit as a child and remember it", "collect boarding passes", "collect airline sick bags as souvenirs", "collect hotel keycards",
+  "pack a week before a trip", "pack an hour before a trip", "make a packing list for every trip", "pack the same things every trip", "forget something small on every trip",
+  "plan the itinerary hour by hour", "plan nothing and wander", "find the best local guide", "find the best street food on every trip", "find the best view in every city",
+  "take a sunrise boat ride in Varanasi", "watch the sunset at Kanyakumari", "see the Wagah border ceremony", "visit the Golden Temple at night", "visit Hampi on a cycle",
+  "take the toy train to Ooty", "go to the Sundarbans to see a tiger", "go to Kaziranga to see a rhino", "go to Gir to see a lion", "go to Ranthambore and see only deer",
+  "stay at a houseboat in Alleppey", "stay in a tent in Jaisalmer", "stay in a hill cottage in Munnar", "stay in a monastery in Ladakh", "stay in a treehouse in Wayanad",
+  "trek to Triund", "trek to Kedarkantha in the snow", "trek to Valley of Flowers", "trek to Roopkund", "trek in Sikkim",
+  "visit the Andamans and go scuba diving", "visit Lakshadweep", "visit Spiti and the highest post office", "visit Tawang", "visit the Rann of Kutch during the festival",
+  "travel to Europe on a train pass", "travel to Japan for the cherry blossoms", "travel to Thailand for the beaches", "travel to Dubai for the shopping", "travel to Singapore for the food",
+  "travel to Bali and never come back", "travel to Iceland to see the lights", "travel to Africa for a safari", "travel to Egypt for the pyramids", "travel to Peru to see Machu Picchu",
+  "visit every hill station in one summer", "visit every beach in Goa in one week", "visit every temple in Tamil Nadu", "visit every fort in Maharashtra", "visit every state capital",
+  "keep a travel diary on every trip", "write postcards to themselves from every trip", "make a map with pins of every place they visited", "keep a jar of sand from every beach", "keep a coin from every country",
+  "go back to the same place every year", "never visit the same place twice", "pick holidays by the food", "pick holidays by the weather", "pick holidays by the photos online",
+  "come back from every trip with new friends", "come back from every trip with a new recipe", "come back from every trip with a new word", "come back from every trip wanting to move there", "come back from every trip tired and happy",
+]

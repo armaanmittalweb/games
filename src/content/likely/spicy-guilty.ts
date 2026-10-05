@@ -1,0 +1,22 @@
+// Most Likely To, spicy: guilty pleasures and little crimes.
+export default [
+  "eat their sibling's chocolate and replace it with a cheaper one", "drink from the bottle and put it back in the fridge", "eat straight from the ice-cream tub at midnight", "eat dessert before dinner and hide the wrapper", "order food and hide the box from their mom",
+  "order dessert on a diet and call it a cheat day", "have a cheat week", "have a cheat month", "eat a whole packet of chips in one sitting", "eat a whole box of sweets meant for guests",
+  "watch the next episode after promising to stop", "watch a whole series in one night and go to work", "rewatch a show for the tenth time", "watch reality TV and judge everyone", "watch cringe content on purpose",
+  "listen to the same breakup song while happy", "sing sad songs at full volume in traffic", "dance alone in their room to 2000s songs", "play old Himesh songs at a party", "know every word of a song they claim to hate",
+  "stalk a celebrity's whole family", "know a celebrity's wedding date", "know a celebrity's pet's name", "follow celebrity gossip pages", "read the comments under celebrity posts for hours",
+  "read old chats from years ago", "look at old photos of an ex", "watch their own old reels", "listen to their own voice notes", "read their own old diary and cringe",
+  "buy something just because it was cute", "buy a gadget they will never use", "buy a third pair of the same shoes", "buy a dress for an event that never happens", "buy running shoes for a run that never happens",
+  "skip the gym and post an old gym selfie", "skip a party and post as if they went", "post a holiday photo from last year as if it were today", "use a filter that changes their face", "edit their photo and deny it",
+  "say they are working when they are napping", "say they are reading when they are watching reels", "say they are on their way when they are watching a film", "say they are sick when they are just tired", "say they lost their phone to avoid replying",
+  "pretend not to be home when the doorbell rings", "pretend not to hear a neighbour calling", "pretend to be asleep when the family needs help", "pretend to be busy when guests come", "pretend to study when parents walk in",
+  "hide in the bathroom at a family function", "hide in the car at a family function", "hide on the terrace at a family function", "fake a call to escape a relative", "fake a stomach-ache to skip an event",
+  "use a relative's Netflix without asking", "use the office printer for personal things", "take office pens home", "use the office wifi to download films", "charge their phone in a restaurant all evening",
+  "sit in a cafe for five hours with one coffee", "use the washroom of a hotel they are not staying at", "use a mall as a free gym", "try free samples three times", "eat free samples at the supermarket for lunch",
+  "keep the hotel bathrobe", "take every free thing from a hotel room", "take extra ketchup sachets every time", "take extra tissues from a cafe", "take the free pen from the bank",
+  "sing loudly in the car with the windows down", "dance in front of the mirror", "practise their Oscar speech", "pretend to be interviewed in the shower", "talk to themselves in a fake accent",
+  "pretend to be in a music video in the rain", "pretend to be in a film while walking with headphones", "walk in slow motion in their head", "imagine the background music in their life", "narrate their own life in their head",
+  "keep a list of people who annoy them", "keep a list of everything they would do if they won the lottery", "plan their revenge on someone and never do it", "plan their dream wedding for a celebrity crush", "imagine being famous before sleeping",
+  "make up arguments in their head and win", "rehearse a fight that never happens", "think of the perfect comeback a day later", "replay compliments in their head", "replay embarrassing moments at 3 am",
+  "sleep in the afternoon and stay up all night", "have a nap that turns into a full sleep", "sleep with the phone on their face", "snooze the alarm and dream of being late", "be late because of 'just five more minutes'",
+]

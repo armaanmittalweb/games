@@ -3,8 +3,9 @@
 //   public/games/<id>.html      a guide page per game, for search engines and for people deciding what to play
 //   public/games.html           the index of every game
 //   public/sitemap.xml
+//   the list of games on public/index.html
 // Runs before every deploy (npm run deploy).
-import { writeFileSync, mkdirSync } from 'node:fs'
+import { readFileSync, writeFileSync, mkdirSync } from 'node:fs'
 import { CATALOG } from '../src/catalog.ts'
 import { iconSvg } from '../src/icons.ts'
 
@@ -165,3 +166,13 @@ ${urls.map(([p, pr, f]) => `  <url><loc>${SITE}${p}</loc><lastmod>${TODAY}</last
 </urlset>
 `)
 console.log(`catalog.js, ${CATALOG.length} game pages, games.html, sitemap.xml (${urls.length} URLs)`)
+
+// The home page's list of games (what search engines and visitors without JavaScript see), from the catalog.
+{
+  const home = readFileSync('public/index.html', 'utf8')
+  const open = '<!-- games: written by scripts/build-site.mjs from src/catalog.ts -->'
+  const i = home.indexOf(open) + open.length, j = home.indexOf('</div>', i)
+  const nl = home.includes('\r\n') ? '\r\n' : '\n'
+  const cards = CATALOG.map(m => `      <a class="card gl" href="/games/${m.id}"><h3 class="with-icon"><span class="gicon">${iconSvg(m.id)}</span>${esc(m.name)}</h3><p>${esc(m.blurb)}</p></a>`).join(nl)
+  writeFileSync('public/index.html', home.slice(0, i) + nl + cards + nl + '    ' + home.slice(j))
+}

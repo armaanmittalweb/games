@@ -1,0 +1,23 @@
+// Most Likely To, spicy: texting crimes.
+export default [
+  "reply 'hmm' and start a fight", "reply 'ok.' with a full stop and mean it", "reply 'k' and ruin someone's day", "reply with a thumbs-up to a long message", "reply to 'I love you' with a sticker",
+  "send 'we need to talk' and go offline", "send 'hey' and then nothing for an hour", "send 'are you free?' with no context", "send 'guess what' and make people wait", "send 'call me' and then not pick up",
+  "text 'I'm outside' when they are still at home", "text 'five minutes' and arrive in forty", "text 'on the way' while in the shower", "text 'reached' before leaving", "text 'just woke up' at 3 pm",
+  "text during a film in the theatre", "text while walking into poles", "text during a wedding ceremony", "text at the dinner table under the table", "text in a meeting with a straight face",
+  "type for five minutes and send 'ok'", "make the typing bubble appear and disappear ten times", "start typing, stop, and never reply", "reply only to the funny part of a serious message", "reply to a serious message with a meme",
+  "send ten one-word messages instead of one sentence", "send a message in parts so the phone keeps buzzing", "write an essay in one message", "send a message with no punctuation at all", "use only capital letters when angry",
+  "use 'lol' with a straight face", "use 'haha' when nothing is funny", "use 'hehe' to flirt", "use 'okayyyy' with seven y's", "use 'sure' to mean 'absolutely not'",
+  "send a crying-laughing emoji to bad news by mistake", "send a heart to their boss by mistake", "send the wrong emoji in the family group", "use the eggplant emoji without knowing what it means", "use the skull emoji to mean they are laughing",
+  "change their WhatsApp status to a sad song after a fight", "set a status only one person will understand", "set a status that starts a family discussion", "put a quote on their status every day", "post a status with a photo of the sky every day",
+  "forward a chain message 'or bad luck will follow'", "believe a chain message and forward it", "forward a message to the person it was about", "forward a private message to the wrong group", "forward a meme to a client",
+  "send a screenshot of their own chat by mistake", "screenshot a chat and send it to the same person", "crop a screenshot badly and reveal everything", "screenshot a story with the person's name visible", "screenshot a friend's dating profile for the group",
+  "read messages from the notification so they don't show as read", "keep messages unread to 'reply later' for months", "mark messages as unread to remember", "archive chats instead of replying", "mute their best friend for a day",
+  "send voice notes while walking with traffic noise", "send voice notes from the bathroom", "send a voice note that is just them laughing", "send a voice note singing happy birthday off-key", "send a voice note by mistake while complaining",
+  "call instead of reading a long message", "call to ask 'did you see my message?'", "ask 'did you get my message?' right after sending", "send 'hello?' after two minutes of no reply", "send '???' after five minutes",
+  "text their ex 'happy new year' at midnight", "text their crush 'happy new year' at 12:00:01", "text everyone 'happy Diwali' with the same message", "copy-paste birthday wishes to everyone", "send the same good morning image every day",
+  "write a long goodnight message every night", "send a goodnight message at 4 am", "text 'good morning' at noon", "wish someone 'happy birthday' a day early", "wish someone 'happy birthday' a week late",
+  "start a group video call nobody asked for", "add people to a group without asking", "make themselves admin of every group", "remove themselves from a group dramatically", "leave and rejoin a group on the same day",
+  "spam the group with forty photos", "post a hundred trip photos in the group", "ask 'who has the photos?' a month after the trip", "make a shared album nobody uploads to", "upload only their own good photos",
+  "end every message with a full stop", "start every message with 'bro'", "start every message with 'listen'", "start every message with 'okay so'", "end every message with 'na'",
+  "write 'hahahahahahaha' for every joke", "write 'hmm' to think", "write 'achha' to every message", "write 'theek hai' with no emotion", "write 'chalo' to end every chat",
+]

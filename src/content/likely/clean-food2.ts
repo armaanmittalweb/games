@@ -1,0 +1,20 @@
+// Most Likely To, clean: more food.
+export default [
+  "eat a full thali and ask for more rice", "finish a whole bucket of popcorn before the film starts", "order a large popcorn and share none", "eat nachos with extra cheese at every film", "eat a full meal at the interval",
+  "know the best vada pav in Mumbai", "know the best kachori in Jaipur", "know the best poha in Indore", "know the best dhokla in Ahmedabad", "know the best idli in Chennai",
+  "eat dosa with a fork and knife", "eat rasam like soup", "eat sambar with everything", "pour ghee on every roti", "ask for makkhan on every paratha",
+  "eat paratha with jam", "eat roti with sugar", "eat rice with sugar and ghee", "eat khichdi with papad and achaar", "eat curd rice with mango pickle",
+  "drink lassi with every meal", "drink buttermilk after every meal", "drink a glass of milk at night", "drink coconut water at every beach", "drink sugarcane juice in every summer",
+  "eat a mango in one bite", "suck the mango seed clean", "eat mangoes in the bathtub to avoid the mess", "argue about which mango is the best", "send mangoes to every relative",
+  "eat watermelon with salt", "eat guava with chilli powder", "eat jamun until their tongue is purple", "eat amla with salt", "eat ber from a roadside cart",
+  "make the best pakoras", "make the best pav bhaji", "make the best rajma chawal", "make the best chole", "make the best aloo paratha",
+  "make the best dal makhani", "make the best butter chicken", "make the best paneer tikka", "make the best fried rice", "make the best pasta",
+  "make the best sandwich", "make the best omelette", "make the best poha", "make the best upma", "make the best khichdi",
+  "make the best gajar halwa", "make the best kheer", "make the best laddoos at Diwali", "make the best cake at Christmas", "know every spice by smell",
+  "add hing to everything", "add jeera to everything", "add coriander to everything", "add lemon to everything", "eat food so spicy it makes them sweat",
+  "eat food with no salt and not notice", "eat food cold from the fridge", "reheat chai three times", "drink chai that has gone cold", "eat at the same dhaba on every highway trip",
+  "know which dhaba has the best dal", "order the same paneer dish at every dhaba", "eat at a truck drivers' dhaba", "sleep on a charpai at a dhaba", "eat at a langar",
+  "volunteer at a langar", "help serve food at a community kitchen", "cook for a hundred people", "cook for a whole wedding", "be the official taster at family dinners",
+  "taste food and say 'needs salt'", "taste food and say 'perfect'", "never criticise anyone's cooking", "praise every dish at a dinner", "bring a dish to every gathering",
+  "bring dessert to every gathering", "bring their mom's famous dish to every gathering", "bring a store-bought cake and decorate it", "bring homemade cookies to the office",
+]

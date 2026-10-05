@@ -1,9 +1,11 @@
 // Most Likely To: everyone votes for a player; voting with the room scores.
 import { rank, type Ctx, type Game } from '../engine'
-import { MOST_LIKELY } from '../content/party'
+import { CLEAN, SPICY } from '../content/likely'
 import { allIn } from './util'
 
-interface C { rounds: number; seconds: number }
+interface C { rounds: number; seconds: number; pack: string }
+
+const PACKS: Record<string, string[]> = { classic: CLEAN, spicy: SPICY, mixed: [...CLEAN, ...SPICY] }
 interface S {
   prompts: string[]
   round: number
@@ -42,7 +44,7 @@ function reveal(g: Ctx<C>, s: S) {
 
 export const mostlikely: Game<S, C> = {
   setup(g) {
-    const s: S = { prompts: g.deal('mostlikely', MOST_LIKELY, g.config.rounds), round: 0, phase: 'vote', until: 0, votes: {}, top: [], pts: {}, crowns: {}, titles: [] }
+    const s: S = { prompts: g.deal(`mostlikely:${PACKS[g.config.pack] ? g.config.pack : 'mixed'}`, PACKS[g.config.pack] ?? PACKS.mixed, g.config.rounds), round: 0, phase: 'vote', until: 0, votes: {}, top: [], pts: {}, crowns: {}, titles: [] }
     open(g, s)
     return s
   },

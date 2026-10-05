@@ -1,0 +1,23 @@
+// Most Likely To, clean: phones, computers and gadgets.
+export default [
+  "know every shortcut on a keyboard", "type with two fingers and still be fast", "type without looking at the keyboard", "use a typewriter for fun", "write code for fun on a Sunday",
+  "build a website for their family", "build an app for their friends", "make a game in their free time", "fix any phone in ten minutes", "know how to recover deleted photos",
+  "keep their phone in a case for ten years", "never use a phone cover", "never drop their phone", "keep their phone screen spotless", "have a screen protector on their screen protector",
+  "have the newest phone in the group", "have the oldest phone in the group", "keep their old phones as backups", "know every phone's specifications", "compare phones for a month before buying",
+  "buy every new gadget on launch day", "own a drone", "own a VR headset", "own a robot vacuum cleaner", "own a smart home with voice controls",
+  "talk to their smart speaker like a friend", "say please to their voice assistant", "set twenty alarms on a smart speaker", "control the lights with their phone", "make their home fully automatic",
+  "back up their photos every week", "never back up anything", "lose all their photos once", "have photos from 2010 on a hard disk", "keep every photo in neat folders",
+  "have a perfect file naming system", "have a desktop full of files", "never close a browser tab", "keep forty apps open", "restart their computer to fix everything",
+  "use the same password for ten years", "use a password manager", "change passwords every month", "write passwords in a diary", "forget every password",
+  "click 'remind me later' on every update", "update every app the moment it comes", "read the terms and conditions", "turn on every privacy setting", "turn off all notifications",
+  "know how to use every Excel formula", "make a spreadsheet for everything", "make pie charts for fun", "make a presentation for a family trip", "make a video slideshow for a birthday",
+  "edit videos like a professional", "edit photos like a professional", "make their own stickers", "make their own memes", "make their own GIFs",
+  "know how to fix the printer", "be called to fix the printer at every office", "unjam the printer with a hit", "know the TV remote better than anyone", "find the right HDMI input in one try",
+  "set up the wifi at every party", "know every wifi password of every friend's house", "share their hotspot with everyone", "run out of data on the first day of the month", "have unlimited data and still complain",
+  "play games on their phone on every trip", "be the top player in a mobile game", "spend money on game coins", "play the same mobile game for five years", "delete a game and reinstall it the next day",
+  "use their phone as a torch every night", "use their phone as a calculator for everything", "use their phone camera as a mirror", "take screenshots of everything", "scan every document with their phone",
+  "pay for everything with UPI", "never carry cash", "always carry cash in case UPI fails", "know every UPI app", "pay a vegetable seller by UPI and feel proud",
+  "use a smartwatch to track sleep", "check their heart rate during a film", "count steps while shopping", "get excited when they hit ten thousand steps", "walk around the house at night to hit their steps",
+  "use AI to plan their week", "use AI to write a birthday poem", "ask AI for life advice", "argue with an AI chatbot", "trust maps more than their own eyes",
+  "learn a skill from a YouTube tutorial", "watch tutorials and never try", "fix something with a YouTube video", "become an expert from YouTube", "start their own tutorial channel",
+]

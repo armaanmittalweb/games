@@ -1,0 +1,23 @@
+// Most Likely To, spicy: agents of chaos.
+export default [
+  "add a random person to the group chat", "rename the group chat every week", "change the group photo to someone's worst picture", "make a poll in the group about who is the laziest", "start a voice call in the group at 2 am",
+  "send a 'we need to talk' text as a joke", "send 'call me, urgent' and then say 'never mind'", "send an April Fools' message that scares their parents", "fake an engagement on April Fools' Day", "fake a new job on April Fools' Day",
+  "tell a lie at a party just to see what happens", "start a rumour that two friends are dating", "convince someone a fake fact for a year", "convince the group a celebrity is their cousin", "convince a child they are a wizard",
+  "switch everyone's shoes at the door", "hide the TV remote for fun", "change the wifi password and not tell anyone", "unplug the router during a match", "turn off the lights during a horror film",
+  "jump out and scare people for fun", "hide behind a door to scare their sibling", "put a fake spider in a friend's bag", "set off a party popper behind someone", "blow an air horn at a sleeping friend",
+  "eat the whole cake before the party", "lick the icing off the cake", "put candles on a samosa for a birthday", "give a birthday gift that is a box inside a box inside a box", "wrap a gift in twenty layers of tape",
+  "start a dance in the middle of a mall", "start a song in a quiet restaurant", "start a chant at a cricket match", "lead the crowd in a stadium", "start a conga line at a wedding",
+  "jump into the pool fully dressed at a wedding", "drive a golf cart into a pond", "set the kitchen on fire making toast", "flood the bathroom while showering", "break the bed jumping on it",
+  "break a chair leaning back", "break the swing at the park", "break the glass table at a party", "break a friend's phone and replace it secretly", "break something expensive and blame the cat",
+  "order fifty pizzas to a friend's house as a prank", "book a taxi to a friend's office as a prank", "subscribe a friend to weird newsletters", "sign a friend up for a dating show", "enter a friend in a talent competition without telling them",
+  "volunteer a friend to give a speech", "volunteer a friend to sing at a wedding", "push a friend on stage", "pull a friend onto the dance floor", "make a friend dance with an aunty",
+  "make a scene at a restaurant over cold food", "send food back three times", "ask to speak to the manager about a small thing", "leave a funny review for a restaurant", "write a poem as a complaint",
+  "talk their way into somewhere they should not be", "sneak into the kitchen of a restaurant", "sneak onto a film set", "sneak into a VIP section at a match", "sneak onto a boat",
+  "make the group take the longest route on purpose", "say 'trust me, I know a shortcut' and get everyone lost", "drive into a dead end with full confidence", "take the group to the wrong city", "book the group on the wrong date",
+  "plan a surprise and ruin it by being too excited", "tell the birthday person about their surprise party", "show up to a surprise party before the birthday person", "hide for a surprise and fall asleep", "jump out at the wrong person",
+  "make a scene at a family dinner", "drop a big secret at the dinner table", "start a debate about politics at Diwali", "bring up an old family fight at a wedding", "bring up someone's ex at their engagement",
+  "change their mind about everything every day", "quit their job and take it back the same day", "dye their hair pink overnight", "move cities in a week", "adopt a pet without telling their family",
+  "have the most chaotic room", "have the most chaotic bag", "have the most chaotic phone gallery", "have the most chaotic browser tabs", "have the most chaotic calendar",
+  "start a new hobby every week and quit", "start five books at once", "start three series at once", "start a startup every month", "start a diet and end it by lunch",
+  "make every simple plan complicated", "turn a coffee plan into a road trip", "turn a quick dinner into a five-hour night", "turn a small fight into a war", "turn a quiet evening into a party",
+]

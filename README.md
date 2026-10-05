@@ -24,6 +24,14 @@ game, or plans a whole game night, and the room keeps one leaderboard across eve
 | Reaction | 1–30 | Wait for green and tap; decoys and moving targets. |
 | Stop the Clock | 1–30 | Stop a stopwatch on a target time; the clock may vanish. Closest wins. |
 | Closest Wins | 2–30 | Number questions; the nearest guess scores. |
+| Connections | 1–30 | Sixteen words, four hidden groups, four mistakes. Everyone solves the same board. |
+| GeoGuess | 1–30 | A country, capital or city is named; drop a pin on the world map. |
+| Music Guess | 1–30 | Two seconds of a Bollywood song; pick it from four. |
+| Movie Guess | 1–30 | Name the film from emojis; a story and a famous line follow. |
+| Mastermind | 2–6 | Everyone races to crack the same colour code in the fewest guesses. |
+| Territory | 2–8 | Claim squares on a shared map; everyone moves at once and clashes cancel. |
+| Auction | 2–10 | 100 coins each; bid on lots, collect sets, keep some cash. |
+| 24 Game | 1–30 | Four numbers; combine them with + − × ÷ to make 24. |
 
 Each game has its own icon, drawn in `src/icons.ts` (a coloured tile with a white drawing); the build puts the SVGs
 into `public/catalog.js` and the guide pages.
@@ -71,6 +79,19 @@ All content is in plain English for friend groups in India.
 - Trivia (`scripts/build-trivia.mjs`): the [Open Trivia Database](https://opentdb.com) (CC BY-SA 4.0), minus anime,
   comics, US sports and politics, plus about 500 questions about India in `data/india-trivia.mjs`. "Mixed" difficulty
   leaves out the hard questions. `npm run trivia` downloads the bank again.
+- Most Likely To has a Clean pack (any group) and a Spicy pack (dating, exes, parties, roasts), about 10,000 prompts
+  in `src/content/likely/`. After adding prompts, `node scripts/dedupe-likely.mjs` removes repeats and rebuilds the index.
+- Connections groups (`src/content/connections.ts`) list the themes their words could also belong to; two groups with a
+  theme in common never share a board, so every board has one answer.
+- GeoGuess: Natural Earth's 1:10m countries as India sees its borders (public domain), simplified by
+  `node scripts/build-geo.mjs <ne_10m_admin_0_countries_ind.geojson>` into `public/geo/world.json` (drawing) and
+  `src/content/geo-shapes.ts` (scoring). Capitals and cities are in `src/content/geo.ts`; `npm test` checks each one
+  lies inside its country.
+- Music Guess: Bollywood songs with Apple's free 30-second previews, found by `node scripts/build-songs.mjs` (iTunes
+  Search API, India store). Only tracks from the film's own album are kept (no covers, remixes or lo-fi versions), and
+  each round links to the song on Apple Music.
+- 24 Game: `node scripts/build-24.mjs` solves all 1,820 hands of four numbers from 1 to 13 and keeps the 1,362 that make
+  24, with a difficulty and one answer each.
 - Prompts, word pairs, drawing words, Code Words boards, Dictionary Bluff words and Closest Wins questions are in
   `src/content/`. Closest Wins answers note any rounding or date.
 
@@ -87,7 +108,13 @@ whole pool has been used. `npm test` fails if a pool holds the same item twice a
 | Mind Meld prompts | 633 | 8 |
 | Dictionary Bluff words | 559 | 5 |
 | Closest Wins questions | 532 | 8 |
-| Most Likely To prompts | 521 | 8 |
+| Most Likely To prompts | 10,004 (4,559 clean, 5,445 spicy) | 8 |
+| Connections groups | 320 | 4 a board |
+| Movie Guess films | 240 (161 Indian, 79 English) | 8 |
+| Music Guess songs | 240 | 10 |
+| GeoGuess places | 195 countries, 102 capitals, 83 cities | 8 |
+| 24 Game hands | 1,362 | 8 |
+| Auction lots | 108 in 12 sets | 12 |
 | Draw & Guess words | about 200 per theme, 1,452 mixed | 3 shown per turn |
 | Telephone starting lines | 221 | only when someone writes nothing |
 

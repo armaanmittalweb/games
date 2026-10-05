@@ -1,0 +1,21 @@
+// Most Likely To, clean: how people are with other people.
+export default [
+  "be the first to welcome a new neighbour", "be the first to say hi in a new class", "be the first to join a new colleague for lunch", "be the first to add a new friend to the group", "be the first to learn everyone's names in a new place",
+  "be the one strangers ask for directions", "be the one strangers ask to take their photo", "be the one children walk up to at a party", "be the one dogs run to at a park", "be the one old people tell their life stories to",
+  "talk to the person sitting alone at a party", "talk to the shy cousin at a wedding", "talk to the new kid in school", "talk to the quiet colleague in a meeting", "talk to the lonely neighbour every evening",
+  "remember a stranger's name after one meeting", "remember a stranger's story months later", "remember a waiter's name and use it", "remember a shopkeeper's family members", "remember a friend's friend's birthday",
+  "make peace between two fighting friends", "make peace between siblings", "make peace in the family group", "make peace in the office", "make peace on a group trip",
+  "keep in touch with old teachers", "keep in touch with old neighbours", "keep in touch with old colleagues", "keep in touch with friends from summer camp", "keep in touch with friends from a trip",
+  "send postcards to friends from every trip", "send birthday cards by post", "send Diwali sweets to old friends", "send a message to an old friend out of the blue", "send a thank-you note after every dinner",
+  "listen without looking at their phone", "listen to the same problem for the tenth time", "listen to an old person's story with full attention", "listen to a child's long story with interest", "listen to a friend's voice note in full",
+  "never interrupt anyone", "always let others finish their sentence", "always ask how others are doing", "always ask follow-up questions", "always remember what others said last time",
+  "give their full attention in a conversation", "give a genuine compliment every day", "give credit where it is due", "give the benefit of the doubt", "give second chances",
+  "make friends with people of every age", "make friends with people from every state", "make friends with people from every country", "make friends with people who are very different from them", "make friends with their friends' parents",
+  "be the friend parents trust", "be the friend teachers trust", "be the friend bosses trust", "be the friend kids trust", "be the friend everyone trusts",
+  "be the glue in every group they join", "be the host in every group they join", "be the planner in every group they join", "be the joker in every group they join", "be the listener in every group they join",
+  "make everyone feel welcome at their home", "make everyone feel included in a game", "make everyone feel heard in a discussion", "make everyone feel special on their birthday", "make everyone feel better after a bad day",
+  "notice when someone needs help", "notice when someone is not eating", "notice when someone is too quiet", "notice when someone has a new haircut", "notice when someone is trying hard",
+  "cheer for the underdog", "cheer for the other team when they play well", "cheer for a stranger at a marathon", "cheer for a child at a school event", "cheer for a friend at every performance",
+  "apologise sincerely", "accept an apology gracefully", "admit a mistake quickly", "laugh at their own mistakes", "learn from other people's mistakes",
+  "be the most loyal friend", "be the most honest friend", "be the most generous friend", "be the most patient friend", "be the most fun friend",
+]

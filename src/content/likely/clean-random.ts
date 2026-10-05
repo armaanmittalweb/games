@@ -1,0 +1,22 @@
+// Most Likely To, clean: a little bit of everything.
+export default [
+  "know a fact about every country", "know the capital of every country", "know every flag in the world", "know every state capital in India", "know every river in India",
+  "know every Prime Minister of India in order", "know the national animal of every country", "know every planet's moons", "know every element in the periodic table", "know every bone in the body",
+  "have a photographic memory", "remember everything from ten years ago", "remember every phone number", "remember every car number plate", "solve a problem nobody else can",
+  "find a lost thing in two minutes", "spot a mistake in any document", "notice when someone gets a haircut", "notice when someone is upset", "make a decision in one second",
+  "think for an hour before saying anything", "give the most thoughtful answer", "ask the most interesting questions", "know what to say in any situation", "stay calm when everyone panics",
+  "laugh in every situation", "be the most patient in a long queue", "keep everyone entertained on a long journey", "keep the group together on a trip", "wake up everyone on a trip with music",
+  "make breakfast for everyone on a trip", "carry everyone's bags on a trip", "find the best spot for a picnic", "set up a tent in five minutes", "light a campfire without a matchbox",
+  "cook food on a campfire", "tell ghost stories around a campfire", "sing around a campfire with a guitar", "fall asleep first around a campfire", "build the best snowman",
+  "make the best sandcastle", "fly the highest kite", "skip a stone ten times on water", "catch a fish on their first try", "win at every carnival game",
+  "win a giant teddy bear at a fair", "guess the number of sweets in a jar", "win a raffle", "win a lucky draw at a mall", "find money on the street and return it",
+  "find a four-leaf clover", "see a rainbow every monsoon", "see a double rainbow", "see a shooting star", "be lucky at every game of chance",
+  "be unlucky at every game of chance", "win every toss", "lose every toss", "pick the right queue every time", "pick the slowest queue every time",
+  "get the window seat every time", "get the last piece of cake every time", "get a free upgrade every time", "get the best room every time", "be the first to try a new food",
+  "be the first to try a new ride", "be the first to try a new app", "be the first to learn a new dance", "be the first to buy a new book", "own the most books",
+  "own the most plants", "own the most mugs", "own the most notebooks", "have the most beautiful handwriting", "have the loudest voice",
+  "have the softest voice", "have the most contagious laugh", "have the warmest smile", "give the best compliments", "give the most honest opinions",
+  "give the best directions", "give the best book recommendations", "give the best film recommendations", "know the best place for anything in the city", "know the history of their neighbourhood",
+  "know the story behind every street name", "know every old building in their city", "know every hidden cafe in their city", "make friends with every shopkeeper", "make friends with every pet in the building",
+  "make friends with every child at a party", "make friends with every grandparent at a wedding", "make friends with the whole train coach",
+]

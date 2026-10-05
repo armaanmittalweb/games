@@ -1,0 +1,20 @@
+// Most Likely To, spicy: the last round of roasts.
+export default [
+  "need a map to find the kitchen", "think a microwave can cook anything", "put metal in the microwave", "boil water and burn the pan", "make tea without tea leaves",
+  "forget the sugar in a cake", "forget the salt in dal", "add salt twice to everything", "add chilli by mistake to dessert", "serve raw rice and call it 'al dente'",
+  "lose their way in their own apartment complex", "go to the wrong floor every week", "try to open the wrong car", "wave at the wrong person every day", "walk into the wrong house at a party",
+  "say 'I'll remember' and forget in a minute", "write a note and lose the note", "set a reminder and ignore it", "forget a meeting they scheduled", "forget their own surprise party",
+  "pick the worst seat in a cinema", "pick the slowest checkout line", "pick the cab with the worst driver", "pick the restaurant with the longest wait", "pick the hotel with the worst wifi",
+  "fail at assembling a chair", "fail at opening a jar", "fail at folding a fitted sheet", "fail at wrapping a gift", "fail at tying a tie",
+  "give directions with only landmarks that no longer exist", "say 'turn left near the old tree'", "say 'it's near the big temple' in a city with a hundred temples", "send a location pin in the wrong city", "give the wrong address for their own party",
+  "fall asleep during their own birthday party", "fall asleep while explaining something", "fall asleep with food in their mouth", "fall asleep in a moving auto", "fall asleep standing in the metro",
+  "talk during a film and miss the twist", "ask 'who is she?' in the last scene of a film", "confuse two actors for a whole film", "think every film is based on a true story", "think every sequel is better",
+  "trust every online review", "buy a product because of a fake review", "fall for every 'limited time offer'", "buy from a TV shopping channel", "believe a product will change their life",
+  "say 'it's just a phase' about every new hobby", "start learning guitar and give up at the first chord", "start running and stop at the end of the lane", "start a diary and write one page", "start a podcast and record one episode",
+  "brag about something they did once ten years ago", "tell the story of their one good cricket match forever", "talk about their board exam marks at thirty", "talk about their college days at every party", "talk about a celebrity they saw once like a close friend",
+  "think every song is about them", "think every quote is about them", "think every meme is about them", "think every story is about them", "think every vague post is about them",
+  "take the longest to understand a joke", "laugh at a joke an hour later", "ask for the joke to be explained", "explain a joke nobody asked about", "ruin a joke by changing the punchline",
+  "be the slowest walker in the group", "be the fastest walker and leave everyone behind", "stop to look at every shop window", "stop to pet every dog on the way", "stop for chai every hour",
+  "be the worst at keeping plants alive", "kill a cactus", "overwater every plant", "forget plants exist", "buy a fake plant and still forget to dust it",
+  "be the worst at keeping secrets about gifts", "give a gift a week early because they could not wait", "guess every gift before opening it", "shake every gift box", "open gifts before the party",
+]

@@ -1,0 +1,23 @@
+// Most Likely To, clean: the future.
+export default [
+  "live in a big house with a garden", "live in a small flat by the sea", "live in a big city forever", "go back to their hometown", "live in five different cities",
+  "live in another country", "speak five languages one day", "learn to fly a plane one day", "drive a vintage car one day", "own a farm one day",
+  "open a bakery one day", "open a bookshop one day", "open a school one day", "open a hospital one day", "write a bestselling book",
+  "write a book for children", "write their autobiography", "write a cookbook", "write a travel guide", "become a grandparent who tells the best stories",
+  "teach their grandchildren to cook", "teach their grandchildren cricket", "take their grandchildren on trips", "spoil their grandchildren the most", "have a big family",
+  "have a big family dog", "have a house full of cats", "have a garden full of flowers", "have a terrace full of plants", "run a marathon one day",
+  "climb a mountain one day", "learn to swim at fifty", "learn to dance at sixty", "learn to paint at seventy", "still play cricket at seventy",
+  "still go on treks at seventy", "still dance at weddings at eighty", "still be on social media at ninety", "still have the same best friend at ninety", "retire early and travel",
+  "retire and start a new business", "retire and become a teacher", "retire and open a cafe", "retire and write poetry", "be famous one day",
+  "be on TV one day", "be in a newspaper one day", "give a famous speech one day", "meet the Prime Minister one day", "meet their favourite cricketer one day",
+  "meet their favourite actor one day", "meet their favourite singer one day", "shake hands with a world leader", "have dinner with a celebrity", "discover a new species",
+  "name a star", "go to space as a tourist", "live on the Moon", "be the first in the group to own a flying car", "be the first in the group to use a robot at home",
+  "be the first to go to Mars", "be the first to live to a hundred", "be the first to become a millionaire", "help build a better city", "plant a forest",
+  "clean a river", "save an endangered animal", "start a movement", "become a mentor to hundreds", "teach thousands of students",
+  "help a village get electricity", "build a library in their village", "start a scholarship", "have their name on a building", "have a park named after them",
+  "have a statue in their hometown", "have a song written about them", "have a street named after them", "keep a time capsule for their kids", "write letters to their future self",
+  "make a video diary for their future kids", "keep a journal for fifty years", "write a memoir about this friend group", "be the happiest at seventy", "be the healthiest at eighty",
+  "be the funniest at ninety", "be the wisest in the family one day", "be the one everyone asks for advice one day", "throw the best fiftieth birthday party", "celebrate their hundredth birthday",
+  "have a reunion with this group in twenty years", "organise the twenty-year reunion", "still look the same at the reunion", "be the most successful at the reunion", "be the most changed at the reunion",
+  "be the least changed at the reunion", "bring their kids to the reunion", "cry at the reunion",
+]

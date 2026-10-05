@@ -1,0 +1,21 @@
+// Most Likely To, clean: more of who is best at what.
+export default [
+  "be the best at remembering where they parked", "be the best at finding a good restaurant in a new city", "be the best at finding a clean washroom on a highway", "be the best at finding cheap flights",
+  "be the best at finding lost things", "be the best at calming a crying baby", "be the best at making a dog sit", "be the best at making a cat come close", "be the best at catching a lizard and putting it outside",
+  "be the best at killing a mosquito", "be the best at whistling", "be the best at clapping to a beat", "be the best at keeping time in music", "be the best at harmonising",
+  "be the best at beatboxing", "be the best at parallel parking", "be the best at driving in the hills", "be the best at reversing a car", "be the best at riding a scooter in traffic",
+  "be the best at changing a tyre", "be the best at packing the car boot", "be the best at fitting everything in one suitcase", "be the best at folding clothes", "be the best at ironing a shirt",
+  "be the best at tying a saree or a turban", "be the best at making a bed", "be the best at arranging a room", "be the best at hanging a picture straight", "be the best at fixing a wobbly table",
+  "be the best at assembling furniture", "be the best at cutting a cake evenly", "be the best at dividing a pizza fairly", "be the best at sharing food equally", "be the best at making a cup of chai for ten",
+  "be the best at making Maggi for a crowd", "be the best at throwing a ball", "be the best at catching a ball", "be the best at hitting a target", "be the best at skipping stones",
+  "be the best at flying a kite", "be the best at hide-and-seek", "be the best at musical chairs", "be the best at passing the parcel", "be the best at treasure hunts",
+  "be the best at escape rooms", "be the best at tongue twisters", "be the best at spelling hard words", "be the best at word games", "be the best at guessing songs",
+  "be the best at guessing films from emojis", "be the best at guessing countries from flags", "be the best at guessing ages", "be the best at guessing prices", "be the best at guessing the weather",
+  "be the best at saving the last bit of toothpaste", "be the best at stretching the month's salary", "be the best at finding coupons", "be the best at getting refunds", "be the best at bargaining for vegetables",
+  "be the best at making friends with shopkeepers", "be the best at getting free extras", "be the best at getting a table at a full restaurant", "be the best at getting a seat on a crowded train", "be the best at getting a taxi in the rain",
+  "be the best at waking up on time", "be the best at being on time", "be the best at keeping promises", "be the best at keeping in touch", "be the best at remembering what people like",
+  "be the best at comforting someone", "be the best at cheering someone up", "be the best at giving a pep talk", "be the best at giving hugs", "be the best at saying the right thing",
+  "be the best at writing a speech", "be the best at giving a toast", "be the best at hosting an event", "be the best at running a quiz night", "be the best at telling a scary story",
+  "be the best at drawing a map", "be the best at reading a map", "be the best at knowing north without a compass", "be the best at reading the stars", "be the best at knowing the time without a watch",
+  "be the best at teaching a child to read", "be the best at teaching a child to swim", "be the best at teaching a child to ride a cycle", "be the best at helping with homework", "be the best at telling bedtime stories",
+]

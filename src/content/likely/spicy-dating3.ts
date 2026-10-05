@@ -1,0 +1,20 @@
+// Most Likely To, spicy: more love and dating.
+export default [
+  "fall for someone on the first video call", "fall for someone's voice notes", "fall for someone's laugh", "fall for someone's handwriting in a letter", "fall for someone's dog first",
+  "fall for someone at the gym and change their workout time", "fall for the person who fixed their laptop", "fall for the person who returned their lost wallet", "fall for a stranger who shared an umbrella", "fall for a stranger who helped with heavy bags",
+  "fall for a co-passenger on a long flight", "fall for the tour guide on a holiday", "fall for a hotel receptionist", "fall for a bartender abroad", "fall for a street musician",
+  "date a musician who writes songs about them", "date a chef who cooks every date", "date a doctor who never has time", "date a pilot who is never home", "date an artist who paints them",
+  "date someone with the same birthday", "date someone with the same name", "date someone who looks like their sibling", "date someone their best friend dated", "date someone their sibling dated",
+  "date someone from a rival college", "date someone from a rival IPL team's city", "date someone who hates their favourite food", "date someone who hates their favourite film", "date someone who has never seen Sholay",
+  "go on a first date to a temple", "go on a first date to a bookstore", "go on a first date to an arcade", "go on a first date to a cricket match", "go on a first date to a street food market",
+  "have a first date that lasts twelve hours", "have a first date that ends in ten minutes", "have a first date that ends at a hospital", "have a first date that ends with a police check", "have a first date that ends with meeting the parents",
+  "kiss in the rain like a film", "kiss on a Ferris wheel", "kiss at the top of a hill", "kiss on a beach at sunset", "kiss in a lift and get caught by a neighbour",
+  "hold hands in public for the first time and blush", "share earphones on a bus", "share a blanket on a train", "share a dessert with two spoons", "share a cold drink with two straws",
+  "write a partner's name on a steamy mirror", "leave a lipstick mark on a letter", "send a perfume-scented letter", "hide a love note in a book", "hide a love note in a lunch box",
+  "plan a candlelight dinner on the terrace", "plan a picnic with a guitar", "plan a surprise trip for a partner", "plan a scavenger hunt for a partner's birthday", "plan a proposal with a flash mob",
+  "make a playlist for every date", "make a playlist called 'us'", "make a video of every date", "make a calendar with photos of a partner", "make a website for a partner",
+  "fight about where the relationship is going", "fight about who loves more", "fight about who texted first", "fight about the last pani puri", "fight about the window seat on a date",
+  "be the one who says 'I miss you' first", "be the one who hangs up first", "be the one who says 'no, you hang up' for ten minutes", "be the one who falls asleep on the call", "be the one who wakes up their partner with a call",
+  "be in a relationship everyone thinks is fake", "be in a relationship everyone is jealous of", "be in a relationship that started as a bet", "be in a relationship that started as a fight", "be in a relationship that started in a group chat",
+  "keep a relationship secret from this group", "tell this group everything about their relationship", "ask this group to vote on their date's outfit", "bring a date to meet this group first", "be judged by this group on every date",
+]

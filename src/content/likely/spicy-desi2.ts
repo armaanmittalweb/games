@@ -1,0 +1,17 @@
+// Most Likely To, spicy: more desi family moments.
+export default [
+  "be asked to sing at every family function and refuse", "be asked to dance at every family function and say yes", "be asked about their marks by a relative at thirty", "be asked about their salary by a relative at a funeral", "be asked to fix a relative's TV during a wedding",
+  "be told they have 'changed a lot' by every relative", "be told they look tired by every relative", "be told to get married by a relative who is divorced", "be told to have kids by a relative with five", "be told to buy a house by a relative who rents",
+  "hide from a relative at a mall", "pretend not to see a relative at a wedding", "duck behind a car to avoid a relative", "get caught avoiding a relative", "hug a relative they were avoiding",
+  "be the cousin who brings the alcohol to the wedding", "be the cousin who hides the alcohol from the elders", "be the cousin who gets caught with the alcohol", "be the cousin who drinks with the elders", "be the cousin who drives everyone home",
+  "be the cousin who knows all the gossip", "be the cousin who spreads all the gossip", "be the cousin who starts all the gossip", "be the cousin who is the subject of all the gossip", "be the cousin who ends all the gossip",
+  "be the cousin with the most foreign trips", "be the cousin with the most degrees", "be the cousin with the best job", "be the cousin with the most followers", "be the cousin with the most kids",
+  "be the cousin who married first", "be the cousin who married for love", "be the cousin who had an arranged marriage and is happiest", "be the cousin who eloped", "be the cousin who is still single and loving it",
+  "be the cousin everyone calls for advice", "be the cousin everyone calls for money", "be the cousin everyone calls for a ride", "be the cousin everyone calls for gossip", "be the cousin nobody calls",
+  "be the one who organises the family trip", "be the one who ruins the family trip", "be the one who sleeps through the family trip", "be the one who takes all the photos on the family trip", "be the one who fights with everyone on the family trip",
+  "be the one who cooks for the whole family at festivals", "be the one who only eats at festivals", "be the one who sleeps after lunch at festivals", "be the one who plays cards all night at festivals", "be the one who sets off the crackers at festivals",
+  "be the family member who forwards the most fake news", "be the family member who fact-checks every forward", "be the family member who starts political fights", "be the family member who leaves the group after a fight", "be the family member who adds everyone back",
+  "be the one whose mom calls their friends to find them", "be the one whose dad still checks their report card at work", "be the one whose grandmother knows all their secrets", "be the one whose sibling blackmails them", "be the one who blackmails their sibling",
+  "be the one who hides their marks, their partner and their tattoo from family", "be the one who tells their family everything", "be the one whose family knows their partner before they do", "be the one whose family picks their outfit for every event", "be the one whose family still calls them 'baby'",
+  "be the one who takes the family's side in every fight", "be the one who takes the partner's side in every fight", "be the one who stays out of every family fight", "be the one who starts every family fight", "be the one who ends every family fight with food",
+]

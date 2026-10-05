@@ -1,0 +1,22 @@
+// Most Likely To, clean: art, music, writing and making things.
+export default [
+  "paint a mural on their wall", "paint their own shoes", "paint a portrait of their pet", "paint the view from their window", "sell a painting",
+  "sketch people on the metro", "draw a cartoon of every friend", "make comics about their family", "draw on their own hand in class", "doodle in every meeting",
+  "write a poem for every occasion", "write a song for a friend's wedding", "write a short story every week", "write a play for their colony", "write a letter to their future self",
+  "keep a sketchbook in their bag", "keep a journal with drawings", "make a zine", "make a photo book", "make a scrapbook of every year",
+  "learn the guitar from YouTube", "learn the flute", "learn the violin", "learn the keyboard", "learn the drums and annoy the neighbours",
+  "sing in a band", "start a band with friends", "play at an open mic", "write their own songs", "record a song at home",
+  "make music on their laptop", "become a DJ for fun", "make a remix of an old song", "make a mashup for a wedding", "compose a jingle for a friend's business",
+  "learn Kathak", "learn Bharatanatyam", "learn salsa", "learn hip-hop dance", "learn to tap dance",
+  "choreograph a dance for a wedding", "teach a dance class", "dance in a flash mob", "perform on stage at a festival", "act in a community theatre play",
+  "do improv comedy", "write a stand-up set", "perform stand-up at an open mic", "make a short film on their phone", "take beautiful photos with an old phone",
+  "learn film photography", "develop their own photos", "take photos of strangers with permission", "photograph every sunset", "make pottery on a wheel",
+  "make candles at home", "make soap at home", "make jewellery from beads", "knit a scarf for a friend", "crochet a toy",
+  "embroider a handkerchief", "sew their own clothes", "upcycle old jeans into a bag", "design their own T-shirts", "build furniture from old wood",
+  "build a bookshelf", "paint their own room", "make a lamp from a bottle", "decorate their room with fairy lights and photos", "make rangoli designs from scratch",
+  "make mehendi designs for everyone", "make a diya from clay", "paint diyas for Diwali", "make a Ganesh idol from clay", "make origami cranes",
+  "make paper flowers", "make a kite and fly it", "make a model of the solar system", "make a volcano model that actually erupts", "make a stop-motion video",
+  "make an animated cartoon", "design a logo for a friend", "design a poster for a college event", "design invitations for a wedding", "cook food that looks like art",
+  "decorate cakes like a professional", "make latte art", "plate food like a chef", "arrange flowers beautifully", "visit every art exhibition",
+  "buy art from street artists", "collect paintings", "frame their friends' drawings", "start an art club",
+]

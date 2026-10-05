@@ -21,7 +21,7 @@ export interface Dna { skill: number; luck: number; social: number; brain: numbe
 export interface Meta {
   id: string
   name: string
-  cat: 'Word' | 'Drawing' | 'Party' | 'Deception' | 'Trivia' | 'Cards & dice' | 'Reflex'
+  cat: 'Word' | 'Drawing' | 'Party' | 'Deception' | 'Trivia' | 'Puzzle' | 'Strategy' | 'Cards & dice' | 'Reflex'
   blurb: string
   min: number
   max: number
@@ -169,14 +169,18 @@ export const CATALOG: Meta[] = [
     blurb: 'Who is most likely to… Everyone points at once. Score by agreeing with the room.',
     min: 3, max: 20, minutes: [3, 0],
     dna: { skill: 1, luck: 2, social: 5, brain: 1, chaos: 4, replay: 4 }, moods: ['social', 'chaos', 'fast'],
-    options: [rounds(8, 3, 20), secs('seconds', 'Seconds to vote', 20, 10, 60)],
+    options: [
+      rounds(8, 3, 30), secs('seconds', 'Seconds to vote', 20, 10, 60),
+      { key: 'pack', label: 'Questions', kind: 'choice', def: 'mixed', choices: [['mixed', 'Mixed'], ['spicy', 'Spicy'], ['classic', 'Clean']] },
+    ],
     night: { rounds: 6 },
     rules: [
       'A prompt appears: "Who is most likely to survive a zombie apocalypse?" Everyone secretly votes for a player.',
+      'Pick the questions: Clean (fine for family), Spicy (dating, exes, parties and roasts) or Mixed.',
       'The votes are revealed together, and the most-voted player takes the title.',
       'You score 2 points when you voted for the player who got the most votes.',
     ],
-    seo: { title: 'Most Likely To Questions Game Online with Friends', description: 'Play Most Likely To online: secret votes, live results and titles for your friends. Hundreds of questions, free private rooms.', about: 'the Most Likely To party game' },
+    seo: { title: 'Most Likely To Questions Game Online with Friends', description: 'Play Most Likely To online: secret votes, live results and titles for your friends. Thousands of questions, clean or spicy. Free private rooms.', about: 'the Most Likely To party game' },
   },
   {
     id: 'trivia', name: 'Trivia', cat: 'Trivia',
@@ -296,6 +300,139 @@ export const CATALOG: Meta[] = [
       'The closest guess scores 10 points, then 7, 5, 4, 3, 2 and 1. For big numbers, closeness is measured by ratio, so being off by half is the same at any size.',
     ],
     seo: { title: 'Estimation Game Online: Closest Guess Wins', description: 'A free estimation party game: how tall, how far, what year? Everyone guesses a number and the closest wins. Private rooms for friends.', about: 'an estimation quiz where the closest guess wins' },
+  },
+  {
+    id: 'connections', name: 'Connections', cat: 'Puzzle',
+    blurb: 'Sixteen words, four hidden groups. Find them before you make four mistakes.',
+    min: 1, max: 30, minutes: [4, 0],
+    dna: { skill: 4, luck: 1, social: 2, brain: 5, chaos: 1, replay: 4 }, moods: ['think', 'competitive'],
+    options: [{ key: 'puzzles', label: 'Boards', kind: 'num', def: 1, min: 1, max: 5 }, secs('seconds', 'Seconds per board', 240, 60, 600)],
+    night: { puzzles: 1 },
+    rules: [
+      'Sixteen words hide four groups of four: things that share something. Some words look like they fit two groups.',
+      'Pick four words and submit. Right, and the group locks in; wrong, and you lose one of four lives. "One away" means three of your four are right.',
+      'Everyone solves the same board on their own. 5 points for each group, and a bonus of 5, 3, 2 and 1 for the first to solve it all.',
+    ],
+    seo: { title: 'Connections Word Game with Friends Online', description: 'Play a Connections-style word puzzle with friends: sixteen words, four groups, four mistakes. Everyone races on the same board. Free, no sign-up.', about: 'a group-finding word puzzle like Connections' },
+  },
+  {
+    id: 'geoguess', name: 'GeoGuess', cat: 'Trivia',
+    blurb: 'A country or city is named. Drop your pin on the world map. Closest wins.',
+    min: 1, max: 30, minutes: [5, 0],
+    dna: { skill: 4, luck: 2, social: 2, brain: 4, chaos: 1, replay: 4 }, moods: ['think', 'competitive'],
+    options: [
+      rounds(8, 3, 20, 'Places'), secs('seconds', 'Seconds per place', 30, 10, 90),
+      { key: 'mode', label: 'Places', kind: 'choice', def: 'mixed', choices: [['mixed', 'Mixed'], ['countries', 'Countries'], ['capitals', 'Capitals'], ['cities', 'Popular cities']] },
+    ],
+    night: { rounds: 6 },
+    rules: [
+      'A place is named: a country, a capital or a city. Drag and zoom the world map and tap to drop your pin, then lock it in.',
+      'A pin inside the country, or right on the city, scores 100. Points fall away with every kilometre you are off.',
+      'Every one of the 195 countries can come up, so tiny islands too. The map shows India\'s borders as India draws them.',
+    ],
+    seo: { title: 'Geography Map Game with Friends: Pin the Place', description: 'A free multiplayer geography game: a country or city is named and everyone drops a pin on the world map. Closest pin wins. Private rooms.', about: 'a pin-the-place geography game' },
+  },
+  {
+    id: 'musicguess', name: 'Music Guess', cat: 'Trivia',
+    blurb: 'Two seconds of a Bollywood song. Name it before your friends do.',
+    min: 1, max: 30, minutes: [4, 0],
+    dna: { skill: 3, luck: 2, social: 3, brain: 2, chaos: 2, replay: 4 }, moods: ['fast', 'competitive', 'social'],
+    options: [rounds(10, 3, 30, 'Songs'), secs('seconds', 'Seconds per song', 25, 10, 60)],
+    night: { rounds: 8 },
+    rules: [
+      'Everyone hears the same two seconds of a Bollywood song (turn your sound on) and picks it from four.',
+      'Right on the two-second clip: 10 points. Halfway through, a five-second clip unlocks; right after that: 5 points.',
+      'Songs from the 1950s to today. The clips are Apple Music previews.',
+    ],
+    seo: { title: 'Guess the Bollywood Song Game Online', description: 'Hear two seconds of a Bollywood song and guess it before your friends. Hundreds of songs from every decade. Free multiplayer, no sign-up.', about: 'a Bollywood guess-the-song game' },
+  },
+  {
+    id: 'movieguess', name: 'Movie Guess', cat: 'Trivia',
+    blurb: 'Name the film from emojis. A story and a famous line follow if you need them.',
+    min: 1, max: 30, minutes: [5, 0],
+    dna: { skill: 3, luck: 2, social: 4, brain: 3, chaos: 2, replay: 4 }, moods: ['social', 'think', 'competitive'],
+    options: [
+      rounds(8, 3, 20, 'Films'), secs('seconds', 'Seconds per film', 45, 20, 90),
+      { key: 'pack', label: 'Films', kind: 'choice', def: 'mixed', choices: [['mixed', 'Mixed'], ['bollywood', 'Indian films'], ['hollywood', 'English films']] },
+    ],
+    night: { rounds: 6 },
+    rules: [
+      'A film is shown as emojis. Type its name.',
+      'A third of the way in, a one-line story appears; two thirds in, a famous dialogue (or the first letters of the title).',
+      'Get it on the emojis alone for 10 points, after the story for 6, after the last clue for 3. Small spelling slips are fine.',
+    ],
+    seo: { title: 'Guess the Movie from Emojis: Bollywood and Hollywood', description: 'Guess the film from emojis, a one-line story and a famous dialogue. Bollywood and Hollywood. Free multiplayer game for friends.', about: 'a guess-the-movie game with emoji clues' },
+  },
+  {
+    id: 'mastermind', name: 'Mastermind', cat: 'Puzzle',
+    blurb: 'Crack the secret colour code in as few guesses as you can. Everyone races on the same code.',
+    min: 2, max: 6, minutes: [6, 0],
+    dna: { skill: 5, luck: 1, social: 1, brain: 5, chaos: 1, replay: 4 }, moods: ['think', 'strategic', 'competitive'],
+    options: [
+      { key: 'rounds', label: 'Codes', kind: 'num', def: 3, min: 1, max: 8 }, secs('seconds', 'Seconds per code', 240, 60, 600),
+      { key: 'pegs', label: 'Code length', kind: 'choice', def: 4, choices: [[4, '4 pegs'], [5, '5 pegs']] },
+      { key: 'colors', label: 'Colours', kind: 'choice', def: 6, choices: [[6, '6 colours'], [8, '8 colours']] },
+      { key: 'repeats', label: 'Repeat colours', kind: 'choice', def: 'no', choices: [['no', 'No'], ['yes', 'Yes']] },
+    ],
+    night: { rounds: 2 },
+    rules: [
+      'There is a secret code of coloured pegs. Make a guess; you are told how many pegs are the right colour in the right place (✓) and how many are the right colour in the wrong place (↔).',
+      'Use that to narrow it down. You have ten guesses. Your guesses are yours alone; others only see how many you have used.',
+      'The fewest guesses cracks it best (speed breaks a tie): 10 points, then 7, 5, 4, 3, 2, 1.',
+    ],
+    seo: { title: 'Mastermind Online Multiplayer: Crack the Code', description: 'Play Mastermind with friends online: everyone races to crack the same colour code in the fewest guesses. Free, no sign-up.', about: 'the code-breaking game Mastermind' },
+  },
+  {
+    id: 'territory', name: 'Territory', cat: 'Strategy',
+    blurb: 'Grab squares on a shared map. Everyone moves at once, and clashes cancel out.',
+    min: 2, max: 8, minutes: [6, 0.5],
+    dna: { skill: 4, luck: 2, social: 3, brain: 4, chaos: 3, replay: 5 }, moods: ['strategic', 'competitive', 'chaos'],
+    options: [
+      secs('seconds', 'Seconds per turn', 12, 5, 30),
+      { key: 'size', label: 'Map', kind: 'choice', def: 'normal', choices: [['small', 'Small'], ['normal', 'Normal'], ['big', 'Big']] },
+    ],
+    night: { seconds: 10, size: 'small' },
+    rules: [
+      'Everyone starts with one square. Each turn, secretly pick one free square next to your land.',
+      'All picks are shown at once. If two players pick the same square, nobody gets it.',
+      'Wall off a free area so that only your land touches it, and the whole area becomes yours. Rocks block the way.',
+      'The game ends when nobody can grow. Most squares wins.',
+    ],
+    seo: { title: 'Territory Game Online: Claim the Map with Friends', description: 'A simultaneous-move territory game for 2 to 8 friends: claim squares, block rivals, wall off land. Free online, no sign-up.', about: 'a simultaneous territory-claiming strategy game' },
+  },
+  {
+    id: 'auction', name: 'Auction', cat: 'Strategy',
+    blurb: 'Everyone gets 100 coins. Bid on lots, collect sets, and do not spend it all.',
+    min: 2, max: 10, minutes: [7, 0],
+    dna: { skill: 3, luck: 3, social: 4, brain: 4, chaos: 3, replay: 5 }, moods: ['strategic', 'social', 'competitive'],
+    options: [
+      { key: 'lots', label: 'Lots', kind: 'choice', def: 12, choices: [[9, '9 lots'], [12, '12 lots'], [15, '15 lots']] },
+      secs('seconds', 'Seconds per lot', 12, 6, 30),
+    ],
+    night: { lots: 9 },
+    rules: [
+      'Everyone starts with 100 coins. Lots come up one at a time; raise the bid by 1, 5, 10 or any amount. When the clock runs out, the top bid wins and pays.',
+      'Each lot is worth points. Three lots from one set earn 10 more. Mystery lots hide their worth (0 to 20) until they are sold.',
+      'Every 10 coins left at the end is worth 1 point. Most points wins.',
+    ],
+    seo: { title: 'Auction Game Online with Friends: Bid and Collect', description: 'A free live auction party game: 100 coins each, bid on lots, collect sets, keep some cash. 2 to 10 players, no sign-up.', about: 'a live bidding auction game' },
+  },
+  {
+    id: 'make24', name: '24 Game', cat: 'Puzzle',
+    blurb: 'Four numbers. Add, subtract, multiply and divide to make 24. First to get it wins most.',
+    min: 1, max: 30, minutes: [4, 0],
+    dna: { skill: 5, luck: 1, social: 1, brain: 5, chaos: 1, replay: 4 }, moods: ['think', 'fast', 'competitive'],
+    options: [
+      rounds(8, 3, 20, 'Hands'), secs('seconds', 'Seconds per hand', 60, 20, 180),
+      { key: 'level', label: 'Difficulty', kind: 'choice', def: 'mixed', choices: [['mixed', 'Easy and medium'], ['easy', 'Easy'], ['medium', 'Medium'], ['hard', 'Hard']] },
+    ],
+    night: { rounds: 6 },
+    rules: [
+      'Four numbers from 1 to 13. Use each one exactly once, with + − × and ÷, to make 24.',
+      'Tap a number, an operation and another number to combine them; keep going until one number is left. Undo any time.',
+      'Every hand can be solved. First to 24 scores 10, then 7, 5, 4, 3, 2, 1. Hard hands need a fraction along the way.',
+    ],
+    seo: { title: '24 Game Online: Make 24 with Friends', description: 'Play the 24 maths game with friends: four numbers, make 24 with + − × ÷. Every hand is solvable. Free multiplayer, no sign-up.', about: 'the 24 maths puzzle' },
   },
 ]
 

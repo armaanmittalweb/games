@@ -1,0 +1,23 @@
+// Most Likely To, clean: college life and learning.
+export default [
+  "join every club in the first week", "become the president of a club", "start a new club in college", "organise a college fest", "win the college quiz",
+  "win the college debate", "win the college treasure hunt", "win the college hackathon", "win the college dance competition", "win the college singing competition",
+  "be the best at college presentations", "make the slides for every group project", "do the whole group project alone", "do nothing in the group project and present it", "take charge of every group project",
+  "know every professor's name", "be friends with every professor", "visit professors during office hours", "ask professors for extra work", "become a professor's research assistant",
+  "publish a research paper in college", "present at a conference as a student", "win an award at a college event", "get a scholarship every year", "top the university",
+  "be the class representative", "speak for the whole class to the dean", "organise the farewell party", "give the farewell speech", "make the farewell video",
+  "make the best yearbook page", "write something funny in everyone's yearbook", "collect signatures on their shirt on the last day", "keep their college ID forever", "keep all their college notes",
+  "spend every free period in the library", "spend every free period in the canteen", "spend every free period on the college lawn", "play cards in every free period", "nap in every free period",
+  "know the best spot on campus to sit", "know every shortcut on campus", "know every building on campus", "get lost on campus in their first week", "help freshers find their classes",
+  "make friends with every fresher", "be the senior every fresher loves", "guide juniors through exams", "give juniors their old books", "lend juniors their notes",
+  "do an internship every summer", "do an internship abroad", "get a job offer from their internship", "work part-time during college", "start a business in college",
+  "learn a new skill every semester", "take extra courses for fun", "audit classes from other departments", "learn a language in college", "learn to code in college",
+  "go on every college trip", "go on an industrial visit and enjoy the bus ride the most", "sing in the bus on every college trip", "plan the class trip", "keep the class trip photos for everyone",
+  "be in every college photo", "take every college photo", "make the college Instagram page famous", "write for the college magazine", "edit the college magazine",
+  "volunteer for every college event", "manage the college event stage", "host the college cultural night", "be on the college sports team", "win a medal for the college",
+  "study in a different city for college", "study abroad for a semester", "do a student exchange", "make friends from every state in college", "learn a new language from a college friend",
+  "stay in touch with college friends forever", "organise the college reunion", "visit the college canteen after ten years", "give a guest lecture at their college", "donate to their college",
+  "learn something new every day", "read the news every morning", "learn from their mistakes", "teach others what they know", "take notes on everything",
+  "make flash cards for everything", "use colour codes for everything", "study with a timer", "study with a group every evening", "help a friend understand a topic in five minutes",
+  "explain physics with food", "explain maths with cricket", "make up a song to remember a formula", "use a mnemonic for everything",
+]

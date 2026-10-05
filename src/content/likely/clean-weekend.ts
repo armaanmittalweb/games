@@ -1,0 +1,22 @@
+// Most Likely To, clean: weekends, holidays and days off.
+export default [
+  "spend the whole weekend in bed", "plan the whole weekend on Monday", "have no plans and love it", "have plans every hour of the weekend", "go on a day trip every Sunday",
+  "go to a flea market every weekend", "go to the farmers' market every Saturday", "go for a Sunday brunch with family", "make a big Sunday breakfast", "make pancakes on Sunday",
+  "clean their whole house on Sunday", "rearrange their room every weekend", "do laundry all Saturday", "wash their car every Sunday", "take their pet to the park every weekend",
+  "watch a film every Friday night", "watch three films in a row on Saturday", "binge a whole series in one weekend", "play board games every Saturday night", "have a family game night every week",
+  "visit their grandparents every Sunday", "call every relative on Sunday", "cook lunch for the whole family on Sunday", "take their parents out for dinner every month", "spend Sunday with their siblings",
+  "go trekking every other weekend", "go cycling every Sunday morning", "go for a long drive every Sunday", "go to the beach every weekend", "go to a lake every weekend",
+  "read a whole book in one weekend", "finish a jigsaw puzzle in one weekend", "learn something new every weekend", "go to a workshop every month", "take a cooking class on a weekend",
+  "go to a concert every month", "go to a play every month", "go to an art gallery every weekend", "go to a museum on every holiday", "go to the zoo as an adult",
+  "go to an amusement park as an adult", "ride every roller coaster", "scream on every ride", "refuse to go on any ride", "hold everyone's bags while they ride",
+  "go to the cinema alone on a weekday", "take a day off just to rest", "take a day off on their birthday", "take a day off to watch a match", "take a long weekend every month",
+  "turn every long weekend into a trip", "plan a trip for every holiday", "stay home on every holiday", "visit their hometown on every holiday", "travel abroad every summer",
+  "spend the summer holidays learning something", "spend the summer holidays playing cricket", "spend the summer holidays at their grandparents' house", "spend the summer holidays reading", "spend the summer holidays sleeping",
+  "make a holiday bucket list", "tick off everything on a bucket list", "make a new bucket list every year", "keep a list of places to visit", "keep a list of restaurants to try",
+  "wake up early even on holidays", "sleep till noon every holiday", "have a lazy breakfast at 11", "have a picnic in the park", "have a barbecue on the terrace",
+  "throw a party every weekend", "host a potluck every month", "host a film night at home", "host a karaoke night", "host a game night with snacks",
+  "spend Sunday afternoon napping", "spend Sunday evening dreading Monday", "plan the week every Sunday night", "iron clothes for the whole week on Sunday", "meal-prep for the week on Sunday",
+  "go to the gym even on weekends", "skip the gym every weekend", "play sports every weekend", "watch sports all weekend", "go to a temple every weekend",
+  "go for a walk by the river every weekend", "watch the sunset every Saturday", "go stargazing on holidays", "go camping on long weekends", "volunteer every weekend",
+  "teach at an NGO on Sundays", "visit an old-age home on holidays", "feed the needy on festivals", "plant trees on weekends",
+]

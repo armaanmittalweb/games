@@ -1,0 +1,21 @@
+// Most Likely To, clean: more what-ifs and silly futures.
+export default [
+  "survive a week without their phone", "survive a week without the internet", "survive a week without chai", "survive a week without sugar", "survive a week without talking",
+  "survive a week in the Himalayas alone", "survive a week on a boat", "survive a week in a tiny village", "survive a week living like their grandparents did", "survive a week with no electricity",
+  "win a fight with a goose", "win a race against a tortoise by falling asleep", "outsmart a monkey", "teach a parrot to say their name", "teach a dog ten tricks",
+  "get a dog to do their homework", "get a cat to love them", "be chosen by a stray cat as its owner", "be followed by a duck", "make friends with a crow that brings gifts",
+  "find a secret tunnel", "find a message in a bottle", "find a time capsule", "find a fossil", "find a meteorite",
+  "accidentally become the mayor of a small town", "accidentally win an election", "accidentally become a cult leader of a book club", "accidentally start a fashion trend", "accidentally invent a new dish",
+  "be the main character in a fairy tale", "be the wise old man in a story", "be the talking animal in a story", "be the dragon in a story", "be the one who finds the treasure in a story",
+  "live in a world without cricket", "live in a world without films", "live in a world without music", "live in a world without spicy food", "live in a world without phones",
+  "travel back to see the dinosaurs", "travel back to watch the 1983 World Cup final", "travel back to meet their grandparents as kids", "travel back to the Mughal court", "travel forward to see their grandchildren",
+  "swap lives with their pet for a day", "swap lives with their boss for a day", "swap lives with their mom for a day", "swap lives with a celebrity for a day", "swap lives with a child for a day",
+  "be invisible for a day and do nothing", "be invisible for a day and eat everyone's snacks", "be able to fly and still take the metro", "be able to read minds and wish they could not", "be able to talk to animals and learn gossip",
+  "have a talking car", "have a robot butler", "have a pet dragon", "have a magic carpet", "have a genie and waste the first wish",
+  "wish for unlimited chai", "wish for unlimited holidays", "wish for unlimited biryani", "wish for every exam to be easy", "wish for no traffic ever",
+  "be a superhero whose power is finding parking", "be a superhero whose power is always having a charger", "be a superhero whose power is perfect timing", "be a superhero whose power is never getting lost", "be a superhero whose power is making people laugh",
+  "be stuck in a lift with their whole family", "be stuck on an island with this group", "be stuck in traffic for a whole day happily", "be stuck at an airport and make friends with everyone", "be stuck in a snowstorm and build a snowman",
+  "be the last one to know the world ended", "be the first one to make friends with aliens", "be the one who explains Earth to aliens", "be the one who teaches aliens Bollywood dance", "be the one who invites aliens for dinner",
+  "become a famous chef in another country", "become a famous dancer in another country", "become a teacher in a faraway village", "become a doctor on a ship", "become a scientist in Antarctica",
+  "write a letter to themselves at ten years old", "give advice to their younger self", "laugh at their younger self's diary", "keep their younger self's promises", "make their younger self proud",
+]

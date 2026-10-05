@@ -1,0 +1,22 @@
+// Most Likely To, spicy: money habits and money fights.
+export default [
+  "check their bank balance and close the app in fear", "order food on the last day of the month", "borrow money for a party", "lie about being broke to skip a plan", "lie about being rich to impress someone",
+  "pay with a credit card to pay another credit card", "forget a subscription for a year", "pay for three music apps", "pay for a gym, a yoga class and a dance class and attend none", "spend all their money on clothes",
+  "spend all their money on food", "spend all their money on gadgets", "spend all their money on travel", "spend all their money on gifts for others", "say 'treat is on me' and then forget their wallet",
+  "say 'I'll pay you back' and never do", "remind people of money owed in a group chat", "send a UPI request for 7 rupees", "round off every split to their benefit", "keep the change from a group order",
+  "order the most expensive dish when someone else is paying", "order water when splitting the bill", "insist on splitting the bill by what each person ate", "pay for the group and quietly take money from everyone later", "lend money to a friend and become their boss",
+  "be the group's bank", "be the friend everybody owes money to", "be the friend who owes everybody money", "have a ledger of the whole friend group", "get scammed by a fake investment",
+  "invest in a friend's cousin's startup", "buy land they have never seen", "buy gold every Dhanteras", "buy a lottery ticket every week", "save coins in a jar for years",
+  "keep money hidden in old books", "keep cash under the mattress", "keep emergency money in a shoe", "find old money in a coat pocket", "bargain for twenty minutes for ten rupees",
+  "walk away from a shop to get a lower price", "get the best price on everything", "know the price of everything", "never know the price of anything", "pay full price on Black Friday",
+  "buy something on sale they did not need", "buy in bulk and never use it", "buy ten of everything at Costco", "buy a gadget and return it after using it", "return clothes after wearing them once",
+  "keep tags on clothes to return them", "know every return policy", "fight a refund for months", "win every refund", "have the most credit cards",
+  "have zero credit cards", "pay rent late every month", "pay rent a month early", "fight with the landlord over a deposit", "lose their security deposit because of a party",
+  "split rent unfairly with roommates", "take the biggest room and pay the same rent", "live alone just to avoid sharing", "live with five roommates to save money", "ask their parents for money at thirty",
+  "send money to their parents every month", "secretly pay their parents' bills", "buy their parents something big and hide the price", "lie to their parents about how much things cost", "lie to their partner about how much things cost",
+  "hide shopping bags in the car", "say a new thing was a gift", "say a new thing was on sale", "pretend a new thing is old", "spend on others but not on themselves",
+  "never spend on themselves", "treat themselves every day", "call every purchase 'self-care'", "call a pizza 'self-care'", "dream of being rich and not save a rupee",
+  "plan to retire at forty with no savings", "say 'next month I'll save' every month", "make a budget and break it on day one", "track every rupee in an app", "have the most financial knowledge in the group",
+  "explain mutual funds at a party", "explain crypto at a wedding", "give stock tips to everyone", "lose money on their own stock tips", "win big on a stock and talk about it forever",
+  "lose big on a stock and never mention it", "make money from a side hustle and quit their job", "become rich and stay simple", "become rich and buy a yacht",
+]

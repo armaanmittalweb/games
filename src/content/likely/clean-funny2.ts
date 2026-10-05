@@ -1,0 +1,20 @@
+// Most Likely To, clean: one more round of silly.
+export default [
+  "laugh at a cat video for ten minutes", "laugh at a baby video and cry", "laugh at their own old photos", "laugh at a meme from 2015", "laugh at a pun everyone groans at",
+  "make a pun out of every name", "make a joke out of every problem", "make up a song about the weather", "make up a dance for a chore", "make up a story for a stranger",
+  "give a dramatic voice-over to their pet", "narrate a cricket match like a commentator at home", "narrate cooking like a TV chef", "narrate a walk like a nature documentary", "narrate their family dinner like the news",
+  "dress up their pet for a festival", "take a selfie with every animal they meet", "take a selfie with every statue", "take a selfie with every 'I love' sign", "take a selfie in every lift",
+  "get a song stuck in everyone's head", "hum an advertisement jingle all day", "sing the alphabet song to remember something", "sing the multiplication tables as songs", "sing every instruction like an opera",
+  "get excited about a new stationery item", "get excited about a free pen", "get excited about bubble wrap", "get excited about a cardboard box", "get excited about a sale on socks",
+  "spend an hour choosing a birthday card", "spend an hour choosing ice cream", "spend an hour choosing a film and then sleep", "spend an hour naming a pet", "spend an hour naming a WhatsApp group",
+  "have a theme song for their life", "have a theme song for their car", "have a theme song for Mondays", "have a theme song for cleaning", "have a theme song for cooking",
+  "talk to the GPS like a friend", "say good morning to the sun", "say good night to the moon", "say sorry to a stuffed toy", "say thank you to a vending machine",
+  "do a happy dance when food arrives", "do a happy dance when the wifi comes back", "do a happy dance when an exam ends", "do a happy dance when it rains", "do a happy dance on Friday evening",
+  "wear socks with a funny print to a meeting", "wear a T-shirt with a pun", "wear a cap with ears", "wear sunglasses shaped like hearts", "wear a scarf in summer for style",
+  "get caught singing on a video call", "get caught dancing in an office lift", "get caught talking to a plant", "get caught making faces in a mirror", "get caught practising a speech in the bathroom",
+  "make a paper plane in a meeting", "make a paper boat in the rain", "make a hat out of a newspaper", "make a crown out of leaves", "make a necklace out of flowers",
+  "play air guitar to every song", "play air drums in traffic", "conduct an imaginary orchestra", "pretend to be a DJ with spoons", "pretend to be a news anchor with a remote",
+  "win a silly contest at a party", "win a staring contest with a cat", "win a game of 'who can stay quiet the longest'", "win a game of 'don't laugh'", "lose a game of 'don't laugh' in a second",
+  "start a pillow fight at a sleepover", "start a tickle fight with kids", "start a water fight at Holi early", "start a snowball fight in the hills", "start a dance-off with their grandparents",
+  "tell the same knock-knock joke every year", "tell dad jokes without being a dad", "tell jokes in Hindi that do not work in English", "tell a joke so bad it becomes good", "tell jokes until everyone gives up",
+]

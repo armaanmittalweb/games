@@ -1,0 +1,20 @@
+// Most Likely To, clean: fame, celebrities and the spotlight.
+export default [
+  "meet Shah Rukh Khan and forget to speak", "meet Virat Kohli and ask for a selfie", "meet a celebrity and act cool", "meet a celebrity and cry", "meet a celebrity and not recognise them",
+  "be mistaken for a celebrity in a mall", "get asked for an autograph by mistake", "sign an autograph for fun", "have a celebrity lookalike", "be told they look like a film star every week",
+  "get a reply from a celebrity on social media", "get followed by a celebrity", "get invited to a celebrity party", "sit next to a celebrity on a flight", "share a lift with a celebrity",
+  "become famous for being kind", "become famous for a funny video", "become famous for their cooking", "become famous for their dancing", "become famous for their singing",
+  "become famous for a single tweet", "become famous for a talent show performance", "become famous for a viral photo", "become famous for a strange hobby", "become famous for saving someone",
+  "be on a cooking show", "be on a quiz show", "be on a travel show", "be on a news debate", "be on a morning TV show",
+  "be in the audience of a TV show", "be caught on camera at a cricket match", "be on the big screen at a stadium", "be interviewed after a film", "give a review for a film on the news",
+  "write a fan letter", "send a gift to a celebrity", "wait outside a celebrity's house", "wait outside a hotel to see a cricketer", "go to a film shooting to watch",
+  "be an extra in a Bollywood film", "be in the background of a famous song", "dance in a crowd scene", "act in an advertisement", "be the face of a local shop's poster",
+  "become a radio jockey", "become a voice actor", "become a model", "become a fashion designer for stars", "become a celebrity's personal chef",
+  "become a celebrity's bodyguard", "become a celebrity's makeup artist", "become a celebrity's photographer", "become a celebrity's manager", "become a celebrity's friend",
+  "know every celebrity's birthday", "know every celebrity's real name", "know every film star's first film", "know every cricketer's jersey number", "know every singer's first song",
+  "win a meet-and-greet contest", "win a contest to have dinner with a star", "win a contest to watch a match from the VIP box", "win a contest to visit a film set", "win a contest on the radio for concert tickets",
+  "handle fame the best", "stay humble if they become famous", "become rich and famous and forget everyone", "remember everyone after becoming famous", "invite this group to their award show",
+  "give the best award acceptance speech", "thank their mom first in an award speech", "cry during an award speech", "forget to thank someone in an award speech", "go on stage to receive an award and trip",
+  "be followed by paparazzi one day", "wear sunglasses to avoid fans", "wear a disguise to go shopping", "have a fan club", "have a wax statue someday",
+  "write a book about meeting a celebrity", "tell the same celebrity story for years", "exaggerate a celebrity story every time", "show the same celebrity selfie to everyone", "frame a celebrity autograph",
+]

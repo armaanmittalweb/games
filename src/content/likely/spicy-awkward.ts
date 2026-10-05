@@ -1,0 +1,23 @@
+// Most Likely To, spicy: awkward and cringe moments.
+export default [
+  "laugh at a joke nobody else laughed at", "tell a joke at a funeral", "say 'congratulations' at a condolence meeting", "say 'happy birthday' at a farewell", "clap at the wrong time at a concert",
+  "clap when the plane lands on a domestic flight", "stand up for the anthem in a cinema and stay standing", "sing along to a song they do not know", "dance to a song that has not started", "start eating before everyone is served",
+  "go for a high five and get a handshake", "go for a hug and get a handshake", "go for a handshake and get a hug", "do the awkward side-to-side walk dance with a stranger", "call a stranger by the wrong name confidently",
+  "ask someone about their job right after they lost it", "ask someone how their partner is after a breakup", "mention someone's ex in front of their new partner", "talk about a surprise party in front of the person", "spill a secret in front of the wrong person",
+  "forget someone's name right after being told", "say 'you too' when someone says happy birthday", "reply 'love you too' to a colleague's 'take care'", "sign off an email with 'love'", "send a heart emoji to their manager",
+  "send a voice note with background embarrassing noises", "join a video call with a filter on", "forget to turn off the camera while changing", "have their mom walk into a video call", "have their dog bark through an important call",
+  "be the only one dressed up at a casual party", "be the only one in casual clothes at a formal party", "show up to a party on the wrong day", "show up to the wrong house for a party", "show up to a meeting that was cancelled",
+  "laugh loudly in a quiet library", "drop something loud in a silent exam hall", "sneeze loudly during a silent prayer", "have their stomach growl in a meeting", "hiccup through a speech",
+  "trip on stage at their graduation", "drop the mic on stage", "forget their speech on stage", "read the wrong speech at a wedding", "make a toast and spill the drink",
+  "start clapping alone and stop", "start singing happy birthday too early", "start a slow clap that nobody joins", "cheer for the wrong team at a match", "celebrate a goal that was offside",
+  "say 'I love you' first and get 'thank you' back", "get rejected in front of the whole class", "be friend-zoned in public", "get a love letter read out by a teacher", "have their crush find their diary",
+  "accidentally like a photo while stalking a new colleague", "accidentally video call a crush at midnight", "send a screenshot of a chat to the person in it", "type a crush's name in the group chat by mistake", "post a story meant for close friends to everyone",
+  "get caught singing in the car by a colleague", "get caught dancing alone by a neighbour", "get caught talking to themselves by a guard", "get caught picking their nose on a video call", "get caught sleeping in a meeting",
+  "wave at someone who was waving to the person behind them", "hold a door for someone who then takes forever", "say goodbye and then walk in the same direction", "say goodbye three times at the door", "end a call with 'bye, love you' to a customer care agent",
+  "laugh when nervous at the wrong time", "smile at a funeral out of nervousness", "giggle when a teacher scolds them", "laugh during a serious family talk", "laugh when someone falls and then help",
+  "walk into a glass wall at a mall", "slip on a wet floor sign", "sit on a chair that is not there", "get their foot stuck in a drain", "get their bag stuck in the metro door",
+  "say the wrong name at the altar", "forget their partner's birthday on a date", "get the year wrong on an anniversary card", "give a gift with the bill inside", "give the same gift to the same person twice",
+  "be at a party where they know only the host who is busy", "stand near the snacks the whole party", "hide in the bathroom at a party to check their phone", "pretend to get a call to leave a conversation", "pretend to know people at a reunion",
+  "not recognise their own cousin", "not recognise their old teacher", "not recognise a friend after a haircut", "compliment a haircut that did not happen", "praise a new phone that is actually old",
+  "be photographed mid-bite in every group photo", "be the blurry one in the group photo", "be cut out of the group photo", "be in the background of a stranger's selfie", "accidentally photobomb a wedding shoot",
+]

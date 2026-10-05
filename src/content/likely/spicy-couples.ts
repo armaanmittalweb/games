@@ -1,0 +1,23 @@
+// Most Likely To, spicy: couples, partners and living together.
+export default [
+  "steal the blanket every night", "hog the whole bed", "snore and deny it", "need the AC at 18 while their partner freezes", "need the fan on in winter",
+  "leave wet towels on the bed", "leave clothes on the floor", "leave dishes in the sink for their partner", "never refill the water bottles", "never close the cupboard doors",
+  "take the remote and never give it back", "watch the next episode without their partner", "spoil a show for their partner", "fall asleep during a movie night every time", "choose a film for an hour and watch nothing",
+  "plan a date night and fall asleep at 9", "forget a date night", "make a surprise breakfast in bed", "burn the surprise breakfast", "bring flowers for no reason",
+  "buy matching outfits", "make couple T-shirts", "make a couple reel every week", "post a couple photo every Sunday", "have a couple hashtag",
+  "call each other by cute names in public", "fight in public and smile for photos", "fight about where to eat for an hour", "fight about who said 'I love you' last", "fight about how to load the dishwasher",
+  "fight over the last bite", "steal food from their partner's plate", "order a salad and eat their partner's fries", "say 'I'm not hungry' and eat half the order", "order separately and share everything",
+  "check their partner's phone 'just to see the time'", "know their partner's passcode", "have each other's location shared forever", "get jealous of a partner's colleague", "get jealous of a partner's gym trainer",
+  "get jealous of a celebrity crush", "get jealous of a partner's best friend", "be jealous of their partner's dog", "be jealous of a video game", "be jealous of their partner's phone",
+  "spend all weekend in pyjamas together", "go on a road trip and fight about the playlist", "fight about directions on every trip", "get lost together on every holiday", "plan the perfect holiday and fight on day one",
+  "keep a shared Google calendar", "make a budget spreadsheet together", "split every bill exactly", "pay for everything without telling the partner", "hide shopping bags from the partner",
+  "sneak in a new purchase and say 'this is old'", "buy the same thing twice", "ask the partner to hold their bag for hours", "ask the partner to take a hundred photos", "pose for photos the partner never likes",
+  "say 'do whatever you want' and be angry about it", "say 'I'm fine' and sulk for a day", "sulk until their partner guesses what is wrong", "forget what the fight was about", "start a fight because they were hungry",
+  "make up with food", "make up with a song", "make up with a long letter", "make up with a meme", "never go to bed angry",
+  "go to bed angry and wake up fine", "write little notes for their partner", "leave notes on the fridge", "make a scrapbook of their relationship", "keep every movie ticket from their dates",
+  "celebrate the day they first met", "celebrate the day they first texted", "forget their anniversary and fake a plan", "plan an anniversary trip a year in advance", "renew their promises every year",
+  "talk about their partner all the time", "never talk about their partner", "introduce their partner to everyone in a week", "hide their partner for a year", "bring their partner to every friends' night",
+  "make their friends and partner best friends", "keep their friends and partner apart", "make their partner join every group trip", "leave the group trip to call their partner", "spend the whole party on the phone with their partner",
+  "be the couple everyone wants to be", "be the couple that fights the most and stays together", "be the couple that gets engaged on a beach", "be the couple that moves in after a month", "be the couple that has a pet first",
+  "be the couple that becomes parents first", "be the couple that travels the most", "be the couple that cooks together every night", "be the couple that never cooks", "be the couple that still holds hands at eighty",
+]

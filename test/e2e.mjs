@@ -16,6 +16,8 @@ const QUICK = {
   codewords: { timer: 60 }, wordle: { mode: 'blitz', words: 2, roundSeconds: 25 }, bluff: { rounds: 2, writeSeconds: 20, voteSeconds: 10 },
   mindmeld: { rounds: 3, seconds: 10 }, mostlikely: { rounds: 3, seconds: 10 }, trivia: { rounds: 3, seconds: 6 }, wordgrid: { minutes: 1 },
   lastcard: { hand: 4, turnSeconds: 10 }, stopwatch: { rounds: 3 }, liarsdice: { dice: 2, turnSeconds: 15 }, reaction: { rounds: 3 }, closest: { rounds: 3, seconds: 10 },
+  connections: { puzzles: 1, seconds: 60 }, geoguess: { rounds: 3, seconds: 12 }, musicguess: { rounds: 3, seconds: 10 }, movieguess: { rounds: 3, seconds: 21 },
+  mastermind: { rounds: 1, seconds: 60 }, territory: { seconds: 5, size: 'small' }, auction: { lots: 9, seconds: 6 }, make24: { rounds: 3, seconds: 20 },
 }
 const TEXT = ['apple', 'mango', 'cricket', 'samosa', 'blue', 'tiger', '42', '1990', 'a small bird', 'crane']
 const NAMES = ['Asha', 'Bilal', 'Chen', 'Dev']
@@ -50,6 +52,32 @@ const rnd = a => a[Math.floor(Math.random() * a.length)]
 async function step(page, id) {
   const tryClick = async sel => { const l = page.locator(sel); const n = await l.count(); if (!n) return false; try { await l.nth(Math.floor(Math.random() * n)).click({ timeout: 800 }); return true } catch { return false } }
   if (await tryClick('.choose button')) return
+  if (id === 'territory' && await tryClick('.tt-cell.can')) return
+  if (id === 'auction' && Math.random() < 0.5 && await tryClick('.au-raise button.primary:not([disabled])')) return
+  if (id === 'mastermind' && await visible(page, '.mm-palette')) {
+    for (let k = 0; k < 4; k++) await tryClick('.mm-palette .mm-peg')
+    await tryClick('.mm-row.cur button.primary:not([disabled])')
+    return
+  }
+  if (id === 'connections' && await visible(page, '.cn-word:not([disabled])')) {
+    await tryClick('button:has-text("Clear"):not([disabled])')
+    for (let k = 0; k < 4; k++) await tryClick('.cn-word:not(.sel):not([disabled])')
+    await tryClick('button:has-text("Submit"):not([disabled])')
+    return
+  }
+  if (id === 'geoguess' && await visible(page, '.geo-map svg')) {
+    const box = await page.locator('.geo-map svg').boundingBox()
+    if (box && await visible(page, 'button:has-text("Lock in")')) {
+      await page.mouse.click(box.x + box.width * (0.2 + Math.random() * 0.6), box.y + box.height * (0.2 + Math.random() * 0.6))
+      await tryClick('button:has-text("Lock in"):not([disabled])')
+    }
+    return
+  }
+  if (id === 'make24' && await visible(page, '.m24-card')) {
+    if (await page.locator('.m24 .m24-card').count() === 1) { await tryClick('button:has-text("Start again")'); return }
+    await tryClick('.m24 .m24-card'); await tryClick('.m24-op:not([disabled])'); await tryClick('.m24 .m24-card:not(.sel)')
+    return
+  }
   if (await visible(page, 'canvas.edit')) {
     const box = await page.locator('canvas.edit').boundingBox()
     if (box) {

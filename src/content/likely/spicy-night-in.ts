@@ -1,0 +1,21 @@
+// Most Likely To, spicy: sleepovers and nights in.
+export default [
+  "fall asleep first at a sleepover and get drawn on", "draw on the first person who falls asleep", "stay up all night talking at a sleepover", "tell the scariest story at a sleepover", "tell a secret at a sleepover and regret it in the morning",
+  "eat all the snacks at a sleepover by midnight", "order food at 3 am at a sleepover", "make Maggi for everyone at 4 am", "raid the host's fridge at a sleepover", "drink all the cold coffee at a sleepover",
+  "steal the best pillow at a sleepover", "hog the blanket at a sleepover", "sleep across three people at a sleepover", "snore the loudest at a sleepover", "talk in their sleep at a sleepover",
+  "start a pillow fight at 2 am", "start a truth or dare at 2 am", "start a horror film at 2 am", "start a deep conversation at 3 am", "start crying at 4 am about life",
+  "prank call someone at a sleepover", "text a crush at a sleepover on a dare", "post a story from a sleepover and wake up to questions", "make a dance video at a sleepover", "do a makeover on a sleeping friend",
+  "put toothpaste on a sleeping friend's hand", "put a sleeping friend's hand in warm water", "set ten alarms on a sleeping friend's phone", "change a sleeping friend's wallpaper", "take a hundred photos of a sleeping friend",
+  "wake up first and make breakfast for everyone", "wake up last and miss breakfast", "wake up with no voice from all the talking", "wake up on the floor somehow", "wake up and leave without telling anyone",
+  "host the best sleepovers", "have the best sleepover snacks", "have the best sleepover games", "have the strictest parents for sleepovers", "have the coolest parents for sleepovers",
+  "turn a quiet night in into a full party", "turn a film night into a karaoke night", "turn a study night into a gossip night", "turn a game night into a fight", "turn a sad night into a laughing night",
+  "cancel going out to stay in and then regret it", "stay in on a Saturday and feel proud", "stay in pyjamas the whole weekend", "stay in and order from three restaurants", "stay in and binge a whole season",
+  "have a night in with face masks and gossip", "have a night in with board games and fights", "have a night in with old photos and tears", "have a night in with cooking and burning everything", "have a night in with a terrible film and the best laughs",
+  "fall asleep during the film they chose", "fall asleep with snacks in their hand", "fall asleep sitting up on the sofa", "fall asleep on someone's shoulder during a film", "fall asleep mid-sentence at 3 am",
+  "keep everyone awake with stories", "keep everyone awake with snoring", "keep everyone awake with music", "keep everyone awake with jokes", "keep everyone awake with a horror story they made up",
+  "remember everything that was said at 3 am", "forget everything that was said at 3 am", "bring up a 3 am confession weeks later", "deny a 3 am confession forever", "make a 3 am promise and keep it",
+  "plan a trip at 3 am and book it", "plan a business at 3 am and forget it", "plan a career change at 3 am and do it", "plan a surprise at 3 am and spoil it by morning", "plan a diet at 3 am while eating chips",
+  "be the last one awake at every night in", "be the one who says 'one more episode'", "be the one who says 'one more game'", "be the one who says 'let's order something'", "be the one who says 'let's do this every week'",
+  "fall asleep during a game of Most Likely To", "get picked for every question tonight", "pick the same friend for every question tonight", "argue about every answer tonight", "laugh the hardest at tonight's answers",
+  "screenshot tonight's best question", "send tonight's best question to their crush", "remember tonight's answers at the next party", "ask for a spicy round after a clean one", "ask for a clean round after a spicy one",
+]
