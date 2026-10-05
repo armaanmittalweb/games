@@ -96,9 +96,10 @@ async function step(page, id) {
   if (await visible(page, '.clue-form')) { await page.fill('.clue-form input', 'zebra' + 'abcdefgh'[Math.floor(Math.random() * 8)]); await page.click('.clue-form button'); return }
   if (id === 'codewords' && await tryClick('button:has-text("Start")')) return
   if (await tryClick('.cwc:not([disabled])')) return
-  if (await tryClick('.lc.ok')) { await tryClick('.colbtn'); return }
-  if (await tryClick('.colbtn')) return
-  if (await tryClick('button:has-text("Draw a card"), button:has-text("Pass"), button:has-text("Draw ")')) return
+  if (await tryClick('.lc-call')) return
+  if (await tryClick('.lc-hand .lc.ok')) { await tryClick('.lc-wheelpick button'); return }
+  if (await tryClick('.lc-wheelpick button')) return
+  if (await tryClick('button:has-text("Draw a card"), button:has-text("Keep it and pass"), button:has-text("Take ")')) return
   if (id === 'liarsdice' && await tryClick(Math.random() < 0.3 ? '.bidder .danger' : '.bidder .primary:not([disabled])')) return
   if (await tryClick('.who:not([disabled])')) return
   if (await tryClick('.choice:not([disabled])')) return

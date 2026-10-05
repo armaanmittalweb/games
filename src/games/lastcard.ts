@@ -18,6 +18,20 @@ interface S {
   until: number
   log: string[]
   winner: string | null
+  fx: Fx[] // the last few moves, numbered, so every screen can animate them in order
+  fxn: number
+}
+/** play: `c` as it lies on the pile (a wild carries its colour); skip/hit/owed name who it hurts. */
+type Fx = { n: number; k: 'play'; by: string; c: string; skip?: string; rev?: boolean; hit?: string; drew?: number; owed?: number; last?: boolean }
+  | { n: number; k: 'draw'; by: string; drew: number }
+  | { n: number; k: 'call'; by: string }
+  | { n: number; k: 'catch'; by: string; who: string }
+  | { n: number; k: 'shuffle' }
+
+type FxIn = Fx extends infer F ? F extends Fx ? Omit<F, 'n'> : never : never
+function fx(s: S, e: FxIn) {
+  s.fx.push({ ...e, n: ++s.fxn } as Fx)
+  if (s.fx.length > 8) s.fx.shift()
 }
 
 const COLORS = ['r', 'y', 'g', 'b']
@@ -48,6 +62,7 @@ function draw(g: Ctx<C>, s: S, id: string, n: number) {
       const keep = s.discard.pop()!
       s.pile = g.shuffle(s.discard.map(c => ('wf'.includes(value(c)) ? 'x' + value(c) : c)))
       s.discard = [keep]
+      fx(s, { k: 'shuffle' })
       if (!s.pile.length) break
     }
     const c = s.pile.pop()!
@@ -94,13 +109,15 @@ function finish(g: Ctx<C>, s: S, winner: string) {
 function takeDraw(g: Ctx<C>, s: S, id: string, auto: boolean) {
   if (s.owed > 0) {
     const n = s.owed
-    draw(g, s, id, n)
+    const got = draw(g, s, id, n)
     s.owed = 0
+    fx(s, { k: 'draw', by: id, drew: got.length })
     say(s, `${nameOf(g, id)} drew ${n}`)
     step(s)
     return startTurn(g, s)
   }
   const [c] = draw(g, s, id, 1)
+  if (c) fx(s, { k: 'draw', by: id, drew: 1 })
   if (c && !auto && playable(s, c, g.config.stack === 'on')) {
     s.drawn = c
     s.until = g.now + Math.min(15, g.config.turnSeconds) * 1000
@@ -116,7 +133,7 @@ export const lastcard: Game<S, C> = {
   setup(g) {
     const s: S = {
       order: g.players.slice(), hands: {}, pile: g.shuffle(deck(g.players.length > 6 ? 2 : 1)), discard: [], color: 'r', turn: 0, dir: 1,
-      owed: 0, drawn: null, called: {}, exposed: null, until: 0, log: [], winner: null,
+      owed: 0, drawn: null, called: {}, exposed: null, until: 0, log: [], winner: null, fx: [], fxn: 0,
     }
     for (const id of s.order) { s.hands[id] = []; draw(g, s, id, g.config.hand) }
     // The first card is never an action or a wild.
@@ -129,6 +146,7 @@ export const lastcard: Game<S, C> = {
     return s
   },
   leave(g, s, id) {
+    if (s.winner) return // the game is already won; it ends after the pause
     const i = s.order.indexOf(id)
     if (i < 0) return
     const wasTurn = i === s.turn
@@ -146,6 +164,7 @@ export const lastcard: Game<S, C> = {
     const stack = g.config.stack === 'on'
     if (m.a === 'last') {
       if (s.hands[id].length > 2) return 'You can call it with two cards or fewer'
+      if (!s.called[id]) fx(s, { k: 'call', by: id })
       s.called[id] = true
       if (s.exposed === id) s.exposed = null
       return
@@ -155,6 +174,7 @@ export const lastcard: Game<S, C> = {
       if (!who || who === id) return 'Nobody to catch'
       draw(g, s, who, 2)
       s.exposed = null
+      fx(s, { k: 'catch', by: id, who })
       say(s, `${nameOf(g, id)} caught ${nameOf(g, who)}: +2`)
       return
     }
@@ -186,28 +206,38 @@ export const lastcard: Game<S, C> = {
     s.color = color
     s.drawn = null
     if (hand.length === 0) {
+      fx(s, { k: 'play', by: id, c: top(s), last: true })
       say(s, `${nameOf(g, id)} played their last card`)
-      return finish(g, s, id)
+      // Hold the table a moment so everyone sees the winning card land.
+      s.winner = id
+      s.exposed = null
+      s.until = g.now + 2600
+      g.wake(s.until)
+      return
     }
     if (hand.length === 1 && !s.called[id]) s.exposed = id
     else if (s.exposed && s.exposed !== id) s.exposed = null
     const v = value(c)
+    const e: Extract<FxIn, { k: 'play' }> = { k: 'play', by: id, c: top(s) }
     let line = `${nameOf(g, id)} played {${top(s)}}`
-    if (v === 's') { step(s, 2); line += ' (skip)' }
+    if (v === 's') { step(s); e.skip = cur(s); step(s); line += ' (skip)' }
     else if (v === 'r') {
       s.dir = s.dir === 1 ? -1 : 1
+      e.rev = true
       // With two players a reverse works like a skip.
-      step(s, s.order.length === 2 ? 2 : 1)
+      if (s.order.length === 2) { step(s); e.skip = cur(s); step(s) } else step(s)
     } else if (v === 'd' || v === 'f') {
       const n = v === 'd' ? 2 : 4
-      if (stack) { s.owed += n; step(s) }
-      else { step(s); draw(g, s, cur(s), n); say(s, `${nameOf(g, cur(s))} drew ${n}`); step(s) }
+      if (stack) { s.owed += n; step(s); e.hit = cur(s); e.owed = s.owed }
+      else { step(s); e.hit = cur(s); e.drew = n; draw(g, s, cur(s), n); say(s, `${nameOf(g, cur(s))} drew ${n}`); step(s) }
     } else step(s)
+    fx(s, e)
     say(s, line)
     startTurn(g, s)
   },
   tick(g, s) {
-    if (s.winner || g.now < s.until) return
+    if (g.now < s.until) return
+    if (s.winner) return finish(g, s, s.winner)
     const id = cur(s)
     if (s.drawn) { say(s, `${nameOf(g, id)} drew a card`); step(s); return startTurn(g, s) }
     takeDraw(g, s, id, true)
@@ -217,7 +247,7 @@ export const lastcard: Game<S, C> = {
     const stack = g.config.stack === 'on'
     return {
       order: s.order, counts: Object.fromEntries(s.order.map(p => [p, s.hands[p]?.length ?? 0])), turn: cur(s), dir: s.dir,
-      top: top(s), color: s.color, owed: s.owed, pile: s.pile.length, until: s.until, log: s.log, called: s.called, exposed: s.exposed,
+      top: top(s), under: s.discard.slice(-4, -1), color: s.color, fx: s.fx, owed: s.owed, pile: s.pile.length, until: s.until, log: s.log, called: s.called, exposed: s.exposed,
       hand, playable: cur(s) === id ? hand.map(c => (s.drawn ? c === s.drawn : playable(s, c, stack))) : hand.map(() => false),
       drawn: cur(s) === id ? s.drawn : null, winner: s.winner,
     }
