@@ -30,6 +30,8 @@ interface Inst {
   chosen?: number
   /** The rules, shown to everyone before play. The game is set up (and its clock starts) only once this ends. */
   intro?: { until: number; ready: string[] }
+  /** On the results screen: who has said they are up for another game, so the host can see the room is ready. */
+  again?: string[]
   /** Counted for the Switchboard: moves, errors, players whose connection dropped and players who came back. */
   q?: { acts: number; errs: number; dropped: string[]; back: string[]; readyAll: boolean }
 }
@@ -447,6 +449,15 @@ export class Room extends DurableObject<Env> {
         this.readyCheck(inst, now)
         break
       }
+      case 'again': {
+        // "I'm in" on the results screen: a vote for another game, shown to the host. Tapping again takes it back.
+        const inst = s.inst
+        if (!inst || s.phase !== 'results') return bail()
+        const a = (inst.again ??= [])
+        if (a.includes(me)) a.splice(a.indexOf(me), 1); else a.push(me)
+        this.isLazy = true
+        break
+      }
       case 'fb': {
         // Feedback on the game just played: stars, would play again, and a line of text.
         const inst = s.inst
@@ -724,7 +735,7 @@ export class Room extends DurableObject<Env> {
       })),
       inst: inst && {
         id: inst.id, n: inst.n, config: inst.config, players: inst.players, startedAt: inst.startedAt, endedAt: inst.endedAt, standings: inst.standings,
-        summary: inst.summary, night: inst.night, intro: inst.intro ? { until: inst.intro.until, ready: inst.intro.ready } : null,
+        summary: inst.summary, night: inst.night, again: inst.again ?? [], intro: inst.intro ? { until: inst.intro.until, ready: inst.intro.ready } : null,
       },
       night: s.night,
     }

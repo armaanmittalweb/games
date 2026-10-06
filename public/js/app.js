@@ -1,16 +1,17 @@
 // Game Night: the page around the games. Home, rooms, the library, game nights, results and chat.
 import { html, render, useState, useEffect, useRef } from './preact.js'
-import { S, ME, connect, disconnect, send, subscribe, changed, toast, share, getName, setName, now } from './core.js'
+import { S, ME, connect, disconnect, send, subscribe, changed, toast, share, copy, codeFrom, keepAwake, getName, setName, now } from './core.js'
 import { Avatar, Name, nameOf, plural, useTick } from './ui.js'
-import { pageView } from './track.js'
+import { pageView, track } from './track.js'
+import { Results } from './results.js'
 import { CATALOG } from '/catalog.js'
 
-const META = Object.fromEntries(CATALOG.map(m => [m.id, m]))
+export const META = Object.fromEntries(CATALOG.map(m => [m.id, m]))
 const MOODS = { think: '🧠 Think', chaos: '😂 Chaos', competitive: '🎯 Competitive', deception: '🕵️ Deception', creative: '🎨 Creative', fast: '⚡ Fast', social: '🗣️ Social', strategic: '♟️ Strategic' }
 const LENGTHS = [['quick', 'Quick', '15 min'], ['standard', 'Standard', '30 min'], ['chaos', 'Chaos', '45 min'], ['tournament', 'Tournament', 'knockout'], ['endless', 'Endless', '∞']]
 const CATS = ['Word', 'Drawing', 'Party', 'Deception', 'Trivia', 'Puzzle', 'Strategy', 'Cards', 'Reflex']
 const DNA = [['skill', 'Skill'], ['luck', 'Luck'], ['social', 'Social'], ['brain', 'Brain'], ['chaos', 'Chaos'], ['replay', 'Replay']]
-const placePoints = p => [10, 7, 5, 4, 3, 2, 1][p - 1] ?? 1
+export const placePoints = p => [10, 7, 5, 4, 3, 2, 1][p - 1] ?? 1
 const estMinutes = (m, n) => Math.round(m.minutes[0] + m.minutes[1] * n)
 const players = (m) => m.min === m.max ? `${m.min}` : `${m.min}–${m.max}`
 
@@ -66,7 +67,14 @@ async function createRoom(pick, start = false) {
 function App() {
   const [where, setWhere] = useState(route())
   useEffect(() => {
-    const on = () => setWhere(route())
+    const on = e => {
+      // Back (often a stray edge swipe on Android) in the middle of a game asks first; staying puts the room back.
+      if (e?.type === 'popstate' && S.room?.phase === 'game' && !location.pathname.startsWith(`/r/${S.room.code}`) && !confirm('Leave the game?')) {
+        history.pushState(null, '', `/r/${S.room.code}`)
+        return
+      }
+      setWhere(route())
+    }
     window.addEventListener('popstate', on)
     window.addEventListener('route', on)
     return () => { window.removeEventListener('popstate', on); window.removeEventListener('route', on) }
@@ -101,7 +109,7 @@ function Home() {
     else toast('Enter your name, then tap the game again', 2600)
   }, [])
   const join = () => {
-    const c = code.trim().toUpperCase()
+    const c = codeFrom(code)
     if (!need()) return
     if (!/^[A-Z0-9]{5}$/.test(c)) return toast('Room codes are 5 characters')
     go('/r/' + c)
@@ -118,7 +126,7 @@ function Home() {
         <${NameField} value=${name} onInput=${setN} onEnter=${() => make(null)} />
         <button class="primary big" disabled=${busy} onClick=${() => make(null)}>Create a room</button>
         <div class="or"><span>or join one</span></div>
-        <div class="row"><input class="grow code-in" value=${code} onInput=${e => setCode(e.target.value)} onKeyDown=${e => e.key === 'Enter' && join()} maxlength="5" placeholder="CODE" autocapitalize="characters" autocomplete="off" aria-label="Room code" /><button onClick=${join}>Join</button></div>
+        <div class="row"><input class="grow code-in" value=${code} onInput=${e => { const c = codeFrom(e.target.value); setCode(c); e.target.value = c }} onKeyDown=${e => e.key === 'Enter' && join()} placeholder="CODE" autocapitalize="characters" autocomplete="off" spellcheck="false" enterkeyhint="go" aria-label="Room code, or paste the room link" /><button onClick=${join}>Join</button></div>
       </div>
     </section>
     <section>
@@ -137,6 +145,8 @@ function RoomGate({ code }) {
   const [name, setN] = useState(getName())
   const [ready, setReady] = useState(!!getName())
   useEffect(() => { if (ready) connect(code); document.title = `Room ${code} · Game Night` }, [ready, code])
+  // The screen stays on while in a room (see keepAwake).
+  useEffect(() => { if (!ready) return; keepAwake(true); return () => keepAwake(false) }, [ready])
   if (!ready) {
     const ok = () => { const n = name.trim(); if (!n) return toast('Enter your name'); setName(n); setReady(true) }
     return html`<div class="wrap narrow stack"><h1>Join room <span class="code">${code}</span></h1>
@@ -172,7 +182,7 @@ function Room() {
   return html`<div class=${'room' + (s.chatOpen ? ' chat-on' : '')}>
     <header class="bar">
       <button class="icon" onClick=${leave} aria-label="Leave the room" title="Leave">←</button>
-      <button class="code" onClick=${() => share(`Join my game night room ${room.code}`, `${location.origin}/r/${room.code}`)} title="Share the room link">${room.code} <span class="small">share</span></button>
+      <button class="code" onClick=${() => { S.invite = true; changed() }} title="Invite friends: share, copy the link or show a QR code">${room.code} <span class="small">invite</span></button>
       ${inGame ? html`<span class="bar-game ell"><${GameIcon} m=${meta} size="small" /> ${meta.name}</span>` : html`<span class="bar-game dim ell">${plural(room.members.filter(m => m.online).length, 'player')} here</span>`}
       ${s.status !== 'open' ? html`<span class="pill warn">reconnecting</span>` : ''}
       ${inGame ? html`<button class="icon rules-btn" id="rules-btn" onClick=${() => setRules(room.inst.id)} aria-label="How to play" title="How to play">?</button>` : ''}
@@ -190,6 +200,7 @@ function Room() {
       ${s.chatOpen && html`<${Chat} />`}
     </div>
     ${rules && html`<${RulesModal} id=${rules} onClose=${() => setRules(null)} />`}
+    ${s.invite && html`<${InviteModal} code=${room.code} onClose=${() => { S.invite = false; changed() }} />`}
     ${inGame && html`<${RulesIntro} key=${room.code + room.inst.n} inst=${room.inst} code=${room.code} />`}
   </div>`
 }
@@ -328,7 +339,8 @@ function Players({ isHost }) {
       ${isHost && m.id !== ME ? html`<button class="icon small" onClick=${() => setMenu(menu === m.id ? null : m.id)} aria-label=${`Options for ${m.name}`}>⋯</button>` : ''}
       ${menu === m.id ? html`<div class="pmenu"><button onClick=${() => { send({ t: 'host', id: m.id }); setMenu(null) }}>Make host</button><button onClick=${() => { if (confirm(`Remove ${m.name}?`)) send({ t: 'kick', id: m.id }); setMenu(null) }}>Remove</button></div>` : ''}
     </li>`)}</ul>
-    <p class="dim small">Share the code <b class="code-sm">${room.code}</b> or tap it at the top. Room points: 10 for a win, then 7, 5, 4, 3, 2, 1.</p>
+    <div class="invite-box"><div class="small">Invite friends to <b class="code-sm">${room.code}</b></div><${InviteButtons} code=${room.code} /></div>
+    <p class="dim small">Room points: 10 for a win, then 7, 5, 4, 3, 2, 1.</p>
     ${room.history.length ? html`<details class="hist"><summary class="small">Played here (${room.history.length})</summary><ul class="small">${room.history.map(h => html`<li><${GameIcon} m=${META[h.id]} size="small" /> ${META[h.id]?.name}: ${h.winners.map(nameOf).join(' & ')}</li>`)}</ul></details>` : ''}
   </div>`
 }
@@ -421,7 +433,7 @@ function NightBanner({ night, isHost }) {
   </div>`
 }
 
-function NightTable({ night }) {
+export function NightTable({ night }) {
   const ids = Object.keys(night.points).sort((a, b) => night.points[b] - night.points[a])
   const last = night.rounds[night.rounds.length - 1]
   let place = 0
@@ -437,10 +449,37 @@ function NightTable({ night }) {
 
 // ---------- playing ----------
 
-const mods = {}
+export const mods = {}
+
+// The height left above a phone keyboard. Android shrinks the page for the keyboard, iOS lays it over the page; the
+// visual viewport is right on both.
+if (window.visualViewport) {
+  const vv = window.visualViewport
+  const set = () => document.documentElement.style.setProperty('--vvh', `${Math.round(vv.height)}px`)
+  vv.addEventListener('resize', set)
+  set()
+}
+
+/** Typing an answer under a drawing on a phone: bring the drawing up so it shows above the keyboard with the box. */
+function useTypingUnderDrawing(ref) {
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const on = e => {
+      if (!e.target.matches?.('.answer input') || !el.querySelector('.canvas') || !matchMedia('(max-width: 860px)').matches) return
+      // After the keyboard is up (it takes a moment to slide in).
+      setTimeout(() => (el.querySelector('.hint') ?? el.querySelector('.canvas'))?.scrollIntoView({ block: 'start', behavior: 'instant' }), 320)
+    }
+    el.addEventListener('focusin', on)
+    return () => el.removeEventListener('focusin', on)
+  })
+}
+
 function GameScreen() {
   const s = useStore()
   const inst = s.room.inst
+  const area = useRef()
+  useTypingUnderDrawing(area)
   const [mod, setMod] = useState(mods[inst.id] ?? null)
   useEffect(() => {
     if (mods[inst.id]) return setMod(mods[inst.id])
@@ -450,50 +489,66 @@ function GameScreen() {
   if (!mod || !s.game) return html`<div class="wrap"><p class="dim">Loading…</p></div>`
   const seated = inst.players.includes(ME)
   const Game = mod.default
-  return html`<div class=${'game-area g-' + inst.id}>
+  return html`<div class=${'game-area g-' + inst.id} ref=${area}>
     ${!seated ? html`<div class="watch">You are watching this game. You will be in the next one.</div>` : ''}
     <${Game} v=${s.game} inst=${inst} seated=${seated} />
   </div>`
 }
 
-// ---------- results ----------
+// ---------- inviting ----------
 
-function Results({ isHost }) {
-  const s = useStore()
-  const room = s.room
-  const inst = room.inst
-  const meta = META[inst.id]
-  const night = room.night && inst.night ? room.night : null
-  const st = inst.standings ?? []
-  const [mod, setMod] = useState(mods[inst.id] ?? null)
-  useEffect(() => { if (!mods[inst.id]) import(`./games/${inst.id}.js`).then(m => { mods[inst.id] = m; setMod(m) }) }, [inst.id])
-  const winners = st.filter(x => x.place === 1).map(x => x.id)
-  const next = night && !night.done ? night.plan[night.idx + 1] ?? (night.length === 'endless' ? 'more' : null) : null
-  const Summary = mod?.Summary
-  const champs = night?.done ? night.champions : []
-  return html`<div class="wrap results stack">
-    ${night?.done ? html`<div class="card champion"><div class="trophy">🏆</div><h1>${champs.map(nameOf).join(' & ')} ${champs.length > 1 ? 'share' : 'wins'} the night!</h1><p class="dim">${night.rounds.length} games played</p></div>` : ''}
-    <div class="card">
-      <div class="row between"><h2 class="nomargin with-icon"><${GameIcon} m=${meta} />${meta.name}</h2><span class="dim small">${winners.length ? `${winners.map(nameOf).join(' & ')} ${winners.length > 1 ? 'tie' : 'wins'}` : ''}</span></div>
-      <div class="podium">${[2, 1, 3].map(p => {
-        const at = st.filter(x => x.place === p)
-        return at.length ? html`<div class=${'pod p' + p}><div class="pod-names">${at.map(x => html`<div key=${x.id}><${Avatar} id=${x.id} size=${p === 1 ? 44 : 34} /><div class="ell"><${Name} id=${x.id} /></div></div>`)}</div><div class="pod-block">${p}</div></div>` : html`<div class=${'pod p' + p + ' empty'}></div>`
-      })}</div>
-      <table class="tbl"><tr><th>#</th><th>Player</th><th>Score</th><th></th><th title="Room points">+pts</th></tr>
-        ${st.map(x => html`<tr key=${x.id} class=${x.id === ME ? 'me' : ''}><td>${x.place}</td><td><${Name} id=${x.id} /></td><td><b>${x.score}</b></td><td class="dim small">${x.detail ?? ''}</td><td class="plus">+${placePoints(x.place)}</td></tr>`)}
-      </table>
-    </div>
-    ${Summary && html`<${Summary} inst=${inst} summary=${inst.summary} />`}
-    ${inst.players.includes(ME) && html`<${Feedback} key=${room.code + inst.n} inst=${inst} code=${room.code} />`}
-    ${night && html`<${NightTable} night=${night} />`}
-    ${isHost ? html`<div class="row wrapgap">
-      ${night && !night.done && next ? html`<button class="primary big grow" onClick=${() => send({ t: 'nightGo' })}>Next: ${next === 'more' ? 'a new game' : META[next].name}</button>` : ''}
-      ${night && !night.done ? html`<button onClick=${() => confirm('End the game night now?') && send({ t: 'nightEnd' })}>End the night</button>` : ''}
-      ${night?.done ? html`<button class="primary big grow" onClick=${() => send({ t: 'nightEnd' })}>Back to the lobby</button>` : ''}
-      ${!night ? html`<button class="primary big grow" onClick=${() => send({ t: 'start', id: inst.id })}>Play again</button><button onClick=${() => send({ t: 'lobby' })}>Choose another game</button>` : ''}
-    </div>` : html`<p class="dim center">${night && !night.done ? `Up next: ${next && next !== 'more' ? META[next].name : 'another game'}. Waiting for the host…` : 'Waiting for the host…'}</p>`}
+const roomLink = code => `${location.origin}/r/${code}`
+const shareRoom = code => share(`Join my game night room ${code}`, roomLink(code))
+const copyRoom = code => { track('share', { method: 'copy' }); return copy(roomLink(code), 'Room link copied') }
+const openQr = () => { S.invite = true; changed() }
+
+/** Share, Copy link and QR code: three ways to get the room link to someone. */
+function InviteButtons({ code }) {
+  return html`<div class="invite-btns">
+    <button type="button" onClick=${() => shareRoom(code)}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12M7 8l5-5 5 5M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"/></svg>Share</button>
+    <button type="button" onClick=${() => copyRoom(code)}><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg>Copy link</button>
+    <button type="button" onClick=${openQr}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h2v2h-2zM18 14h2v2h-2zM14 18h2v2h-2zM18 18h2v2h-2z"/></svg>QR code</button>
   </div>`
 }
+
+/** The room's QR code (the camera app opens the room), its code in big letters and its link. */
+function InviteModal({ code, onClose }) {
+  const [svg, setSvg] = useState('')
+  useEffect(() => {
+    track('share', { method: 'qr' })
+    import('./qr.js').then(({ default: qrcode }) => {
+      const q = qrcode(0, 'M')
+      q.addData(roomLink(code))
+      q.make()
+      const n = q.getModuleCount(), pad = 4
+      let d = ''
+      for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) if (q.isDark(y, x)) d += `M${x + pad} ${y + pad}h1v1h-1z`
+      setSvg(`<svg viewBox="0 0 ${n + pad * 2} ${n + pad * 2}" shape-rendering="crispEdges" role="img" aria-label="QR code for the room link"><rect width="100%" height="100%" fill="#fff"/><path d="${d}" fill="#111"/></svg>`)
+    }, () => setSvg(''))
+    const onKey = e => e.key === 'Escape' && onClose()
+    addEventListener('keydown', onKey)
+    return () => removeEventListener('keydown', onKey)
+  }, [code])
+  return html`<div class="modal" onClick=${e => e.target === e.currentTarget && onClose()} role="dialog" aria-modal="true" aria-labelledby="inv-title">
+    <div class="card stack modal-card invite-card">
+      <div class="row between"><h2 class="nomargin" id="inv-title">Invite friends</h2><button class="icon" onClick=${onClose} aria-label="Close">✕</button></div>
+      <div class="inv-body">
+        <div class="stack inv-qr"><div class="qr" dangerouslySetInnerHTML=${{ __html: svg }}></div>
+          <p class="dim small center nomargin">Point a phone camera at this to join.</p></div>
+        <div class="stack inv-info">
+          <div class="center"><div class="dim small">Room code</div><div class="code big-code">${code}</div></div>
+          <button type="button" class="link-line" onClick=${() => copyRoom(code)} title="Copy the link">${roomLink(code).replace(/^https?:\/\//, '')}</button>
+          <div class="invite-btns">
+            <button type="button" class="primary" onClick=${() => shareRoom(code)}>Share</button>
+            <button type="button" onClick=${() => copyRoom(code)}>Copy link</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>`
+}
+
+// ---------- results ----------
 
 // ---------- feedback ----------
 
@@ -501,7 +556,7 @@ const FB_KEY = 'gn.fb'
 const fbDone = () => { try { return JSON.parse(localStorage.getItem(FB_KEY) ?? '[]') } catch { return [] } }
 
 /** After a game: stars, would you play it again, and an optional line (something to fix, or a game to add). */
-function Feedback({ inst, code }) {
+export function Feedback({ inst, code }) {
   const key = code + ':' + inst.n
   const [rating, setRating] = useState(0)
   const [again, setAgain] = useState(null)

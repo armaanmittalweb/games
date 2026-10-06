@@ -10,7 +10,7 @@ function Teams({ v, inst }) {
     <ul class="plain">${inst.players.filter(id => v.team[id] === team).map(id => html`<li key=${id} class="row"><${Avatar} id=${id} size=${24} /><${Name} id=${id} />${v.spy[team] === id ? html`<span class="pill">spymaster</span>` : ''}</li>`)}</ul>
     ${v.you.team !== team ? html`<button onClick=${() => act({ a: 'team', team })}>Join ${T[team]}</button>` : html`<button class=${v.spy[team] === ME ? '' : 'primary'} onClick=${() => act({ a: 'spy' })}>${v.spy[team] === ME ? 'Stop being spymaster' : 'Be the spymaster'}</button>`}
   </div>`
-  return html`<div class="stack">
+  return html`<div class="cw">
     <div class="ghead"><div><div class="gtitle">Choose teams</div><div class="dim small">Each team needs a spymaster and at least one guesser.</div></div></div>
     <div class="teams">${col('red')}${col('blue')}</div>
     <div class="row"><button onClick=${() => act({ a: 'shuffle' })}>Shuffle teams</button><button class="primary big grow" onClick=${() => act({ a: 'go' })}>Start</button></div>

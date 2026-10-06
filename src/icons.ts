@@ -2,7 +2,13 @@
 // SVG into public/catalog.js (for the page) and into the guide pages.
 
 const W = '#fff'
-const line = (d: string, extra = '') => `<path d="${d}" fill="none" stroke="${W}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"${extra}/>`
+/** A stroked path. `extra` attributes replace the defaults of the same name (an attribute twice makes the SVG invalid
+ * as an image file, which the result card draws from). */
+function line(d: string, extra = '') {
+  const set = new Map(Object.entries({ fill: 'none', stroke: W, 'stroke-width': '3', 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }))
+  for (const [, k, v] of extra.matchAll(/([a-z-]+)="([^"]*)"/g)) set.set(k, v)
+  return `<path d="${d}"${[...set].map(([k, v]) => ` ${k}="${v}"`).join('')}/>`
+}
 const fill = (d: string, color = W) => `<path d="${d}" fill="${color}"/>`
 const dot = (x: number, y: number, r: number, color = W) => `<circle cx="${x}" cy="${y}" r="${r}" fill="${color}"/>`
 const ring = (x: number, y: number, r: number) => `<circle cx="${x}" cy="${y}" r="${r}" fill="none" stroke="${W}" stroke-width="3"/>`

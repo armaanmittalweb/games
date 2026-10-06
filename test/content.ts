@@ -18,6 +18,7 @@ import { CAPITALS, CITIES, COUNTRIES } from '../src/content/geo'
 import { LOTS_BY_SET } from '../src/content/auction'
 import { check, stepsFor } from '../src/games/make24'
 import { distanceTo } from '../src/games/geoguess'
+import { ICON_IDS, iconSvg } from '../src/icons'
 
 export function checkContent(): number {
   let failures = 0
@@ -89,6 +90,14 @@ export function checkContent(): number {
   }
   // A country's label point is where its answer is marked, so it has to be inside the country.
   for (const c of COUNTRIES) if (distanceTo(c, c).km > 0) { failures++; console.log(`FAIL content geo: ${c.n}'s marker is outside it`) }
+  // Icons are drawn into the shareable result card as image files, where an attribute given twice breaks the SVG.
+  for (const id of ICON_IDS) {
+    for (const tag of iconSvg(id).match(/<[a-z][^>]*>/g) ?? []) {
+      const attrs = [...tag.matchAll(/\s([a-z-]+)=/g)].map(x => x[1])
+      const twice = attrs.find((x, i) => attrs.indexOf(x) !== i)
+      if (twice) { failures++; console.log(`FAIL content icons: ${id} has ${twice} twice in ${tag.slice(0, 40)}`) }
+    }
+  }
   if (names.size !== 195) { failures++; console.log(`FAIL content geo: ${names.size} countries, expected 195`) }
   for (const [set, lots] of Object.entries(LOTS_BY_SET)) if (lots.length < 5) { failures++; console.log(`FAIL content auction: ${set} has only ${lots.length} lots`) }
   // Dealing goes through the whole pool before anything comes back, whatever size each game takes.

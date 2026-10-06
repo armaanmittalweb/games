@@ -10,7 +10,7 @@ export default function Territory({ v, inst, seated }) {
   return html`<div class="play2">
     <div class="pmain">
       <${Head} title=${`Turn ${v.turn}`} sub=${can ? (v.mine === null ? 'Pick a glowing square next to your land' : 'Picked. You can still change it.') : seated ? 'No free square next to your land' : 'Watching'} until=${v.until} />
-      <div class="tt-grid" style=${`--w:${v.w}`} role="grid" aria-label="The map">
+      <div class="tt-frame"><div class="tt-grid" style=${`--w:${v.w}`} role="grid" aria-label="The map">
         ${v.cells.map((c, i) => {
           const owner = c >= 0 ? v.seats[c] : null
           let cls = 'tt-cell'
@@ -25,7 +25,7 @@ export default function Territory({ v, inst, seated }) {
           return html`<button key=${i} class=${cls} style=${owner ? `--c:${colorOf(owner)}` : ''} disabled=${!(can && moves.has(i))}
             onClick=${() => act({ a: 'pick', cell: i })} aria-label=${c === -2 ? 'rock' : owner ? `owned by ${owner === ME ? 'you' : 'a player'}` : moves.has(i) ? 'free, next to your land' : 'free'}>${clash.has(i) ? '✕' : ''}</button>`
         })}
-      </div>
+      </div></div>
       <p class="dim small center">${v.last.clash.length ? `${v.last.clash.length} square${v.last.clash.length > 1 ? 's' : ''} picked by two players stayed free (✕). ` : ''}${v.last.walled.length ? `${v.last.walled.length} walled-in square${v.last.walled.length > 1 ? 's' : ''} changed hands. ` : ''}Wall off an area and it is yours.</p>
       <${Waiting} ids=${inst.players} done=${v.picked} label="picked" />
     </div>

@@ -63,8 +63,12 @@ place kept stays in) until two play a final; knocked-out players watch.
 - Pen strokes are passed straight through to the other players and saved every few seconds rather than on every
   stroke; Telephone keeps each drawing in its own storage key.
 - The page is plain ES modules with Preact and htm (`public/js/preact.js`, vendored, no build step). `public/js/app.js`
-  is the room, lobby, game nights, results and chat; `public/js/games/<id>.js` is one screen per game.
+  is the room, lobby, inviting, game nights and chat; `public/js/results.js` the results screen (headline, podium,
+  moments, "I'm in" votes, the shareable 1080 × 1350 result picture); `public/js/games/<id>.js` is one screen per game.
+  `public/js/qr.js` is qrcode-generator (MIT), loaded only when someone opens the room's QR code.
 - Players are a random id and secret in `localStorage`, so a refresh or a dropped connection rejoins the same seat.
+  A line that goes quiet for 60 s is replaced, and coming back to the page (unlocking the phone, switching back from
+  another app, the network returning) reconnects at once. While in a room the screen is kept on (Wake Lock).
 - Site-wide counts (rooms, games by type, players) live in the `Stats` Durable Object (`src/stats.ts`), read by the
   Switchboard at `/internal/stats` with the shared `INTERNAL_KEY`; without it the route is a 404.
 
@@ -155,7 +159,15 @@ npm run dev      # http://localhost:8799
 npm run check    # type-check
 npm test         # bots play every game at several table sizes, with joins and drop-outs
 node test/e2e.mjs [gameId,…]   # with dev running: four browsers play each game to its results screen
+node test/mobile.mjs [gameId …] [--shots=dir]   # with dev running: phone checks on every screen (below)
 npm run deploy   # games.amittal.dev
 ```
 
 `.dev.vars` (not committed) holds `INTERNAL_KEY` for local runs. Everything runs on Cloudflare's free plan.
+
+`test/mobile.mjs` puts a desktop host and three phones (390 × 844, 360 × 640, and 844 × 390 held sideways) through
+the home page, lobby, invite sheet, every game and the results, and fails on: sideways scrolling, a tap target under
+32 px (44 px is the aim; smaller ones are listed as warnings), the keyboard hiding the answer box, a pasted room link
+not turning into its code, the results' buttons off screen, and a phone that loses its connection for 40 s (as when
+it sleeps) not being back in the game within 3 s of waking. Each game is also resized as the address bar comes and
+goes and turned to landscape and back mid-game.

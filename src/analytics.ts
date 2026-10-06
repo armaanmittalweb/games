@@ -84,7 +84,7 @@ export function pageEvent(sql: Sql, e: PageEvent, now = Date.now()) {
     else sql.exec('INSERT INTO a_sessions (sid, vid, start, last, day, src, landing, views) VALUES (?, ?, ?, ?, ?, ?, ?, 1)', e.sid, e.vid, now, now, day, invite ? 'Room link' : src, path)
     sql.exec('INSERT OR IGNORE INTO a_active (vid, day) VALUES (?, ?)', e.vid, day)
   } else if (e.t === 'share') {
-    if (!isX(sql, e.vid) && !x) count(sql, 'share', e.method === 'native' ? 'native' : 'copy', 1, now)
+    if (!isX(sql, e.vid) && !x) count(sql, 'share', e.method === 'native' || e.method === 'qr' ? e.method : 'copy', 1, now)
   } else if (e.t === 'err') {
     sql.exec('UPDATE a_sessions SET err = 1 WHERE sid = ?', e.sid)
     if (!isX(sql, e.vid) && !x) count(sql, 'err', short(e.msg, 120) || 'unknown', 1, now)

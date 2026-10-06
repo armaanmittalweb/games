@@ -31,7 +31,7 @@ for (let i = 0; i < NAMES.length; i++) {
   await ctx.addInitScript(n => { try { localStorage.setItem('wr.name', n) } catch {} }, NAMES[i])
   const page = await ctx.newPage()
   page.on('pageerror', e => errors.push(`${NAMES[i]}: ${e.message}`))
-  page.on('console', m => { if (m.type() === 'error' && !/WebSocket|favicon|net::/.test(m.text())) errors.push(`${NAMES[i]} console: ${m.text()}`) })
+  page.on('console', m => { if (m.type() === 'error' && !/WebSocket|favicon|net::|AudioContext encountered an error from the audio device/.test(m.text())) errors.push(`${NAMES[i]} console: ${m.text()}`) })
   page.on('dialog', d => d.accept())
   pages.push(page)
 }

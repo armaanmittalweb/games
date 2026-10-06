@@ -61,9 +61,8 @@ for (const m of CATALOG) {
     '@context': 'https://schema.org',
     '@graph': [
       {
-        '@type': ['VideoGame', 'WebApplication'], name: `${m.name} (Game Night)`, url: SITE + path, description: m.seo.description,
-        genre: [m.cat, 'Party game'], gamePlatform: ['Web browser', 'Android', 'iOS', 'Desktop'], playMode: m.min === 1 ? ['MultiPlayer', 'SinglePlayer'] : ['MultiPlayer'],
-        numberOfPlayers: { '@type': 'QuantitativeValue', minValue: m.min, maxValue: m.max }, applicationCategory: 'GameApplication', operatingSystem: 'Any',
+        '@type': 'WebApplication', name: `${m.name} (Game Night)`, url: SITE + path, description: m.seo.description,
+        applicationCategory: 'EntertainmentApplication', operatingSystem: 'Any',
         isAccessibleForFree: true, offers: { '@type': 'Offer', price: '0', priceCurrency: 'INR' }, image: `${SITE}/og.png`, inLanguage: 'en',
         author: { '@type': 'Person', name: 'Armaan Mittal', url: 'https://www.amittal.dev/' },
       },
