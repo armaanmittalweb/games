@@ -388,36 +388,105 @@ table.tbl, .tbl { border-collapse: collapse; width: 100%; font-size: 14px; }
 .imp-name { font-size: 26px; display: flex; align-items: center; justify-content: center; gap: 10px; margin: 6px 0; }
 
 /* Code Words */
+/* The room becomes a spy's desk: a deep navy (paper in light mode) with faint spy things drawn on it. They are a
+   painted background, so they can never be dragged, picked or selected. */
+:root:has(.g-codewords) { --cw-desk: radial-gradient(ellipse 120% 80% at 50% 25%, #1b2c48, #0c1322 70%); --cw-ink: #9fbfff; --cw-ink-a: .075; }
+:root[data-theme="light"]:has(.g-codewords) { --cw-desk: radial-gradient(ellipse 120% 80% at 50% 25%, #f8f0dc, #e4d4b0 75%); --cw-ink: #6b4a1a; --cw-ink-a: .1; }
+:root:has(.g-codewords) { background: #0c1322; } :root[data-theme="light"]:has(.g-codewords) { background: #e9dbbb; }
+/* The desk sits under everything in the page (z-index -1 on the root), so the page itself lets it show through. */
+:root:has(.g-codewords) body { background: transparent; }
+.g-codewords::before, .g-codewords::after { content: ''; position: fixed; inset: 0; z-index: -1; pointer-events: none; user-select: none; }
+.g-codewords::before { background: var(--cw-desk); }
+.g-codewords::after { background: var(--cw-ink); opacity: var(--cw-ink-a);
+  -webkit-mask: url(/img/codewords-desk.svg) 0 0 / 260px 260px repeat; mask: url(/img/codewords-desk.svg) 0 0 / 260px 260px repeat; }
+:root:has(.g-codewords) .bar { background: color-mix(in srgb, var(--bar) 82%, transparent); backdrop-filter: blur(8px); }
+
 .cw { padding: 10px 12px; max-width: 980px; width: 100%; margin: 0 auto; display: flex; flex-direction: column; gap: 10px; }
-.cw-top { display: flex; align-items: center; gap: 10px; }
-.score-red, .score-blue { color: #fff; font-size: 26px; font-weight: 900; width: 46px; height: 46px; border-radius: 10px; display: flex; align-items: center; justify-content: center; }
-.score-red { background: var(--redteam); } .score-blue { background: var(--blueteam); }
+.cw-top { display: flex; align-items: center; gap: 10px; min-height: 62px; padding: 2px 4px 0; }
+.cw-status { min-width: 0; }
 b.red, .cw-teams .red { color: var(--redtext); } b.blue, .cw-teams .blue { color: var(--bluetext); }
-.clue.big { font-size: 20px; padding: 3px 12px; text-transform: uppercase; }
-.cw-board { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
-.cwc { background: #e9e4d4; color: #1a1a1a; border-radius: 8px; min-height: 64px; padding: 6px 4px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; position: relative; font-weight: 800; }
+
+/* Agents left per team; the team on turn's tile is lifted and ringed. */
+.cw-score { width: 54px; height: 58px; border-radius: 12px; color: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1;
+  box-shadow: 0 3px 0 #0003, inset 0 1px 0 #fff4; transition: transform .3s, box-shadow .3s; flex: none; }
+.cw-score b { font-size: 28px; font-weight: 900; font-variant-numeric: tabular-nums; }
+.cw-score small { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .5px; opacity: .85; margin-top: 2px; }
+.cw-score.red { background: linear-gradient(#ef6a62, #c8423b); } .cw-score.blue { background: linear-gradient(#64a2f0, #3474cc); }
+.cw-score.on { transform: translateY(-2px) scale(1.06); }
+.cw-score.on.red { box-shadow: 0 0 0 3px var(--bg), 0 0 0 5px var(--redteam), 0 6px 16px #0005; }
+.cw-score.on.blue { box-shadow: 0 0 0 3px var(--bg), 0 0 0 5px var(--blueteam), 0 6px 16px #0005; }
+
+/* The clue on turn: a paper tag with the word and a team-coloured number. */
+.cw-clue { display: inline-flex; flex-direction: column; align-items: center; gap: 4px; max-width: 100%; }
+.cw-clue-main { display: inline-flex; align-items: stretch; border-radius: 10px; overflow: hidden; box-shadow: 0 3px 0 #0003, 0 6px 14px #0003; animation: cw-tag .5s cubic-bezier(.2, 1.5, .4, 1) both; max-width: 100%; }
+.cw-clue-word { background: #fbf6e8; color: #1a1a1a; font-size: 22px; font-weight: 900; text-transform: uppercase; letter-spacing: 1px; padding: 5px 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.cw-clue-n { color: #fff; font-size: 22px; font-weight: 900; padding: 5px 12px; display: flex; align-items: center; }
+.cw-clue.red .cw-clue-n { background: var(--redteam); } .cw-clue.blue .cw-clue-n { background: var(--blueteam); }
+.cw-clue-left { display: flex; align-items: center; gap: 4px; font-size: 13px; color: var(--dim); font-weight: 600; }
+.cw-clue-left i { width: 9px; height: 9px; border-radius: 50%; background: currentColor; }
+.cw-clue.red .cw-clue-left i { color: var(--redteam); } .cw-clue.blue .cw-clue-left i { color: var(--blueteam); }
+.cw-clue-left span { margin-left: 4px; }
+@keyframes cw-tag { from { transform: translateY(-14px) rotate(-6deg) scale(.8); opacity: 0; } }
+
+/* The board: 25 paper cards on the desk. */
+.cw-board { display: grid; grid-template-columns: repeat(5, 1fr); gap: 7px; perspective: 900px; }
+.cwc { --paper: linear-gradient(#f8f3e6, #e7dfca); background: var(--paper); color: #1a1a1a; border-radius: 9px; min-height: 64px; padding: 6px 4px 9px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
+  position: relative; font-weight: 800; overflow: hidden; box-shadow: 0 2px 0 #0000002e, 0 4px 10px #0000002a, inset 0 0 0 1px #ffffff90; transition: transform .15s, box-shadow .15s, outline-color .15s; }
+.cwc::after { content: ''; position: absolute; left: 8px; right: 8px; bottom: 5px; height: 4px; border-radius: 3px; background: transparent; }
+.cwc:not(:disabled):hover { transform: translateY(-2px); box-shadow: 0 4px 0 #0000002e, 0 8px 16px #00000033, inset 0 0 0 1px #fff; }
+.cwc:not(:disabled):active { transform: translateY(1px); }
 .cwc:disabled { opacity: 1; cursor: default; }
 /* Long words shrink to fit the card instead of breaking (--n is the word length). */
-.cw-word { font-size: max(9px, min(clamp(11px, 2.4vw, 16px), calc((100vw - 72px) / 5 / (var(--n, 6) * .78)))); hyphens: auto; text-transform: uppercase; letter-spacing: .3px; word-break: break-word; text-align: center; }
-.cwc.key-red { box-shadow: inset 0 -6px 0 var(--redteam); } .cwc.key-blue { box-shadow: inset 0 -6px 0 var(--blueteam); }
-.cwc.key-assassin { box-shadow: inset 0 -6px 0 #111; background: #b8b2a0; } .cwc.key-neutral { box-shadow: inset 0 -6px 0 #c9b98f; }
-.cwc.open.red { background: var(--redteam); color: #fff; } .cwc.open.blue { background: var(--blueteam); color: #fff; }
-.cwc.open.neutral { background: #8c8471; color: #f2f2f2; } .cwc.open.assassin { background: #111; color: #ff6b6b; }
-.cwc.open .cw-word { opacity: .85; }
-.cwc.marked { outline: 3px solid var(--gold); }
+.cw-word { position: relative; font-size: max(9px, min(clamp(11px, 2.4vw, 16px), calc((100vw - 72px) / 5 / (var(--n, 6) * .88)))); hyphens: auto; text-transform: uppercase; letter-spacing: .3px; word-break: break-word; text-align: center; }
+/* What the spymasters (and everyone at the end) see on closed cards. */
+.cwc.key-red { --paper: linear-gradient(#fbe9e6, #f0cfca); } .cwc.key-red::after { background: var(--redteam); }
+.cwc.key-blue { --paper: linear-gradient(#e7f0fc, #cadcf4); } .cwc.key-blue::after { background: var(--blueteam); }
+.cwc.key-neutral::after { background: #c9b98f; }
+.cwc.key-assassin { --paper: linear-gradient(#4a4a4a, #262626); color: #f2f2f2; } .cwc.key-assassin::after { background: #000; box-shadow: 0 0 0 1px #fff3; }
+/* Turned over: the card shows who it was. */
+.cwc.open { box-shadow: 0 1px 0 #0003, inset 0 0 0 1px #ffffff30; }
+.cwc.open.red { --paper: linear-gradient(#ec625a, #c43e37); color: #fff; } .cwc.open.blue { --paper: linear-gradient(#5d9cee, #3070c8); color: #fff; }
+.cwc.open.neutral { --paper: linear-gradient(#a39a85, #857c68); color: #f6f2e8; } .cwc.open.assassin { --paper: linear-gradient(#242424, #0b0b0b); color: #ff6b6b; }
+.cwc.open .cw-word { opacity: .9; text-shadow: 0 1px 2px #0004; }
+.cw-ico { position: absolute; inset: 0; display: grid; place-items: center; opacity: .22; pointer-events: none; }
+.cw-ico svg { width: 70%; height: 82%; }
+.cwc.open.assassin .cw-ico { opacity: .4; }
+.cwc.just { animation: cw-flip .7s cubic-bezier(.3, 1.4, .5, 1) both; z-index: 1; }
+@keyframes cw-flip { 0% { transform: rotateY(90deg) scale(1.15); filter: brightness(1.8); } 55% { transform: rotateY(-12deg) scale(1.12); } 100% { transform: none; } }
+.cwc.marked { outline: 3px solid var(--gold); outline-offset: -1px; transform: translateY(-2px) rotate(-1.2deg); }
+.cwc.eyed { outline: 2px dashed var(--gold); outline-offset: -2px; }
 .cw-marks { display: flex; gap: 2px; position: absolute; top: 3px; right: 4px; }
 .cw-marks i { font-style: normal; font-size: 10px; background: #1a1a1a; color: #fff; border-radius: 50%; width: 16px; height: 16px; display: flex; align-items: center; justify-content: center; }
+.cw .cw-board { padding: 6px; margin: -6px; border-radius: 14px; transition: box-shadow .4s, background-color .4s; }
+.cw.turn-red .cw-board { box-shadow: 0 0 0 3px var(--redteam), 0 0 28px #e5534b55; } .cw.turn-blue .cw-board { box-shadow: 0 0 0 3px var(--blueteam), 0 0 28px #4a8fe755; }
+
 .cw-bottom { display: flex; flex-direction: column; gap: 8px; align-items: center; }
+.cw-bottom > p { margin: 0; }
 .clue-form { display: flex; gap: 8px; width: 100%; max-width: 520px; }
+.clue-form input { flex: 1; min-width: 0; }
 .clue-form select { width: 70px; }
 .cw-teams { display: flex; gap: 14px; flex-wrap: wrap; justify-content: center; }
+/* Clues so far, as tags: the clue in the team's colour, then the words it found coloured by what they were. */
+.cw-log { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; max-width: 100%; }
+.cw-logchip { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px; padding: 4px 9px 4px 4px; border-radius: 8px; background: var(--panel); font-size: 13px; box-shadow: 0 1px 0 #0002; }
+.cw-logchip > b { color: #fff; padding: 1px 7px; border-radius: 5px; text-transform: uppercase; font-size: 12px; letter-spacing: .4px; }
+.cw-logchip.red > b { background: var(--redteam); } .cw-logchip.blue > b { background: var(--blueteam); }
+.cw-dotw { display: inline-flex; align-items: center; gap: 3px; color: var(--dim); }
+.cw-dotw::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: #c9b98f; }
+.cw-dotw.red::before { background: var(--redteam); } .cw-dotw.blue::before { background: var(--blueteam); } .cw-dotw.assassin::before { background: #000; box-shadow: 0 0 0 1px var(--dim); }
 .teams { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-.team-col { border-radius: 12px; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
-.team-col.red { background: var(--red-bg); border: 1px solid var(--red-line); } .team-col.blue { background: var(--blue-bg); border: 1px solid var(--blue-line); }
+.team-col { border-radius: 14px; padding: 12px; display: flex; flex-direction: column; gap: 8px; box-shadow: 0 4px 14px #0003; }
+.team-col h3 { margin: 0; display: flex; justify-content: space-between; align-items: center; }
+.team-col.red { background: var(--red-bg); border: 1px solid var(--red-line); border-top: 5px solid var(--redteam); } .team-col.blue { background: var(--blue-bg); border: 1px solid var(--blue-line); border-top: 5px solid var(--blueteam); }
+.cw-count { font-size: 14px; min-width: 26px; height: 26px; border-radius: 99px; display: grid; place-items: center; color: #fff; }
+.team-col.red .cw-count { background: var(--redteam); } .team-col.blue .cw-count { background: var(--blueteam); }
+.cw-spy-pill { background: #1a1a1a; color: #fff; }
 .small-board .cwc { min-height: 44px; }
-/* The team on turn: its colour behind the clock and around the board. */
+.cw-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: #111; box-shadow: 0 0 0 1px var(--dim); vertical-align: -1px; }
+
+/* The team on turn: a bar in its colour that drains with the timer. */
 .cw-timer { position: relative; overflow: hidden; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 0 14px;
-  color: #fff; font-weight: 800; text-shadow: 0 1px 2px #0004; transition: background-color .4s; }
+  color: #fff; font-weight: 800; text-shadow: 0 1px 2px #0004; transition: background-color .4s; box-shadow: 0 3px 10px #0003; }
 .cw-timer.red { background: #8f2f2a; } .cw-timer.blue { background: #2a5596; }
 .cw-timer-fill { position: absolute; inset: 0 auto 0 0; transition: width .25s linear, background-color .4s; }
 .cw-timer.red .cw-timer-fill { background: var(--redteam); } .cw-timer.blue .cw-timer-fill { background: var(--blueteam); }
@@ -426,9 +495,7 @@ b.red, .cw-teams .red { color: var(--redtext); } b.blue, .cw-teams .blue { color
 .cw-timer > b { font-size: 22px; font-variant-numeric: tabular-nums; }
 .cw-timer.low > b { animation: cw-throb 1s ease-in-out infinite; }
 @keyframes cw-throb { 50% { transform: scale(1.18); } }
-.cw .cw-board { padding: 5px; margin: -5px; border-radius: 12px; transition: box-shadow .4s; }
-.cw.turn-red .cw-board { box-shadow: 0 0 0 3px var(--redteam); } .cw.turn-blue .cw-board { box-shadow: 0 0 0 3px var(--blueteam); }
-.cw-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: #111; box-shadow: 0 0 0 1px var(--dim); vertical-align: -1px; }
+
 /* Turn change: the whole screen in the new team's colour for a moment. --age keeps it in step when it mounts late. */
 .cw-splash { position: fixed; inset: 0; z-index: 28; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; padding: 24px 16px;
   color: #fff; text-align: center; cursor: pointer; animation: cw-splash 2.4s ease both; animation-delay: var(--age); }
@@ -437,16 +504,68 @@ b.red, .cw-teams .red { color: var(--redtext); } b.blue, .cw-teams .blue { color
 .cw-splash-why { font-size: 17px; font-weight: 700; opacity: .92; animation: res-in .4s .15s both; }
 .cw-splash-team { font-size: clamp(84px, 28vw, 220px); font-weight: 900; line-height: .9; letter-spacing: -2px; text-transform: uppercase; text-shadow: 0 6px 0 #0003; animation: cw-slam .55s cubic-bezier(.2, 1.6, .4, 1) both; }
 .cw-splash-turn { font-size: clamp(24px, 7vw, 44px); font-weight: 900; text-transform: uppercase; letter-spacing: 3px; animation: res-in .4s .25s both; }
-.cw-splash-you { margin-top: 18px; padding: 8px 16px; border-radius: 99px; background: #0003; font-weight: 800; font-size: 17px; animation: res-in .4s .4s both; }
+.cw-splash-you { margin-top: 18px; padding: 8px 16px; border-radius: 99px; background: #0003; color: #fff; font-weight: 800; font-size: 17px; animation: res-in .4s .4s both; }
 .cw-splash-you.mine { background: #fff; color: #1a1a1a; animation: res-in .4s .4s both, cw-throb 1s .9s ease-in-out 2; }
 .cw-chip { display: inline-block; padding: 1px 9px; border-radius: 6px; font-weight: 900; text-transform: uppercase; background: #e9e4d4; color: #1a1a1a; border: 2px solid #fff; }
 .cw-chip.red { background: var(--redteam); color: #fff; } .cw-chip.blue { background: var(--blueteam); color: #fff; } .cw-chip.neutral { background: #8c8471; color: #f2f2f2; }
 @keyframes cw-splash { 0% { clip-path: circle(0% at 50% 50%); } 18% { clip-path: circle(75% at 50% 50%); } 85% { opacity: 1; } 100% { clip-path: circle(75% at 50% 50%); opacity: 0; } }
 @keyframes cw-slam { from { transform: scale(2.4); opacity: 0; } to { transform: none; opacity: 1; } }
 @keyframes cw-fade { 85% { opacity: 1; } to { opacity: 0; } }
-@media (prefers-reduced-motion: reduce) { .cw-splash { animation-name: cw-fade; } .cw-splash > * { animation: none !important; } .cw-timer.low > b { animation: none; } }
+
+/* A clue given: the spymaster's card drops onto everyone's screen. */
+.cw-cluesplash { position: fixed; inset: 0; z-index: 29; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; padding: 24px 16px; cursor: pointer;
+  background: #0b1020b8; backdrop-filter: blur(3px); animation: cw-fade 2.6s ease both; }
+.cw-cluecard { position: relative; width: min(340px, 86vw); background: linear-gradient(#fdf8ea, #efe5cc); color: #1a1a1a; border-radius: 14px; padding: 0 18px 22px; text-align: center;
+  box-shadow: 0 18px 50px #0008, inset 0 0 0 1px #fff; animation: cw-drop .6s cubic-bezier(.2, 1.4, .4, 1) both; transform: rotate(-2.5deg); }
+.cw-cluecard-from { margin: 0 -18px 16px; padding: 9px 12px; border-radius: 14px 14px 0 0; color: #fff; font-weight: 800; font-size: 14px; text-transform: uppercase; letter-spacing: 1.5px; }
+.cw-cluesplash.red .cw-cluecard-from { background: var(--redteam); } .cw-cluesplash.blue .cw-cluecard-from { background: var(--blueteam); }
+.cw-cluecard-word { font-size: min(56px, calc(min(300px, 78vw) / (var(--n, 6) * .72))); font-weight: 900; text-transform: uppercase; letter-spacing: 1px; line-height: 1.1; word-break: break-word; }
+.cw-cluecard-n { position: absolute; top: -20px; right: -18px; width: 62px; height: 62px; border-radius: 50%; display: grid; place-items: center; color: #fff; font-size: 32px; font-weight: 900;
+  border: 4px solid #fff; box-shadow: 0 6px 16px #0006; animation: cw-stamp .45s .35s cubic-bezier(.2, 1.6, .4, 1) both; }
+.cw-cluesplash.red .cw-cluecard-n { background: var(--redteam); } .cw-cluesplash.blue .cw-cluecard-n { background: var(--blueteam); }
+.cw-cluesplash .cw-splash-you { margin-top: 14px; }
+@keyframes cw-drop { from { transform: translateY(-60vh) rotate(-18deg); } }
+@keyframes cw-stamp { from { transform: scale(2.6) rotate(-30deg); opacity: 0; } }
+
+/* The end: the deciding card, then the winners, before the results. */
+.cw.finale-black .cw-board { animation: cw-quake .55s .3s both; }
+@keyframes cw-quake { 15%, 55% { transform: translate(-7px, 3px) rotate(-.6deg); } 35%, 75% { transform: translate(7px, -3px) rotate(.6deg); } }
+.cw-finale { position: fixed; inset: 0; z-index: 29; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; padding: 24px 16px; color: #fff; text-align: center; overflow: hidden; }
+.cw-finale::before { content: ''; position: absolute; inset: 0; z-index: -1; animation: cw-sweep .7s .9s cubic-bezier(.5, 0, .2, 1) both; }
+.cw-finale.red::before { background: radial-gradient(circle at 50% 42%, #f47c74, var(--redteam) 42%, #8f2721); }
+.cw-finale.blue::before { background: radial-gradient(circle at 50% 42%, #78b0f4, var(--blueteam) 42%, #214f94); }
+.cw-finale.black::before { background: radial-gradient(circle at 50% 40%, #4a1210, #120404 55%, #000); }
+.cw-finale.black::after { content: ''; position: absolute; inset: 0; background: #fff; pointer-events: none; animation: cw-flash .5s .85s both; }
+.cw-finale-card { position: relative; width: min(220px, 60vw); padding: 26px 14px; border-radius: 14px; font-size: 26px; font-weight: 900; text-transform: uppercase; letter-spacing: 1px; overflow: hidden; word-break: break-word;
+  box-shadow: 0 20px 50px #0009, inset 0 0 0 2px #ffffff55; animation: cw-cardin .7s 1.05s cubic-bezier(.2, 1.4, .4, 1) both; transform: rotate(-4deg); }
+.cw-finale-card span:last-child { position: relative; }
+.cw-finale-card.red { background: linear-gradient(#ec625a, #c43e37); } .cw-finale-card.blue { background: linear-gradient(#5d9cee, #3070c8); }
+.cw-finale-card.assassin { background: linear-gradient(#262626, #050505); color: #ff6b6b; box-shadow: 0 0 0 3px #ff6b6b66, 0 0 60px #ff3b3088, 0 20px 50px #000; }
+.cw-finale-card .cw-ico { opacity: .3; }
+.cw-finale-boom { font-size: clamp(56px, 18vw, 120px); font-weight: 900; line-height: 1; color: #ffd43b; text-transform: uppercase; letter-spacing: -1px; margin-top: -18px;
+  text-shadow: 0 0 0 #000, 4px 4px 0 #e8590c, 8px 8px 0 #0008; animation: cw-boom .6s 1.35s cubic-bezier(.2, 1.8, .4, 1) both; transform: rotate(-7deg); }
+.cw-finale-why { margin-top: 14px; font-size: 18px; font-weight: 800; opacity: .95; animation: res-in .4s 1.6s both; }
+.cw-finale-team { font-size: clamp(76px, 25vw, 200px); font-weight: 900; line-height: .9; letter-spacing: -2px; text-transform: uppercase; text-shadow: 0 6px 0 #0003; animation: cw-slam .6s 1.9s cubic-bezier(.2, 1.6, .4, 1) both; }
+.cw-finale.black .cw-finale-team { color: var(--team); }
+.cw-finale.black.red { --team: #ff6f66; } .cw-finale.black.blue { --team: #79b0ff; }
+.cw-finale-wins { font-size: clamp(28px, 8vw, 52px); font-weight: 900; text-transform: uppercase; letter-spacing: 4px; animation: res-in .4s 2.2s both; }
+.cw-finale .cw-splash-you { animation: res-in .4s 2.5s both; }
+.cw-finale.black .cw-splash-you:not(.mine) { background: #ffffff24; }
+.cw-finale .cw-splash-you.mine { animation: res-in .4s 2.5s both, cw-throb 1s 3s ease-in-out 2; }
+@keyframes cw-sweep { from { clip-path: circle(0% at 50% 50%); } to { clip-path: circle(80% at 50% 50%); } }
+@keyframes cw-flash { 0% { opacity: 0; } 25% { opacity: .9; } 100% { opacity: 0; } }
+@keyframes cw-cardin { from { transform: translateY(40vh) rotate(-30deg) scale(.4); opacity: 0; } }
+@keyframes cw-boom { from { transform: scale(3) rotate(-25deg); opacity: 0; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .cw-splash, .cw-cluesplash { animation-name: cw-fade; }
+  .cw-splash > *, .cw-cluesplash *, .cw-finale *, .cw-finale::before, .cw-finale::after, .cwc.just, .cw.finale-black .cw-board, .cw-clue-main { animation: none !important; }
+  .cw-finale.black::after { display: none; }
+  .cw-timer.low > b { animation: none; }
+}
 @media (orientation: landscape) and (max-height: 500px) {
-  .cw-splash-team { font-size: 26vh; } .cw-splash-you { margin-top: 8px; }
+  .cw-splash-team, .cw-finale-team { font-size: 26vh; } .cw-splash-you { margin-top: 8px; }
+  .cw-finale-card { padding: 12px; font-size: 20px; } .cw-finale-boom { font-size: 16vh; margin-top: -8px; } .cw-finale-why { margin-top: 4px; }
   /* Phone on its side: scores, timer and the clue box on the left, the whole board on the right without scrolling. */
   .cw:has(> .cw-board) { display: grid; grid-template-columns: minmax(190px, 32%) 1fr; grid-template-rows: auto auto 1fr; align-items: start; column-gap: 14px; }
   .cw:has(> .cw-board) > .cw-top { grid-area: 1 / 1; flex-wrap: wrap; justify-content: space-between; }
@@ -454,7 +573,7 @@ b.red, .cw-teams .red { color: var(--redtext); } b.blue, .cw-teams .blue { color
   .cw:has(> .cw-board) > .cw-timer { grid-area: 2 / 1; }
   .cw:has(> .cw-board) > .cw-bottom { grid-area: 3 / 1; }
   .cw:has(> .cw-board) > .cw-board { grid-area: 1 / 2 / 4 / 3; margin: 0; }
-  .cw:has(> .cw-board) .cwc { min-height: max(44px, calc((var(--vvh, 100dvh) - var(--bar-h) - 54px) / 5)); }
+  .cw:has(> .cw-board) .cwc { min-height: max(44px, calc((var(--vvh, 100dvh) - var(--bar-h) - 58px) / 5)); }
   .cw .clue-form { flex-wrap: wrap; } .cw .clue-form input { flex: 1 1 100%; }
   .cw:has(> .cw-board) .cw-word { font-size: min(15px, 1.7vw); }
 }

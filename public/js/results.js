@@ -84,14 +84,13 @@ function Count({ to, delay = 0 }) {
   return html`<span>${typeof v === 'number' ? fmtNum(v) : v}</span>`
 }
 
-/** Paper confetti over the whole screen, once. */
-function confetti(big) {
+/** Paper confetti over the whole screen, once. Games can throw it too, in their own colours. */
+export function confetti(big, colors = ['#f5c542', '#ff6b6b', '#4dabf7', '#69db7c', '#da77f2', '#ff922b']) {
   if (still()) return
   const layer = document.createElement('div')
   layer.className = 'confetti'
   layer.setAttribute('aria-hidden', 'true')
   document.body.append(layer)
-  const colors = ['#f5c542', '#ff6b6b', '#4dabf7', '#69db7c', '#da77f2', '#ff922b']
   const n = big ? 120 : 60
   const W = innerWidth, H = innerHeight
   for (let i = 0; i < n; i++) {

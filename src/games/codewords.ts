@@ -25,6 +25,9 @@ interface S {
   turnN: number
   turnAt: number
   handoff: { team: Team; why: 'time' | 'pass' | 'miss' | 'done'; word?: string; card?: Card } | null
+  clueAt: number
+  // The card that ended the game, for the finale before the results.
+  final: { i: number; card: Card; by: Team; at: number } | null
 }
 
 const other = (t: Team): Team => (t === 'red' ? 'blue' : 'red')
@@ -61,10 +64,21 @@ function endTurn(g: Ctx<C>, s: S, why: 'time' | 'pass' | 'miss' | 'done', i?: nu
   newTurn(g, s)
 }
 
-function finish(g: Ctx<C>, s: S, winner: Team, why: string) {
+/** The winning card stays on screen for a moment (phones play the finale), then the results come. */
+const FINALE = 4500
+
+function finish(g: Ctx<C>, s: S, winner: Team, why: string, i: number) {
   s.phase = 'over'
   s.winner = winner
   s.why = why
+  s.final = { i, card: s.keys[i], by: s.turn, at: g.now }
+  s.clue = null
+  s.until = g.now + FINALE
+  g.wake(s.until)
+}
+
+function results(g: Ctx<C>, s: S) {
+  const winner = s.winner!, why = s.why
   g.wake(0)
   g.end(g.players.map(id => ({ id, place: s.team[id] === winner ? 1 : 2, score: s.team[id] === winner ? 'Won' : 'Lost', detail: `${s.team[id] ?? ''}${s.spy[s.team[id]] === id ? ' spymaster' : ''}` })),
     { winner, why, words: s.words, keys: s.keys })
@@ -79,7 +93,7 @@ function balance(g: Ctx<C>, s: S) {
 
 export const codewords: Game<S, C> = {
   setup(g) {
-    const s = { phase: 'teams', team: {}, spy: { red: null, blue: null }, clue: null, left: 0, marks: {}, log: [], winner: null, why: '', until: 0, turnN: 0, turnAt: 0, handoff: null } as unknown as S
+    const s = { phase: 'teams', team: {}, spy: { red: null, blue: null }, clue: null, left: 0, marks: {}, log: [], winner: null, why: '', until: 0, turnN: 0, turnAt: 0, handoff: null, clueAt: 0, final: null } as unknown as S
     balance(g, s)
     deal(g, s)
     return s
@@ -125,6 +139,7 @@ export const codewords: Game<S, C> = {
       const w = norm(word)
       if (s.words.some((x, i) => !s.open[i] && (norm(x).includes(w) || w.includes(norm(x))))) return 'Your clue cannot be (part of) a word on the board'
       s.clue = { word, n }
+      s.clueAt = g.now
       // 0 means "unlimited": guess as many as you like.
       s.left = n === 0 ? 25 : n + 1
       s.log.push({ team: s.turn, clue: word, n, picks: [] })
@@ -150,9 +165,9 @@ export const codewords: Game<S, C> = {
       delete s.marks[i]
       s.log[s.log.length - 1].picks.push(i)
       const card = s.keys[i]
-      if (card === 'assassin') return finish(g, s, other(s.turn), `${s.turn === 'red' ? 'Red' : 'Blue'} hit a black card`)
+      if (card === 'assassin') return finish(g, s, other(s.turn), `${s.turn === 'red' ? 'Red' : 'Blue'} hit a black card`, i)
       for (const team of ['red', 'blue'] as Team[]) {
-        if (s.keys.every((k, j) => k !== team || s.open[j])) return finish(g, s, team, `${team === 'red' ? 'Red' : 'Blue'} found all its agents`)
+        if (s.keys.every((k, j) => k !== team || s.open[j])) return finish(g, s, team, `${team === 'red' ? 'Red' : 'Blue'} found all its agents`, i)
       }
       if (card !== s.turn) return endTurn(g, s, 'miss', i)
       s.left--
@@ -167,6 +182,7 @@ export const codewords: Game<S, C> = {
   },
   tick(g, s) {
     if (s.phase === 'play' && s.until && g.now >= s.until) endTurn(g, s, 'time')
+    else if (s.phase === 'over' && s.until && g.now >= s.until) results(g, s)
   },
   view(g, s, id) {
     const t = s.team[id]
@@ -178,7 +194,7 @@ export const codewords: Game<S, C> = {
       // Spymasters see the key; everyone else only the cards turned over.
       keys: s.keys.map((k, i) => (spy || over || s.open[i] ? k : null)),
       turn: s.turn, first: s.first, clue: s.clue, left: s.left, marks: s.marks, log: s.log, winner: s.winner, why: s.why, until: s.until,
-      turnN: s.turnN, turnAt: s.turnAt, handoff: s.handoff, black: s.keys.filter(k => k === 'assassin').length,
+      turnN: s.turnN, turnAt: s.turnAt, handoff: s.handoff, clueAt: s.clueAt, final: s.final, black: s.keys.filter(k => k === 'assassin').length,
       remaining: { red: s.keys.filter((k, i) => k === 'red' && !s.open[i]).length, blue: s.keys.filter((k, i) => k === 'blue' && !s.open[i]).length },
     }
   },

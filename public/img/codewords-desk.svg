@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="260" height="260" viewBox="0 0 260 260" fill="none" stroke="#000" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+  <!-- A spy's desk, drawn as a tile: Code Words uses it as a mask behind the board. -->
+  <g transform="rotate(-14 40 40)"><circle cx="36" cy="36" r="15"/><path d="M47 47l16 16" stroke-width="6"/></g>
+  <g transform="translate(168 18)"><path d="M8 40c0-20 8-32 22-32s22 12 22 32"/><path d="M16 42c0-16 5-26 14-26s14 10 14 26"/><path d="M24 44c0-12 2-20 6-20s6 8 6 20"/><path d="M1 32C5 13 15 2 30 2s25 11 29 30"/></g>
+  <path d="M125 20l4 9 10 1-7 7 2 10-9-5-9 5 2-10-7-7 10-1z"/>
+  <g transform="rotate(20 120 128)"><circle cx="96" cy="128" r="10"/><path d="M106 128h42M138 128v9M146 128v7"/></g>
+  <g transform="rotate(-6 50 108)"><path d="M43 100a9 9 0 1 1 13 8c-3 2-4 4-4 7"/><circle cx="52" cy="123" r="1.6" fill="#000"/></g>
+  <g transform="rotate(-8 205 112)"><path d="M184 104h42M193 104l4-14h16l4 14"/><circle cx="198" cy="116" r="6"/><circle cx="214" cy="116" r="6"/><path d="M204 116h4"/></g>
+  <g transform="rotate(-9 45 180)"><rect x="18" y="162" width="54" height="36" rx="3"/><path d="M18 164l27 20 27-20"/></g>
+  <g transform="rotate(7 200 188)"><path d="M168 168h20l6 7h34v42h-60z"/><text x="198" y="202" font-family="Arial, sans-serif" font-weight="700" font-size="9" letter-spacing="1" text-anchor="middle" fill="#000" stroke="none">SECRET</text></g>
+  <g transform="rotate(-20 116 222)"><ellipse cx="108" cy="230" rx="5" ry="8"/><ellipse cx="124" cy="214" rx="5" ry="8"/></g>
+  <g transform="rotate(10 240 150)"><rect x="230" y="146" width="20" height="16" rx="2"/><path d="M234 146v-5a6 6 0 0 1 12 0v5"/></g>
+</svg>
