@@ -28,6 +28,7 @@ export const SCHEMA = `
   CREATE TABLE IF NOT EXISTS a_counts (day TEXT, kind TEXT, key TEXT, n INTEGER, PRIMARY KEY (day, kind, key));
   CREATE TABLE IF NOT EXISTS a_feedback (id INTEGER PRIMARY KEY AUTOINCREMENT, at INTEGER, vid TEXT, rid TEXT, game TEXT, rating INTEGER,
     again INTEGER, kind TEXT, text TEXT, x INTEGER DEFAULT 0);
+  CREATE TABLE IF NOT EXISTS a_live (rid TEXT PRIMARY KEY, phase TEXT, vids TEXT, at INTEGER);
   CREATE INDEX IF NOT EXISTS a_games_rid ON a_games (rid);
   CREATE INDEX IF NOT EXISTS a_sessions_vid ON a_sessions (vid);
 `
@@ -132,6 +133,14 @@ export function gameEnded(sql: Sql, g: GameEnd, now = Date.now()) {
   if (g.outcome === 'done') sql.exec('UPDATE a_rooms SET done = done + 1, last = ? WHERE rid = ?', now, g.rid)
 }
 
+/** Who is connected to a room right now (a browser id each), sent whenever that or the room's phase changes. */
+export interface Presence { rid: string; phase: string; vids: string[] }
+export function presence(sql: Sql, p: Presence, now = Date.now()) {
+  if (!p.vids.length) sql.exec('DELETE FROM a_live WHERE rid = ?', p.rid)
+  else sql.exec('INSERT INTO a_live (rid, phase, vids, at) VALUES (?, ?, ?, ?) ON CONFLICT(rid) DO UPDATE SET phase = excluded.phase, vids = excluded.vids, at = excluded.at',
+    p.rid, p.phase, JSON.stringify(p.vids.slice(0, 40)), now)
+}
+
 export interface Feedback { vid: string; rid: string; game: string; rating?: number; again?: boolean; kind?: string; text?: string }
 export function feedback(sql: Sql, f: Feedback, now = Date.now()) {
   const rating = Number.isInteger(f.rating) && f.rating! >= 1 && f.rating! <= 5 ? f.rating! : null
@@ -195,6 +204,16 @@ export function report(sql: Sql, days: number, now = Date.now()) {
     .filter(g => realRids.has(g.rid))
   const games = gamesAll.filter(g => dayOf(g.chosen) >= from)
   const STALE = 6 * 3_600_000
+  // Right now: people connected to a room, from what each room last reported. A room that has not reported for 6 hours
+  // without emptying is taken to have closed without saying so.
+  const presenceNow = { online: 0, rooms: 0, playing: 0, waiting: 0 }
+  for (const r of q<{ phase: string; vids: string }>('SELECT phase, vids FROM a_live WHERE at > ?', now - STALE)) {
+    const real = (JSON.parse(r.vids) as string[]).filter(v => !testVids.has(v)).length
+    if (!real) continue
+    presenceNow.rooms++
+    presenceNow.online += real
+    if (r.phase === 'game') presenceNow.playing += real; else presenceNow.waiting += real
+  }
   const ended = games.filter(g => g.ended)
   const done = games.filter(g => g.outcome === 'done')
   const aborted = games.filter(g => g.outcome === 'aborted')
@@ -307,7 +326,7 @@ export function report(sql: Sql, days: number, now = Date.now()) {
 
   return {
     now, today, since, from, days, tz: 'IST (UTC+5:30)',
-    live: { games: liveGames.length, players: liveGames.reduce((a, g) => a + g.players, 0) },
+    live: { games: liveGames.length, players: liveGames.reduce((a, g) => a + g.players, 0), ...presenceNow },
     acquisition: {
       dau: byDay.get(today)?.v.size ?? 0, wau: span(today, 7, 'v'), mau: span(today, 30, 'v'),
       dauPlayers: byDay.get(today)?.p.size ?? 0, wauPlayers: span(today, 7, 'p'), mauPlayers: span(today, 30, 'p'),

@@ -75,6 +75,15 @@ const idOk = (x: unknown): x is string => typeof x === 'string' && /^[a-z0-9]{6,
 
 const attached = (ws: WebSocket) => (ws.deserializeAttachment() as { id?: string } | null)?.id
 
+/** A room saved while a game that has since been taken off the site was picked or playing goes back to its lobby. */
+function retire(s: State) {
+  if (s.inst && !GAMES[s.inst.id]) { s.inst = null; s.phase = 'lobby' }
+  if (!GAMES[s.pick]) s.pick = 'draw'
+  s.history = s.history.filter(h => GAMES[h.id])
+  if (s.night && [...s.night.plan, ...s.night.rounds.map(r => r.id)].some(id => !GAMES[id])) s.night = null
+  return s
+}
+
 export class Room extends DurableObject<Env> {
   s: State | null = null
   chat: Chat[] = []
@@ -94,13 +103,15 @@ export class Room extends DurableObject<Env> {
   ended: { standings: Standing[]; summary?: unknown } | null = null
   dirty = false
   lastSave = 0
+  /** Who was online, and in which phase, when the Stats object last heard (it shows who is on right now). */
+  lastPresence = ''
 
   constructor(ctx: DurableObjectState, env: Env) {
     super(ctx, env)
     ctx.setWebSocketAutoResponse(new WebSocketRequestResponsePair('ping', 'pong'))
     ctx.blockConcurrencyWhile(async () => {
       const s = await ctx.storage.get<State>('s')
-      this.s = s && s.v === 2 ? s : null
+      this.s = s && s.v === 2 ? retire(s) : null
       this.chat = (await ctx.storage.get<Chat[]>('chat')) ?? []
       for (const [k, v] of await ctx.storage.list({ prefix: 'b:' })) this.blobs.set(k.slice(2), v)
     })
@@ -669,6 +680,16 @@ export class Room extends DurableObject<Env> {
   }
 
   async flush() {
+    const s = this.s
+    if (s?.rid) {
+      const vids = [...this.online()].map(id => s.members[id]?.vid || id).sort()
+      const key = `${s.phase} ${vids.join(',')}`
+      if (key !== this.lastPresence) {
+        this.lastPresence = key
+        const p = { rid: s.rid, phase: s.phase, vids }
+        this.reports.push(st => st.presence(p))
+      }
+    }
     if (Object.keys(this.moved).length) {
       const moved = this.moved
       this.moved = {}

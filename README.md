@@ -20,7 +20,6 @@ game, or plans a whole game night, and the room keeps one leaderboard across eve
 | Trivia | 1–30 | Multiple choice with speed points and streaks; an India category. |
 | Word Grid | 1–20 | Boggle-style word search, unique-word scoring. |
 | Last Card | 2–10 | Uno-style card game with stacking and Last Card calls. |
-| Liar's Dice | 2–8 | Hidden dice, rising bids, calls of "liar". |
 | Reaction | 1–30 | Wait for green and tap; decoys and moving targets. |
 | Stop the Clock | 1–30 | Stop a stopwatch on a target time; the clock may vanish. Closest wins. |
 | Closest Wins | 2–30 | Number questions; the nearest guess scores. |
@@ -84,9 +83,11 @@ All content is in plain English for friend groups in India.
 - Connections groups (`src/content/connections.ts`) list the themes their words could also belong to; two groups with a
   theme in common never share a board, so every board has one answer.
 - GeoGuess: Natural Earth's 1:10m countries as India sees its borders (public domain), simplified by
-  `node scripts/build-geo.mjs <ne_10m_admin_0_countries_ind.geojson>` into `public/geo/world.json` (drawing) and
-  `src/content/geo-shapes.ts` (scoring). Capitals and cities are in `src/content/geo.ts`; `npm test` checks each one
-  lies inside its country.
+  `node scripts/build-geo.mjs <ne_10m_admin_0_countries_ind.geojson>` into `public/geo/lo.json` (the map zoomed out,
+  ~5 km detail), `public/geo/hi.json` (zoomed in, ~1 km, fetched once needed) and `src/content/geo-shapes.ts`
+  (scoring, ~2 km). The map is our own canvas renderer (`public/js/games/geomap.js`): Mercator, wraps at the date line.
+  Capitals and cities are in `src/content/geo.ts`; `npm test` checks each one lies within 25 km of its country, that
+  every country is drawn on both maps, and that each country's answer marker is on its land.
 - Music Guess: Bollywood songs with Apple's free 30-second previews, found by `node scripts/build-songs.mjs` (iTunes
   Search API, India store). Only tracks from the film's own album are kept (no covers, remixes or lo-fi versions), and
   each round links to the song on Apple Music.

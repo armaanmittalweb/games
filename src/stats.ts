@@ -66,6 +66,8 @@ export class Stats extends DurableObject {
   /** A game the host ended before it finished. */
   async aborted(a: A.GameEnd) { A.gameEnded(this.sql, a) }
 
+  async presence(p: A.Presence) { A.presence(this.sql, p) }
+
   async feedback(f: A.Feedback) { A.feedback(this.sql, f) }
 
   /** Page views, share taps and script errors, sent by the page to /api/ev. */

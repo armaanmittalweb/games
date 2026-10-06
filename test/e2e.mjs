@@ -15,7 +15,7 @@ const QUICK = {
   draw: { rounds: 1, seconds: 30 }, telephone: { writeSeconds: 15, drawSeconds: 20 }, imposter: { rounds: 1, clues: 1, clueSeconds: 10, talkSeconds: 15 },
   codewords: { timer: 60 }, wordle: { mode: 'blitz', words: 2, roundSeconds: 25 }, bluff: { rounds: 2, writeSeconds: 20, voteSeconds: 10 },
   mindmeld: { rounds: 3, seconds: 10 }, mostlikely: { rounds: 3, seconds: 10 }, trivia: { rounds: 3, seconds: 6 }, wordgrid: { minutes: 1 },
-  lastcard: { hand: 4, turnSeconds: 10 }, stopwatch: { rounds: 3 }, liarsdice: { dice: 2, turnSeconds: 15 }, reaction: { rounds: 3 }, closest: { rounds: 3, seconds: 10 },
+  lastcard: { hand: 4, turnSeconds: 10 }, stopwatch: { rounds: 3 }, reaction: { rounds: 3 }, closest: { rounds: 3, seconds: 10 },
   connections: { puzzles: 1, seconds: 60 }, geoguess: { rounds: 3, seconds: 12 }, musicguess: { rounds: 3, seconds: 10 }, movieguess: { rounds: 3, seconds: 21 },
   mastermind: { rounds: 1, seconds: 60 }, territory: { seconds: 5, size: 'small' }, auction: { lots: 9, seconds: 6 }, make24: { rounds: 3, seconds: 20 },
 }
@@ -65,8 +65,8 @@ async function step(page, id) {
     await tryClick('button:has-text("Submit"):not([disabled])')
     return
   }
-  if (id === 'geoguess' && await visible(page, '.geo-map svg')) {
-    const box = await page.locator('.geo-map svg').boundingBox()
+  if (id === 'geoguess' && await visible(page, '.geo-map canvas')) {
+    const box = await page.locator('.geo-map canvas').boundingBox()
     if (box && await visible(page, 'button:has-text("Lock in")')) {
       await page.mouse.click(box.x + box.width * (0.2 + Math.random() * 0.6), box.y + box.height * (0.2 + Math.random() * 0.6))
       await tryClick('button:has-text("Lock in"):not([disabled])')
@@ -100,7 +100,6 @@ async function step(page, id) {
   if (await tryClick('.lc-hand .lc.ok')) { await tryClick('.lc-wheelpick button'); return }
   if (await tryClick('.lc-wheelpick button')) return
   if (await tryClick('button:has-text("Draw a card"), button:has-text("Keep it and pass"), button:has-text("Take ")')) return
-  if (id === 'liarsdice' && await tryClick(Math.random() < 0.3 ? '.bidder .danger' : '.bidder .primary:not([disabled])')) return
   if (await tryClick('.who:not([disabled])')) return
   if (await tryClick('.choice:not([disabled])')) return
   if (await tryClick('.def:not([disabled])')) return

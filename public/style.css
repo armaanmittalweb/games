@@ -393,31 +393,6 @@ b.red, .cw-teams .red { color: var(--redtext); } b.blue, .cw-teams .blue { color
 .like { align-self: flex-end; background: var(--panel2); }
 .like.on { background: var(--sel-blue); }
 
-/* Last Card */
-.lcg { padding: 10px 12px; max-width: 980px; width: 100%; margin: 0 auto; display: flex; flex-direction: column; gap: 12px; }
-.opps { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
-.opp { background: var(--panel); border: 2px solid var(--line); border-radius: 12px; padding: 8px 10px; display: flex; flex-direction: column; align-items: center; gap: 3px; min-width: 96px; max-width: 140px; }
-.opp.turn { border-color: var(--gold); }
-
-/* Liar's Dice */
-.ld { padding: 10px 12px; max-width: 900px; width: 100%; margin: 0 auto; display: flex; flex-direction: column; gap: 12px; align-items: center; }
-.dice-row { display: flex; gap: 3px; flex-wrap: wrap; justify-content: center; }
-.die { display: inline-grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 1fr); gap: 2px; width: 44px; height: 44px; padding: 6px; background: #f4f1e8; border-radius: 9px; vertical-align: middle; box-shadow: 0 2px 0 #b9b19a; }
-.die i { border-radius: 50%; }
-.die i.on { background: #1a1a1a; }
-.die.sm { width: 24px; height: 24px; padding: 3px; gap: 1px; border-radius: 5px; box-shadow: none; }
-.die.hidden { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; padding: 0; font-size: 13px; background: var(--line); color: var(--dim); box-shadow: none; border-radius: 5px; }
-.die.hit { background: var(--gold); }
-.dice-row.big .die { width: 62px; height: 62px; padding: 9px; gap: 3px; }
-.ld-mid { display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center; }
-.bid-now { display: flex; flex-direction: column; align-items: center; font-size: 24px; }
-.ld-mine { text-align: center; }
-.bidder { display: flex; flex-direction: column; gap: 12px; align-items: center; }
-.q { font-size: 28px; min-width: 40px; text-align: center; }
-.faces { display: flex; gap: 4px; }
-.face { padding: 6px; background: var(--panel2); line-height: 0; }
-.face.sel { background: var(--gold); }
-
 /* Phones */
 @media (max-width: 860px) {
   .hero { grid-template-columns: 1fr; gap: 14px; padding-top: 8px; }
@@ -613,21 +588,16 @@ a.button.alt { background: var(--line); color: var(--text); }
 /* GeoGuess */
 .geo-ask { display: flex; flex-direction: column; align-items: center; gap: 2px; }
 .geo-ask b { font-size: clamp(22px, 5vw, 32px); }
-.geo-map { position: relative; border-radius: 14px; overflow: hidden; border: 1px solid var(--line); }
-.geo-map svg { display: block; width: 100%; aspect-ratio: 2.5; touch-action: none; cursor: crosshair; user-select: none; }
-.geo-sea { fill: #1d3a52; }
-:root[data-theme="light"] .geo-sea { fill: #bcd9ee; }
-.geo-land { fill: #5f7d4f; stroke: #24331f; stroke-width: .7; }
-:root[data-theme="light"] .geo-land { fill: #ece6d2; stroke: #9a9480; }
-.geo-land.hit { fill: var(--gold); }
-.geo-pin { stroke: #fff; stroke-width: 2; }
-.geo-target { fill: none; stroke: var(--gold); stroke-width: 3; }
-.geo-line { stroke: #fff; stroke-width: 1.5; stroke-dasharray: 4 3; opacity: .8; }
-.geo-zoom { position: absolute; right: 8px; top: 8px; display: flex; flex-direction: column; gap: 4px; }
-.geo-zoom button { width: 36px; height: 36px; padding: 0; font-size: 20px; border-radius: 8px; background: var(--panel); }
-.geo-loading { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
+.geo-map { position: relative; border-radius: 14px; overflow: hidden; border: 1px solid var(--line); background: var(--geo-sea);
+  --geo-sea: #183247; --geo-land: #557548; --geo-edge: #1f2d1b; --geo-grid: rgba(255,255,255,.05); --geo-hit: #f5c542; --geo-hit-edge: #fff3c4; }
+:root[data-theme="light"] .geo-map { --geo-sea: #b9d7ec; --geo-land: #efe9d6; --geo-edge: #9a9480; --geo-grid: rgba(20,60,100,.07); --geo-hit: #f2c230; --geo-hit-edge: #6b4f00; }
+.geo-map canvas { display: block; width: 100%; height: min(64vh, 620px); min-height: 300px; touch-action: none; cursor: crosshair; user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent; outline: none; }
+.geo-map canvas:focus-visible { outline: 3px solid var(--accent); outline-offset: -3px; }
+.geo-map canvas.grab { cursor: grabbing; }
+.geo-zoom { position: absolute; right: 8px; top: 8px; display: flex; flex-direction: column; gap: 6px; }
+.geo-zoom button { width: 40px; height: 40px; padding: 0; font-size: 22px; line-height: 1; border-radius: 10px; background: var(--panel); border: 1px solid var(--line); box-shadow: 0 2px 6px #0004; display: grid; place-items: center; }
 @media (max-width: 640px) {
-  .geo-map svg { aspect-ratio: 1.5; }
+  .geo-map canvas { height: min(58vh, 520px); }
   .cn-word { min-height: 56px; }
   .m24-card { width: 74px; height: 100px; }
   .m24-n { font-size: 30px; }

@@ -36,7 +36,7 @@ export function cuts(n: number) {
   return seq
 }
 
-const FINALS = ['reaction', 'stopwatch', 'trivia', 'wordle', 'liarsdice', 'closest', 'wordgrid', 'lastcard']
+const FINALS = ['reaction', 'stopwatch', 'trivia', 'wordle', 'closest', 'wordgrid', 'lastcard']
 
 function score(m: Meta, moods: Mood[], length: Length, r: () => number) {
   let s = r() * 3

@@ -1,4 +1,5 @@
 // Checks the content pools: no item twice in a pool, and how many plays each pool lasts before anything repeats.
+import { readFileSync } from 'node:fs'
 import { MIND_MELD } from '../src/content/party'
 import { CLEAN, SPICY } from '../src/content/likely'
 import { ESTIMATES } from '../src/content/estimates'
@@ -77,10 +78,17 @@ export function checkContent(): number {
   for (const p of [...CAPITALS, ...CITIES]) {
     const home = COUNTRIES.find(c => c.n === p.of)
     if (!home) { failures++; console.log(`FAIL content geo: ${p.n} is in "${p.of}", which is not a country on the map`); continue }
-    const d = distanceTo(home, p)
-    // Outlines are simplified, so a city on the coast can sit a little offshore; 150 km catches real mistakes.
-    if (d > 150) { failures++; console.log(`FAIL content geo: ${p.n} is ${Math.round(d)} km outside ${p.of}`) }
+    const d = distanceTo(home, p).km
+    // Outlines are simplified, so a city on the coast can sit a little offshore; 25 km catches real mistakes.
+    if (d > 25) { failures++; console.log(`FAIL content geo: ${p.n} is ${Math.round(d)} km outside ${p.of}`) }
   }
+  // Every country asked about has to be drawn on both maps, or its answer can't be shown.
+  for (const file of ['lo', 'hi']) {
+    const drawn = new Set(JSON.parse(readFileSync(`public/geo/${file}.json`, 'utf8')).c.filter((c: { r: number[][] }) => c.r.length).map((c: { n: string }) => c.n))
+    for (const c of COUNTRIES) if (!drawn.has(c.shape)) { failures++; console.log(`FAIL content geo: ${c.n} is not drawn on the ${file} map`) }
+  }
+  // A country's label point is where its answer is marked, so it has to be inside the country.
+  for (const c of COUNTRIES) if (distanceTo(c, c).km > 0) { failures++; console.log(`FAIL content geo: ${c.n}'s marker is outside it`) }
   if (names.size !== 195) { failures++; console.log(`FAIL content geo: ${names.size} countries, expected 195`) }
   for (const [set, lots] of Object.entries(LOTS_BY_SET)) if (lots.length < 5) { failures++; console.log(`FAIL content auction: ${set} has only ${lots.length} lots`) }
   // Dealing goes through the whole pool before anything comes back, whatever size each game takes.

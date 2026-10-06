@@ -21,7 +21,7 @@ export interface Dna { skill: number; luck: number; social: number; brain: numbe
 export interface Meta {
   id: string
   name: string
-  cat: 'Word' | 'Drawing' | 'Party' | 'Deception' | 'Trivia' | 'Puzzle' | 'Strategy' | 'Cards & dice' | 'Reflex'
+  cat: 'Word' | 'Drawing' | 'Party' | 'Deception' | 'Trivia' | 'Puzzle' | 'Strategy' | 'Cards' | 'Reflex'
   blurb: string
   min: number
   max: number
@@ -221,7 +221,7 @@ export const CATALOG: Meta[] = [
     seo: { title: 'Boggle-Style Word Grid Game Online, Multiplayer', description: 'Find words in a grid of letters against your friends, in the style of Boggle. 4×4 or 5×5, unique-word scoring. Free, private rooms.', about: 'a word search game in the style of Boggle' },
   },
   {
-    id: 'lastcard', name: 'Last Card', cat: 'Cards & dice',
+    id: 'lastcard', name: 'Last Card', cat: 'Cards',
     blurb: 'Match the colour or number, play action cards, and do not forget to call last card.',
     min: 2, max: 10, minutes: [5, 1],
     dna: { skill: 2, luck: 4, social: 4, brain: 2, chaos: 4, replay: 5 }, moods: ['chaos', 'social', 'competitive'],
@@ -239,25 +239,6 @@ export const CATALOG: Meta[] = [
       'First to empty their hand wins; the rest are ranked by the fewest cards left.',
     ],
     seo: { title: 'Uno-Style Card Game Online with Friends, Free', description: 'Play an Uno-style card game online with 2 to 10 friends: action cards, wilds, stacking and Last Card calls. Free, private rooms, no sign-up.', about: 'a colour-matching card game in the style of Uno' },
-  },
-  {
-    id: 'liarsdice', name: "Liar's Dice", cat: 'Cards & dice',
-    blurb: 'Hidden dice, rising bids, and one word: liar.',
-    min: 2, max: 8, minutes: [3, 1.2],
-    dna: { skill: 3, luck: 4, social: 4, brain: 3, chaos: 2, replay: 5 }, moods: ['deception', 'strategic', 'social'],
-    options: [
-      { key: 'dice', label: 'Dice each', kind: 'num', def: 5, min: 2, max: 6 },
-      { key: 'wild', label: 'Ones are wild', kind: 'choice', def: 'on', choices: [['on', 'Yes'], ['off', 'No']] },
-      secs('turnSeconds', 'Seconds per turn', 45, 15, 120),
-    ],
-    night: { dice: 4 },
-    rules: [
-      'Everyone rolls their dice in secret. Each turn, bid on how many dice of one face are on the whole table: "four 5s".',
-      'The next player either bids higher (more dice, or the same number of a higher face) or calls Liar.',
-      'On a call, all dice are shown. If there are at least as many as the bid said, the caller loses a die; if not, the bidder does. With ones wild, ones count as every face.',
-      'Lose all your dice and you are out. Last player with dice wins.',
-    ],
-    seo: { title: "Liar's Dice Online with Friends, Free", description: "Play Liar's Dice online with 2 to 8 friends: hidden dice, bids and bluffs. Ones-wild option, turn timer, private rooms. Free, no sign-up.", about: "the bluffing dice game Liar's Dice" },
   },
   {
     id: 'reaction', name: 'Reaction', cat: 'Reflex',

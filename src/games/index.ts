@@ -8,7 +8,6 @@ import { draw } from './draw'
 import { geoguess } from './geoguess'
 import { imposter } from './imposter'
 import { lastcard } from './lastcard'
-import { liarsdice } from './liarsdice'
 import { make24 } from './make24'
 import { mastermind } from './mastermind'
 import { mindmeld } from './mindmeld'
@@ -25,6 +24,6 @@ import { wordle } from './wordle'
 
 /** Every game by its catalog id. */
 export const GAMES: Record<string, Game> = {
-  auction, bluff, closest, codewords, connections, draw, geoguess, imposter, lastcard, liarsdice, make24, mastermind, mindmeld, mostlikely,
+  auction, bluff, closest, codewords, connections, draw, geoguess, imposter, lastcard, make24, mastermind, mindmeld, mostlikely,
   movieguess, musicguess, reaction, stopwatch, telephone, territory, trivia, wordgrid, wordle,
 }

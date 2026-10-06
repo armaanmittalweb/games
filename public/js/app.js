@@ -8,7 +8,7 @@ import { CATALOG } from '/catalog.js'
 const META = Object.fromEntries(CATALOG.map(m => [m.id, m]))
 const MOODS = { think: '🧠 Think', chaos: '😂 Chaos', competitive: '🎯 Competitive', deception: '🕵️ Deception', creative: '🎨 Creative', fast: '⚡ Fast', social: '🗣️ Social', strategic: '♟️ Strategic' }
 const LENGTHS = [['quick', 'Quick', '15 min'], ['standard', 'Standard', '30 min'], ['chaos', 'Chaos', '45 min'], ['tournament', 'Tournament', 'knockout'], ['endless', 'Endless', '∞']]
-const CATS = ['Word', 'Drawing', 'Party', 'Deception', 'Trivia', 'Puzzle', 'Strategy', 'Cards & dice', 'Reflex']
+const CATS = ['Word', 'Drawing', 'Party', 'Deception', 'Trivia', 'Puzzle', 'Strategy', 'Cards', 'Reflex']
 const DNA = [['skill', 'Skill'], ['luck', 'Luck'], ['social', 'Social'], ['brain', 'Brain'], ['chaos', 'Chaos'], ['replay', 'Replay']]
 const placePoints = p => [10, 7, 5, 4, 3, 2, 1][p - 1] ?? 1
 const estMinutes = (m, n) => Math.round(m.minutes[0] + m.minutes[1] * n)

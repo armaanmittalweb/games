@@ -33,7 +33,6 @@ const ICONS: Record<string, { color: string; draw: (c: string) => string }> = {
   // Two cards in a fan.
   lastcard: { color: '#e67700', draw: c => `<rect x="10.5" y="12" width="16" height="23" rx="3" fill="none" stroke="${W}" stroke-width="3" transform="rotate(-14 18.5 23.5)"/><rect x="21" y="12.5" width="16.5" height="23.5" rx="3" fill="${W}" transform="rotate(10 29 24)"/>` + fill('M29.3 19.5l4 4.8-4 4.8-4-4.8z', c) },
   // A die, showing five.
-  liarsdice: { color: '#495057', draw: c => `<g transform="rotate(-10 24 24)"><rect x="11" y="11" width="26" height="26" rx="6" fill="${W}"/>${dot(18, 18, 2.4, c)}${dot(30, 18, 2.4, c)}${dot(24, 24, 2.4, c)}${dot(18, 30, 2.4, c)}${dot(30, 30, 2.4, c)}</g>` },
   // A lightning bolt.
   reaction: { color: '#f08c00', draw: () => fill('M27.5 7L13 27.5h9.5L20 41l15-21h-9.5z') },
   // A stopwatch.
