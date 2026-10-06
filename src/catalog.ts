@@ -90,13 +90,14 @@ export const CATALOG: Meta[] = [
     options: [
       { key: 'timer', label: 'Turn timer', kind: 'choice', def: 0, choices: [[0, 'Off'], [60, '1 minute'], [120, '2 minutes'], [180, '3 minutes']] },
       { key: 'pack', label: 'Words', kind: 'choice', def: 'mixed', choices: [['mixed', 'Mixed'], ['desi', 'With desi words']] },
+      { key: 'black', label: 'Black cards', kind: 'choice', def: 1, choices: [[1, '1 (classic)'], [2, '2'], [3, '3 (risky)'], [4, '4 (very risky)']] },
     ],
     night: { timer: 120 },
     rules: [
       'Players split into Red and Blue, and each team picks a spymaster. The spymasters see which of the 25 words belong to which team.',
       'On their turn a spymaster gives a one-word clue and a number: how many words it points to.',
       'Teammates tap words to reveal them. A right guess lets them keep going (up to the number plus one). A neutral word or the other team\'s word ends the turn.',
-      'First team to find all its agents wins. Reveal the assassin and your team loses at once.',
+      'First team to find all its agents wins. Reveal a black card (the assassin) and your team loses at once. The host can add up to 4 black cards for a riskier board.',
     ],
     seo: { title: 'Codenames-Style Word Game Online for Teams', description: 'A free team word game in the style of Codenames: spymasters give one-word clues, teams find their agents and avoid the assassin. Private rooms.', about: 'a team word-association game in the style of Codenames' },
   },

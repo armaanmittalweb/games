@@ -1,6 +1,6 @@
 // Code Words: pick teams, then spymasters give clues and teams reveal cards.
-import { html, useState, Name, Avatar, Clock, nameOf } from '../ui.js'
-import { act, ME } from '../core.js'
+import { html, useState, useEffect, useTick, fmt, Name, Avatar, nameOf } from '../ui.js'
+import { act, ME, now } from '../core.js'
 
 const T = { red: 'Red', blue: 'Blue' }
 
@@ -26,11 +26,60 @@ function ClueForm() {
     <button class="primary">Give clue</button></form>`
 }
 
+const SPLASH = 2400
+const buzz = ms => { try { navigator.vibrate?.(ms) } catch { /* not supported */ } }
+
+/** Why the turn moved, in a few words. */
+function reason(h, turn) {
+  if (!h) return `${T[turn]} goes first`
+  const by = T[h.team]
+  if (h.why === 'time') return `${by} ran out of time`
+  if (h.why === 'pass') return `${by} ended their turn`
+  if (h.why === 'done') return `${by} used every guess`
+  return html`${by} picked <span class=${'cw-chip ' + h.card}>${h.word}</span>${h.card === 'neutral' ? " (nobody's word)" : ` (${T[h.card]}'s word)`}`
+}
+
+/** The whole screen turns the colour of the team now up, for a couple of seconds after every turn change. Tap to close. */
+function TurnSplash({ v }) {
+  const [closed, setClosed] = useState(0)
+  const age = now() - (v.turnAt ?? 0)
+  const show = v.turnN && closed !== v.turnN && age < SPLASH && v.phase === 'play'
+  useEffect(() => {
+    if (!show) return
+    if (v.you.team === v.turn) buzz([60, 40, 60])
+    const t = setTimeout(() => setClosed(v.turnN), SPLASH - age)
+    return () => clearTimeout(t)
+  }, [v.turnN, show])
+  if (!show) return null
+  const mine = v.you.team === v.turn
+  const you = !v.you.team ? '' : !mine ? 'Their turn: watch the board' : v.you.spy ? 'Your clue, spymaster' : "Wait for your spymaster's clue"
+  return html`<div class=${'cw-splash ' + v.turn} style=${`--age:-${Math.round(age)}ms`} onClick=${() => setClosed(v.turnN)} role="status">
+    <div class="cw-splash-why">${reason(v.handoff, v.turn)}</div>
+    <div class="cw-splash-team">${T[v.turn]}</div>
+    <div class="cw-splash-turn">team's turn</div>
+    ${you ? html`<div class=${'cw-splash-you' + (mine ? ' mine' : '')}>${you}</div>` : ''}
+  </div>`
+}
+
+/** A bar in the colour of the team on turn. With a turn timer it drains as the time runs out. */
+function TurnBar({ v }) {
+  useTick(250)
+  const left = v.until ? v.until - now() : 0
+  const total = v.until - (v.turnAt || v.until)
+  const pct = v.until && total > 0 ? Math.max(0, Math.min(100, left / total * 100)) : 100
+  const mine = v.you.team === v.turn
+  return html`<div class=${'cw-timer ' + v.turn + (v.until && left < 10500 ? ' low' : '')} role="timer">
+    <div class="cw-timer-fill" style=${`width:${pct}%`}></div>
+    <span>${mine ? "Your team's turn" : `${T[v.turn]} team's turn`}</span>
+    ${v.until ? html`<b aria-label="Time left">${fmt(left)}${left < 60000 ? 's' : ''}</b>` : ''}
+  </div>`
+}
+
 /** The final board with every card's colour. */
 export function Summary({ summary }) {
   if (!summary) return null
   return html`<div class="card"><h2>${T[summary.winner]} wins: ${summary.why.toLowerCase()}</h2>
-    <div class="cw-board small-board">${summary.words.map((w, i) => html`<div key=${i} class=${'cwc open ' + summary.keys[i]}><span class="cw-word">${w}</span></div>`)}</div></div>`
+    <div class="cw-board small-board">${summary.words.map((w, i) => html`<div key=${i} class=${'cwc open ' + summary.keys[i]}><span class="cw-word" style=${`--n:${w.length}`}>${w}</span></div>`)}</div></div>`
 }
 
 export default function CodeWords({ v, inst }) {
@@ -44,22 +93,23 @@ export default function CodeWords({ v, inst }) {
   if (over) status = html`<b class=${v.winner}>${T[v.winner]} wins!</b> <span class="dim">${v.why}</span>`
   else if (!v.clue) status = html`<b class=${v.turn}>${T[v.turn]}</b>: waiting for <${Name} id=${v.spy[v.turn]} /> to give a clue`
   else status = html`<b class=${v.turn}>${T[v.turn]}</b>: <span class="clue big">${v.clue.word} ${v.clue.n === 0 ? '∞' : v.clue.n}</span> <span class="dim small">${v.left > 20 ? 'guess freely' : `${v.left} guess${v.left === 1 ? '' : 'es'} left`}</span>`
-  return html`<div class=${'cw' + (spy ? ' is-spy' : '')}>
+  return html`<div class=${'cw' + (spy ? ' is-spy' : '') + (over ? '' : ' turn-' + v.turn)}>
+    <${TurnSplash} v=${v} />
     <div class="cw-top">
       <span class="score-red">${v.remaining.red}</span><div class="grow center">${status}</div><span class="score-blue">${v.remaining.blue}</span>
-      ${v.until ? html`<${Clock} until=${v.until} />` : ''}
     </div>
+    ${over ? '' : html`<${TurnBar} v=${v} />`}
     <div class="cw-board">${v.words.map((w, i) => {
       const k = v.keys[i]
       const marks = v.marks[i] ?? []
       const cls = 'cwc' + (v.open[i] ? ' open ' + k : spy || over ? ' key-' + k : '') + (marks.includes(ME) ? ' marked' : '')
       return html`<button key=${i} class=${cls} disabled=${!guessing || v.open[i]} onClick=${() => act({ a: marks.includes(ME) ? 'pick' : 'mark', i })}>
-        <span class="cw-word">${w}</span>${marks.length ? html`<span class="cw-marks">${marks.map(id => html`<i key=${id} title=${nameOf(id)}>${nameOf(id).slice(0, 1)}</i>`)}</span>` : ''}</button>`
+        <span class="cw-word" style=${`--n:${w.length}`}>${w}</span>${marks.length ? html`<span class="cw-marks">${marks.map(id => html`<i key=${id} title=${nameOf(id)}>${nameOf(id).slice(0, 1)}</i>`)}</span>` : ''}</button>`
     })}</div>
     <div class="cw-bottom">
       ${myTurn && spy && !v.clue ? html`<${ClueForm} />` : ''}
       ${guessing ? html`<p class="small dim center">Tap a word to mark it, tap it again to reveal it.</p>${last?.picks.length ? html`<button onClick=${() => act({ a: 'pass' })}>End our turn</button>` : ''}` : ''}
-      ${!over && !myTurn ? html`<p class="small dim center">${T[v.turn]} team's turn.</p>` : ''}
+      ${v.black > 1 ? html`<p class="small dim center"><span class="cw-dot"></span> ${v.black} black cards on this board. Any one of them loses the game.</p>` : ''}
       <div class="cw-teams small">
         ${['red', 'blue'].map(t => html`<span key=${t} class=${t}>${T[t]}: ${inst.players.filter(id => v.team[id] === t).map(id => nameOf(id) + (v.spy[t] === id ? ' (spymaster)' : '')).join(', ')}</span>`)}
       </div>

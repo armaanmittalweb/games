@@ -4,7 +4,7 @@ import { board } from '../content/codewords'
 
 type Team = 'red' | 'blue'
 type Card = Team | 'neutral' | 'assassin'
-interface C { timer: number; pack: string }
+interface C { timer: number; pack: string; black: number }
 interface S {
   phase: 'teams' | 'play' | 'over'
   team: Record<string, Team>
@@ -21,6 +21,10 @@ interface S {
   winner: Team | null
   why: string
   until: number
+  // Each turn change, so phones can show who is up now and why the turn moved.
+  turnN: number
+  turnAt: number
+  handoff: { team: Team; why: 'time' | 'pass' | 'miss' | 'done'; word?: string; card?: Card } | null
 }
 
 const other = (t: Team): Team => (t === 'red' ? 'blue' : 'red')
@@ -29,7 +33,9 @@ const guessers = (s: S, t: Team) => Object.keys(s.team).filter(id => s.team[id] 
 function deal(g: Ctx<C>, s: S) {
   s.words = board(g.config.pack, g.deal, g.shuffle)
   s.first = g.rand() < 0.5 ? 'red' : 'blue'
-  const keys: Card[] = [...Array(9).fill(s.first), ...Array(8).fill(other(s.first)), ...Array(7).fill('neutral'), 'assassin']
+  // More black cards take the place of neutral ones, so the teams keep 9 and 8 agents.
+  const black = Math.min(4, Math.max(1, Math.round(Number(g.config.black) || 1)))
+  const keys: Card[] = [...Array(9).fill(s.first), ...Array(8).fill(other(s.first)), ...Array(8 - black).fill('neutral'), ...Array(black).fill('assassin')]
   s.keys = g.shuffle(keys)
   s.open = Array(25).fill(false)
   s.turn = s.first
@@ -40,12 +46,19 @@ function timer(g: Ctx<C>, s: S) {
   g.wake(s.until)
 }
 
-function endTurn(g: Ctx<C>, s: S) {
+function newTurn(g: Ctx<C>, s: S) {
+  s.turnN = (s.turnN ?? 0) + 1
+  s.turnAt = g.now
+  timer(g, s)
+}
+
+function endTurn(g: Ctx<C>, s: S, why: 'time' | 'pass' | 'miss' | 'done', i?: number) {
+  s.handoff = { team: s.turn, why, ...(i === undefined ? {} : { word: s.words[i], card: s.keys[i] }) }
   s.turn = other(s.turn)
   s.clue = null
   s.left = 0
   s.marks = {}
-  timer(g, s)
+  newTurn(g, s)
 }
 
 function finish(g: Ctx<C>, s: S, winner: Team, why: string) {
@@ -66,7 +79,7 @@ function balance(g: Ctx<C>, s: S) {
 
 export const codewords: Game<S, C> = {
   setup(g) {
-    const s = { phase: 'teams', team: {}, spy: { red: null, blue: null }, clue: null, left: 0, marks: {}, log: [], winner: null, why: '', until: 0 } as unknown as S
+    const s = { phase: 'teams', team: {}, spy: { red: null, blue: null }, clue: null, left: 0, marks: {}, log: [], winner: null, why: '', until: 0, turnN: 0, turnAt: 0, handoff: null } as unknown as S
     balance(g, s)
     deal(g, s)
     return s
@@ -97,7 +110,7 @@ export const codewords: Game<S, C> = {
           if (!guessers(s, team).length) return `${team === 'red' ? 'Red' : 'Blue'} needs at least one guesser`
         }
         s.phase = 'play'
-        timer(g, s)
+        newTurn(g, s)
       }
       return
     }
@@ -137,23 +150,23 @@ export const codewords: Game<S, C> = {
       delete s.marks[i]
       s.log[s.log.length - 1].picks.push(i)
       const card = s.keys[i]
-      if (card === 'assassin') return finish(g, s, other(s.turn), `${s.turn === 'red' ? 'Red' : 'Blue'} found the assassin`)
+      if (card === 'assassin') return finish(g, s, other(s.turn), `${s.turn === 'red' ? 'Red' : 'Blue'} hit a black card`)
       for (const team of ['red', 'blue'] as Team[]) {
         if (s.keys.every((k, j) => k !== team || s.open[j])) return finish(g, s, team, `${team === 'red' ? 'Red' : 'Blue'} found all its agents`)
       }
-      if (card !== s.turn) return endTurn(g, s)
+      if (card !== s.turn) return endTurn(g, s, 'miss', i)
       s.left--
-      if (s.left <= 0) endTurn(g, s)
+      if (s.left <= 0) endTurn(g, s, 'done')
       return
     }
     if (m.a === 'pass') {
       if (!mine || !s.clue) return
       if (s.log[s.log.length - 1].picks.length === 0) return 'Make at least one guess first'
-      return endTurn(g, s)
+      return endTurn(g, s, 'pass')
     }
   },
   tick(g, s) {
-    if (s.phase === 'play' && s.until && g.now >= s.until) endTurn(g, s)
+    if (s.phase === 'play' && s.until && g.now >= s.until) endTurn(g, s, 'time')
   },
   view(g, s, id) {
     const t = s.team[id]
@@ -165,6 +178,7 @@ export const codewords: Game<S, C> = {
       // Spymasters see the key; everyone else only the cards turned over.
       keys: s.keys.map((k, i) => (spy || over || s.open[i] ? k : null)),
       turn: s.turn, first: s.first, clue: s.clue, left: s.left, marks: s.marks, log: s.log, winner: s.winner, why: s.why, until: s.until,
+      turnN: s.turnN, turnAt: s.turnAt, handoff: s.handoff, black: s.keys.filter(k => k === 'assassin').length,
       remaining: { red: s.keys.filter((k, i) => k === 'red' && !s.open[i]).length, blue: s.keys.filter((k, i) => k === 'blue' && !s.open[i]).length },
     }
   },

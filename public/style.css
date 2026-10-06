@@ -397,7 +397,8 @@ b.red, .cw-teams .red { color: var(--redtext); } b.blue, .cw-teams .blue { color
 .cw-board { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
 .cwc { background: #e9e4d4; color: #1a1a1a; border-radius: 8px; min-height: 64px; padding: 6px 4px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; position: relative; font-weight: 800; }
 .cwc:disabled { opacity: 1; cursor: default; }
-.cw-word { font-size: clamp(11px, 2.4vw, 16px); text-transform: uppercase; letter-spacing: .3px; word-break: break-word; text-align: center; }
+/* Long words shrink to fit the card instead of breaking (--n is the word length). */
+.cw-word { font-size: max(9px, min(clamp(11px, 2.4vw, 16px), calc((100vw - 72px) / 5 / (var(--n, 6) * .78)))); hyphens: auto; text-transform: uppercase; letter-spacing: .3px; word-break: break-word; text-align: center; }
 .cwc.key-red { box-shadow: inset 0 -6px 0 var(--redteam); } .cwc.key-blue { box-shadow: inset 0 -6px 0 var(--blueteam); }
 .cwc.key-assassin { box-shadow: inset 0 -6px 0 #111; background: #b8b2a0; } .cwc.key-neutral { box-shadow: inset 0 -6px 0 #c9b98f; }
 .cwc.open.red { background: var(--redteam); color: #fff; } .cwc.open.blue { background: var(--blueteam); color: #fff; }
@@ -414,6 +415,49 @@ b.red, .cw-teams .red { color: var(--redtext); } b.blue, .cw-teams .blue { color
 .team-col { border-radius: 12px; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
 .team-col.red { background: var(--red-bg); border: 1px solid var(--red-line); } .team-col.blue { background: var(--blue-bg); border: 1px solid var(--blue-line); }
 .small-board .cwc { min-height: 44px; }
+/* The team on turn: its colour behind the clock and around the board. */
+.cw-timer { position: relative; overflow: hidden; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 0 14px;
+  color: #fff; font-weight: 800; text-shadow: 0 1px 2px #0004; transition: background-color .4s; }
+.cw-timer.red { background: #8f2f2a; } .cw-timer.blue { background: #2a5596; }
+.cw-timer-fill { position: absolute; inset: 0 auto 0 0; transition: width .25s linear, background-color .4s; }
+.cw-timer.red .cw-timer-fill { background: var(--redteam); } .cw-timer.blue .cw-timer-fill { background: var(--blueteam); }
+.cw-timer > span, .cw-timer > b { position: relative; }
+.cw-timer > span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.cw-timer > b { font-size: 22px; font-variant-numeric: tabular-nums; }
+.cw-timer.low > b { animation: cw-throb 1s ease-in-out infinite; }
+@keyframes cw-throb { 50% { transform: scale(1.18); } }
+.cw .cw-board { padding: 5px; margin: -5px; border-radius: 12px; transition: box-shadow .4s; }
+.cw.turn-red .cw-board { box-shadow: 0 0 0 3px var(--redteam); } .cw.turn-blue .cw-board { box-shadow: 0 0 0 3px var(--blueteam); }
+.cw-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: #111; box-shadow: 0 0 0 1px var(--dim); vertical-align: -1px; }
+/* Turn change: the whole screen in the new team's colour for a moment. --age keeps it in step when it mounts late. */
+.cw-splash { position: fixed; inset: 0; z-index: 28; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; padding: 24px 16px;
+  color: #fff; text-align: center; cursor: pointer; animation: cw-splash 2.4s ease both; animation-delay: var(--age); }
+.cw-splash.red { background: radial-gradient(circle at 50% 45%, #f0736b, var(--redteam) 45%, #a82f29); }
+.cw-splash.blue { background: radial-gradient(circle at 50% 45%, #6fa8f0, var(--blueteam) 45%, #2a5fae); }
+.cw-splash-why { font-size: 17px; font-weight: 700; opacity: .92; animation: res-in .4s .15s both; }
+.cw-splash-team { font-size: clamp(84px, 28vw, 220px); font-weight: 900; line-height: .9; letter-spacing: -2px; text-transform: uppercase; text-shadow: 0 6px 0 #0003; animation: cw-slam .55s cubic-bezier(.2, 1.6, .4, 1) both; }
+.cw-splash-turn { font-size: clamp(24px, 7vw, 44px); font-weight: 900; text-transform: uppercase; letter-spacing: 3px; animation: res-in .4s .25s both; }
+.cw-splash-you { margin-top: 18px; padding: 8px 16px; border-radius: 99px; background: #0003; font-weight: 800; font-size: 17px; animation: res-in .4s .4s both; }
+.cw-splash-you.mine { background: #fff; color: #1a1a1a; animation: res-in .4s .4s both, cw-throb 1s .9s ease-in-out 2; }
+.cw-chip { display: inline-block; padding: 1px 9px; border-radius: 6px; font-weight: 900; text-transform: uppercase; background: #e9e4d4; color: #1a1a1a; border: 2px solid #fff; }
+.cw-chip.red { background: var(--redteam); color: #fff; } .cw-chip.blue { background: var(--blueteam); color: #fff; } .cw-chip.neutral { background: #8c8471; color: #f2f2f2; }
+@keyframes cw-splash { 0% { clip-path: circle(0% at 50% 50%); } 18% { clip-path: circle(75% at 50% 50%); } 85% { opacity: 1; } 100% { clip-path: circle(75% at 50% 50%); opacity: 0; } }
+@keyframes cw-slam { from { transform: scale(2.4); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes cw-fade { 85% { opacity: 1; } to { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .cw-splash { animation-name: cw-fade; } .cw-splash > * { animation: none !important; } .cw-timer.low > b { animation: none; } }
+@media (orientation: landscape) and (max-height: 500px) {
+  .cw-splash-team { font-size: 26vh; } .cw-splash-you { margin-top: 8px; }
+  /* Phone on its side: scores, timer and the clue box on the left, the whole board on the right without scrolling. */
+  .cw:has(> .cw-board) { display: grid; grid-template-columns: minmax(190px, 32%) 1fr; grid-template-rows: auto auto 1fr; align-items: start; column-gap: 14px; }
+  .cw:has(> .cw-board) > .cw-top { grid-area: 1 / 1; flex-wrap: wrap; justify-content: space-between; }
+  .cw:has(> .cw-board) > .cw-top > .grow { order: 3; flex-basis: 100%; font-size: 15px; }
+  .cw:has(> .cw-board) > .cw-timer { grid-area: 2 / 1; }
+  .cw:has(> .cw-board) > .cw-bottom { grid-area: 3 / 1; }
+  .cw:has(> .cw-board) > .cw-board { grid-area: 1 / 2 / 4 / 3; margin: 0; }
+  .cw:has(> .cw-board) .cwc { min-height: max(44px, calc((var(--vvh, 100dvh) - var(--bar-h) - 54px) / 5)); }
+  .cw .clue-form { flex-wrap: wrap; } .cw .clue-form input { flex: 1 1 100%; }
+  .cw:has(> .cw-board) .cw-word { font-size: min(15px, 1.7vw); }
+}
 
 /* Draw & Guess */
 .draw-wrap { display: grid; grid-template-columns: 1fr 300px; gap: 12px; padding: 10px 12px; max-width: 1200px; width: 100%; margin: 0 auto; }
