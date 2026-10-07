@@ -71,7 +71,6 @@ export const trivia: Game<S, C> = {
     open(g, s)
     return s
   },
-  join() { return true },
   act(g, s, id, m) {
     if (m.a !== 'answer' || s.phase !== 'answer' || s.answers[id]) return
     if (g.now < s.opened) return 'Wait for the choices'

@@ -17,6 +17,8 @@ export interface Ctx<C = Record<string, unknown>> {
   /** Seat colours (index into the palette), for drawings and pieces. */
   colors: Record<string, number>
   online: Set<string>
+  /** The room's host, who runs a game's own setup steps (Code Words: shuffling the teams and starting). */
+  host: string | null
   rand(): number
   int(n: number): number
   pick<T>(a: readonly T[]): T
@@ -48,7 +50,10 @@ export interface Game<S = any, C = any> {
   act(g: Ctx<C>, s: S, pid: string, m: Record<string, unknown>): string | void
   /** Called once the time set with wake() has come. */
   tick?(g: Ctx<C>, s: S): void
-  /** Someone joined mid-game. Return true to seat them (they are added to players). */
+  /**
+   * Someone new arrived after the rules, while the game is still in its own setup (Code Words' team picking). Return
+   * true to seat them. Once play is under way newcomers watch, and play from the next game.
+   */
   join?(g: Ctx<C>, s: S, pid: string): boolean
   /** A seated player was removed from the room. */
   leave?(g: Ctx<C>, s: S, pid: string): void

@@ -25,9 +25,6 @@ export interface Night {
   champions: string[]
 }
 
-/** Points a place is worth on the night's (and the room's) leaderboard. */
-export const placePoints = (place: number) => [10, 7, 5, 4, 3, 2, 1][place - 1] ?? 1
-
 /** How many are left after each tournament cut, down to the two who play the final. */
 export function cuts(n: number) {
   const seq = [n]

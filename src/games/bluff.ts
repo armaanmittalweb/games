@@ -62,7 +62,6 @@ export const bluff: Game<S, C> = {
     write(g, s)
     return s
   },
-  join() { return true },
   act(g, s, id, m) {
     if (m.a === 'write' && s.phase === 'write') {
       const text = clean(m.text, 140)

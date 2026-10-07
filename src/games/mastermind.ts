@@ -77,7 +77,6 @@ export const mastermind: Game<S, C> = {
     open(g, s)
     return s
   },
-  join() { return true },
   act(g, s, id, m) {
     if (m.a !== 'guess' || s.phase !== 'play' || s.done[id] !== undefined) return
     const { colors, pegs } = g.config

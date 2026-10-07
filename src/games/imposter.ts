@@ -100,7 +100,6 @@ export const imposter: Game<S, C> = {
     start(g, s)
     return s
   },
-  join() { return true }, // plays from the next round
   leave(g, s, id) {
     // The imposter was removed: show the words and move on, with no points either way.
     if (id === s.imposter && s.phase !== 'reveal') {

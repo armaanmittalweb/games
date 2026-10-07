@@ -125,6 +125,19 @@ a { color: var(--accent); }
 .modal { position: fixed; inset: 0; background: var(--shade); display: flex; align-items: center; justify-content: center; z-index: 40; padding: 16px; }
 .modal-card { max-width: 520px; width: 100%; max-height: 85dvh; overflow: auto; }
 .rules li { margin: 8px 0; }
+
+/* Our dialogs (public/js/dialog.js), in place of the browser's confirm() */
+.modal.dialog { z-index: 60; animation: dlg-shade .16s ease-out; }
+.dialog-card { max-width: 400px; padding: 20px; animation: dlg-in .18s ease-out; box-shadow: 0 18px 48px #0006; }
+.dialog-card h2 { font-size: 20px; line-height: 1.25; }
+.dlg-body { color: var(--dim); }
+.dialog-btns { display: flex; gap: 8px; justify-content: flex-end; }
+.dialog-btns button { min-height: 46px; min-width: 104px; }
+@media (max-width: 480px) { .dialog-btns button { flex: 1; min-width: 0; } }
+@keyframes dlg-in { from { transform: translateY(10px) scale(.97); opacity: 0; } }
+@keyframes dlg-shade { from { background-color: transparent; } }
+@media (prefers-reduced-motion: reduce) { .modal.dialog, .dialog-card { animation: none; } }
+
 .gicon.huge { width: 76px; height: 76px; margin: 0 auto; }
 
 /* The rules before each game */
@@ -1039,3 +1052,27 @@ a.button.alt { background: var(--line); color: var(--text); }
   .qr { width: min(200px, calc(var(--vvh, 100dvh) - 150px)); }
 }
 
+.team-col li.away { opacity: .62; }
+.team-col li.away .dim { margin-left: auto; }
+.cw-wait { margin: 4px 0 0; }
+
+/* The host's switches in the lobby */
+.switch-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 10px 0 4px; cursor: pointer; }
+.switch-row > span { display: flex; flex-direction: column; gap: 2px; }
+button.switch { position: relative; flex: none; width: 56px; height: 44px; padding: 0; background: none; border-radius: 99px; }
+button.switch::before { content: ""; position: absolute; inset: 6px 0; border-radius: 99px; background: var(--line); transition: background-color .18s; }
+button.switch.on::before { background: var(--btn); }
+button.switch i { position: absolute; top: 9px; left: 3px; width: 26px; height: 26px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px #0006; transition: transform .18s ease; }
+button.switch.on i { transform: translateX(24px); }
+button.switch:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) { button.switch i, button.switch::before { transition: none; } }
+
+/* Room points */
+.points-help table { margin: 6px 0; }
+.points-help td:first-child, .points-help th:first-child { width: 72px; }
+.points-help p { margin: 6px 0; }
+.res-table tr.sat td { opacity: .7; }
+.res-pts-note { margin-top: 8px; }
+.cw-why { margin: 0 0 8px; padding: 8px 12px; border-radius: 10px; background: var(--panel); border: 1px solid var(--line); font-weight: 600; font-size: 15px; text-align: center; }
+.cw-go { align-items: stretch; }
+.hist summary { padding: 13px 0; }

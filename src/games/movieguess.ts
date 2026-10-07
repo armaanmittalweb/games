@@ -75,7 +75,6 @@ export const movieguess: Game<S, C> = {
     open(g, s)
     return s
   },
-  join() { return true },
   act(g, s, id, m) {
     if (m.a !== 'guess' || s.phase !== 'guess' || s.got[id] !== undefined) return
     const text = String(m.text ?? '').slice(0, 60).trim()

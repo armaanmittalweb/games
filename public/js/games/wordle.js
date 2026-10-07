@@ -1,6 +1,7 @@
 // Word Race: multiplayer Wordle. The server checks every guess; this screen is the board and the keyboard.
 import { html, useState, useEffect, useRef, Name, Clock, useTick, fmt } from '../ui.js'
 import { act, now, onEvent, ME, share, toast } from '../core.js'
+import { ask } from '../dialog.js'
 
 const MODES = { marathon: 'Marathon', race: 'Race', survival: 'Survival', blitz: 'Blitz' }
 const secs = ms => (ms / 1000).toFixed(1) + 's'
@@ -96,7 +97,7 @@ export default function Wordle({ v, seated }) {
         <b>${blitz ? `Round ${v.round + 1}/${v.total}` : `Word ${Math.min((me?.idx ?? 0) + 1, v.total)}/${v.total}`}</b>
         <span class="pill">${MODES[v.mode]}</span>
         ${lastWord && lastRes && !finished ? html`<span class="small dim">last: <b class="up">${lastWord}</b> ${lastRes.solved ? '✓' : '✗'}</span>` : ''}
-        ${!blitz && !finished && seated ? html`<button class="link" onClick=${() => confirm(v.mode === 'survival' ? 'Skipping counts as a miss and you will be out. Skip?' : 'Skip this word? It counts as missed.') && act({ a: 'skip' })}>skip word</button>` : ''}
+        ${!blitz && !finished && seated ? html`<button class="link" onClick=${async () => (await ask({ title: 'Skip this word?', body: v.mode === 'survival' ? 'In Survival a skip counts as a miss, and you are out.' : 'It counts as missed.', ok: 'Skip', danger: true })) && act({ a: 'skip' })}>skip word</button>` : ''}
         <${Clock} until=${counting ? 0 : until} />
       </div>
       ${finished || !me

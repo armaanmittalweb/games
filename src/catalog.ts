@@ -88,7 +88,7 @@ export const CATALOG: Meta[] = [
     min: 4, max: 16, minutes: [12, 0],
     dna: { skill: 4, luck: 1, social: 4, brain: 5, chaos: 2, replay: 5 }, moods: ['think', 'social', 'strategic'],
     options: [
-      { key: 'timer', label: 'Turn timer', kind: 'choice', def: 0, choices: [[0, 'Off'], [60, '1 minute'], [120, '2 minutes'], [180, '3 minutes']] },
+      { key: 'timer', label: 'Turn timer', kind: 'choice', def: 120, choices: [[60, '1 minute'], [120, '2 minutes'], [180, '3 minutes'], [0, 'Off']] },
       { key: 'pack', label: 'Words', kind: 'choice', def: 'mixed', choices: [['mixed', 'Mixed'], ['desi', 'With desi words']] },
       { key: 'black', label: 'Black cards', kind: 'choice', def: 1, choices: [[1, '1 (classic)'], [2, '2'], [3, '3 (risky)'], [4, '4 (very risky)']] },
     ],
@@ -172,12 +172,12 @@ export const CATALOG: Meta[] = [
     dna: { skill: 1, luck: 2, social: 5, brain: 1, chaos: 4, replay: 4 }, moods: ['social', 'chaos', 'fast'],
     options: [
       rounds(8, 3, 30), secs('seconds', 'Seconds to vote', 20, 10, 60),
-      { key: 'pack', label: 'Questions', kind: 'choice', def: 'mixed', choices: [['mixed', 'Mixed'], ['spicy', 'Spicy'], ['classic', 'Clean']] },
+      { key: 'pack', label: 'Questions', kind: 'choice', def: 'classic', choices: [['classic', 'Clean'], ['mixed', 'Mixed'], ['spicy', 'Spicy']] },
     ],
     night: { rounds: 6 },
     rules: [
       'A prompt appears: "Who is most likely to survive a zombie apocalypse?" Everyone secretly votes for a player.',
-      'Pick the questions: Clean (fine for family), Spicy (dating, exes, parties and roasts) or Mixed.',
+      'Pick the questions: Clean (fine for family, and the default), Spicy (dating, exes, parties and roasts) or Mixed.',
       'The votes are revealed together, and the most-voted player takes the title.',
       'You score 2 points when you voted for the player who got the most votes.',
     ],
@@ -351,7 +351,7 @@ export const CATALOG: Meta[] = [
     min: 2, max: 6, minutes: [6, 0],
     dna: { skill: 5, luck: 1, social: 1, brain: 5, chaos: 1, replay: 4 }, moods: ['think', 'strategic', 'competitive'],
     options: [
-      { key: 'rounds', label: 'Codes', kind: 'num', def: 3, min: 1, max: 8 }, secs('seconds', 'Seconds per code', 240, 60, 600),
+      { key: 'rounds', label: 'Codes', kind: 'num', def: 2, min: 1, max: 8 }, secs('seconds', 'Seconds per code', 240, 60, 600),
       { key: 'pegs', label: 'Code length', kind: 'choice', def: 4, choices: [[4, '4 pegs'], [5, '5 pegs']] },
       { key: 'colors', label: 'Colours', kind: 'choice', def: 6, choices: [[6, '6 colours'], [8, '8 colours']] },
       { key: 'repeats', label: 'Repeat colours', kind: 'choice', def: 'no', choices: [['no', 'No'], ['yes', 'Yes']] },

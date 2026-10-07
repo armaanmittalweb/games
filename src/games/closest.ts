@@ -64,7 +64,6 @@ export const closest: Game<S, C> = {
     open(g, s)
     return s
   },
-  join() { return true },
   act(g, s, id, m) {
     if (m.a !== 'answer' || s.phase !== 'answer') return
     const n = parseNumber(m.value)

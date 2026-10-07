@@ -75,7 +75,6 @@ export const wordgrid: Game<S, C> = {
     g.wake(s.startsAt)
     return s
   },
-  join() { return true },
   act(g, s, id, m) {
     if (m.a !== 'word') return
     if (g.now < s.startsAt) return 'Wait for the countdown'

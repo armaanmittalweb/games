@@ -112,7 +112,6 @@ export const geoguess: Game<S, C> = {
     open(g, s)
     return s
   },
-  join() { return true },
   act(g, s, id, m) {
     // A pin is placed on the page and sent once, when the player locks it in.
     if (m.a !== 'pin' || s.phase !== 'pin' || s.pins[id]) return

@@ -68,7 +68,6 @@ export const musicguess: Game<S, C> = {
     open(g, s)
     return s
   },
-  join() { return true },
   act(g, s, id, m) {
     if (m.a !== 'pick' || s.phase !== 'listen' || s.picks[id] !== undefined) return
     const i = Number(m.i)

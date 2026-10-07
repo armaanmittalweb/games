@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Privacy | Game Night</title>
+<meta name="description" content="What Game Night keeps about you: no accounts, no ads, no trackers. A name you type, random ids, rooms that delete themselves after a day, and anonymous counts.">
+<link rel="canonical" href="https://games.amittal.dev/privacy">
+<meta name="theme-color" content="#121213">
+<script>/* Light or dark: the saved choice, else the system setting. Runs before the page draws. */(function(){var d=document.documentElement;function set(t){d.dataset.theme=t;var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==='light'?'#f6f6f4':'#121213'}var t;try{t=localStorage.getItem('gn.theme')}catch(e){}set(t||(matchMedia('(prefers-color-scheme: light)').matches?'light':'dark'));window.toggleTheme=function(){var n=d.dataset.theme==='light'?'dark':'light';set(n);try{localStorage.setItem('gn.theme',n)}catch(e){}}})()</script>
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Game Night">
+<meta property="og:url" content="https://games.amittal.dev/privacy">
+<meta property="og:title" content="Privacy | Game Night">
+<meta property="og:description" content="No accounts, no ads, no trackers. What Game Night keeps, where, and for how long.">
+<meta property="og:image" content="https://games.amittal.dev/og.png">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<header class="site-nav">
+  <a class="brand" href="/">🎲 Game Night</a>
+  <nav aria-label="Main"><a href="/games">All games</a><a href="/how-to-play">Word Race rules</a><a class="play" href="/">Play</a><button class="theme-btn" type="button" onclick="toggleTheme()" aria-label="Switch between light and dark mode" title="Light or dark"></button></nav>
+</header>
+<main class="doc privacy">
+  <p class="crumbs"><a href="/">Game Night</a> › Privacy</p>
+  <h1>Privacy</h1>
+  <p class="lead">Game Night has no accounts, no ads and no ad trackers, and sells nothing about you. To play, you only type a name. A room, with its chat and drawings, deletes itself a day after it was last used; beyond that the site keeps random ids, counts, and any feedback you choose to send.</p>
+  <p class="small dim">Last updated 7 October 2026.</p>
+
+  <section id="short">
+    <h2>In short</h2>
+    <ul>
+      <li><b>No sign-up.</b> We never ask for your email, phone number, age or real name. The name you play under can be anything.</li>
+      <li><b>Rooms are temporary.</b> A room, with everything said and drawn in it, is deleted 24 hours after it was last used.</li>
+      <li><b>Counts are anonymous.</b> We count visits and games with random ids made by your browser, never with names.</li>
+      <li><b>No cookies from us.</b> Game Night stores a few small values in your browser instead (listed below), which you can clear at any time.</li>
+    </ul>
+  </section>
+
+  <section id="device">
+    <h2>What is kept in your browser</h2>
+    <p>These live in your browser's storage for games.amittal.dev. Clearing the site's data removes all of them.</p>
+    <table>
+      <tr><th>Key</th><th>What it is for</th></tr>
+      <tr><td><code>wr.id</code>, <code>wr.secret</code></td><td>A random player id and secret, so a refresh or a dropped connection puts you back in your seat.</td></tr>
+      <tr><td><code>wr.name</code></td><td>The name you last played under, so you do not type it every time.</td></tr>
+      <tr><td><code>gn.vid</code></td><td>A random id for this browser, used only for the anonymous counts below.</td></tr>
+      <tr><td><code>gn.sid</code>, <code>gn.sidAt</code></td><td>This visit's random id (kept only until the tab closes; a new one after 30 idle minutes).</td></tr>
+      <tr><td><code>gn.theme</code></td><td>Light or dark.</td></tr>
+      <tr><td><code>gn.fb</code></td><td>Which games you have already rated, so you are not asked twice.</td></tr>
+      <tr><td><code>lc.mute</code>, <code>lc.sort</code></td><td>Last Card's sound and card-sorting settings.</td></tr>
+      <tr><td><code>gn.me</code></td><td>Set only if you open the site with <code>?me=1</code> (see "Leaving the counts").</td></tr>
+    </table>
+  </section>
+
+  <section id="rooms">
+    <h2>What a room keeps</h2>
+    <p>Each room is held on Cloudflare's servers while it is in use. It keeps:</p>
+    <ul>
+      <li>the name and colour of everyone in it, their random player id, and when they joined;</li>
+      <li>the games played: moves, answers, drawings, scores and the room's leaderboard;</li>
+      <li>the room chat (the last 80 messages).</li>
+    </ul>
+    <p>Everyone in the room can see your name, your chat messages and whatever the game shows them, such as your drawings and answers. A room and everything in it is deleted automatically 24 hours after it was last used, once nobody is connected to it. Room codes are reused after that, but nothing from the old room carries over.</p>
+  </section>
+
+  <section id="counts">
+    <h2>The anonymous counts</h2>
+    <p>To know whether the games work and what people enjoy, the site counts:</p>
+    <ul>
+      <li><b>Page views:</b> the page, the website you came from (its domain only, such as google.com), a <code>utm_source</code> tag if the link had one, your country (two letters, worked out by Cloudflare from your connection; your IP address is not stored), whether you are on a phone, tablet or computer, the time, and your browser and visit ids.</li>
+      <li><b>Rooms and games:</b> a random room id and its code, which games were played, how many players, when they started and ended, how many moves and errors there were, and whether dropped connections came back. Players are recorded by their random ids.</li>
+      <li><b>Who is in a room right now</b>, by browser id, for a live count.</li>
+      <li><b>Taps on Share</b> (whether by your phone's share sheet, copying the link or the QR code) and <b>script errors</b> (the first 120 characters of the error message).</li>
+      <li><b>Feedback you choose to send</b> after a game: the stars, whether you would play again, and up to 300 characters of text. Please do not put personal details in it.</li>
+    </ul>
+    <p>Totals per room and per player id are deleted after 30 days. The anonymous records above are kept so trends can be compared over time; they hold no names, email addresses or IP addresses.</p>
+    <p>Pages on the site also send a separate page-view count to <code>api.amittal.dev</code>, the dashboard for all of Armaan Mittal's sites: the site name, the page and the page you came from. It carries no ids.</p>
+  </section>
+
+  <section id="others">
+    <h2>Other services involved</h2>
+    <ul>
+      <li><b>Cloudflare</b> hosts the site and runs the rooms. Like any web host it handles your IP address to deliver the pages. See <a href="https://www.cloudflare.com/privacypolicy/" rel="noopener">Cloudflare's privacy policy</a>.</li>
+      <li><b>Apple</b>: Music Guess plays 30-second song previews straight from Apple's servers, so Apple receives that request (including your IP address) when a clip plays. The "Listen on Apple Music" link opens Apple's site. See <a href="https://www.apple.com/legal/privacy/" rel="noopener">Apple's privacy policy</a>.</li>
+      <li>Sharing a room uses your own device's share sheet or clipboard, and the QR code is drawn in your browser. Nothing is sent anywhere until you choose where to share it.</li>
+    </ul>
+    <p>There are no advertising, social media or third-party analytics scripts on Game Night.</p>
+  </section>
+
+  <section id="out">
+    <h2>Leaving the counts</h2>
+    <p>Open <a href="/?me=1">games.amittal.dev/?me=1</a> once in a browser and everything that browser does is marked and left out of every count from then on. Clearing the site's data from your browser removes your ids; a new random id is made next time you visit.</p>
+  </section>
+
+  <section id="contact">
+    <h2>Questions or deletion</h2>
+    <p>Game Night is made by <a href="https://www.amittal.dev/">Armaan Mittal</a> in India. To ask what is kept about a room or about your browser's id (you will find it in your browser's site data as <code>gn.vid</code>), or to have it deleted, get in touch through <a href="https://www.amittal.dev/">amittal.dev</a>.</p>
+  </section>
+
+  <p class="cta"><a class="button" href="/">Play Game Night</a></p>
+</main>
+<footer class="foot">
+  <p>Game Night is an independent site by <a href="https://www.amittal.dev/">Armaan Mittal</a>.</p>
+</footer>
+<script type="module" src="/js/view.js"></script>
+</body>
+</html>

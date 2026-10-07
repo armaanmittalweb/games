@@ -3,7 +3,8 @@ import type { Stats } from './stats'
 import type { GameEnd } from './analytics'
 import { GAMES } from './games'
 import { META, settings, type Mood } from './catalog'
-import { MOODS, LENGTHS, cuts, placePoints, plan, swap, type Length, type Night } from './night'
+import { MOODS, LENGTHS, cuts, plan, swap, type Length, type Night } from './night'
+import { award } from './points'
 import { dealAt, rng, clean, type Ctx, type Standing } from './engine'
 
 interface Env { STATS: DurableObjectNamespace<Stats> }
@@ -34,6 +35,12 @@ interface Inst {
   again?: string[]
   /** Counted for the Switchboard: moves, errors, players whose connection dropped and players who came back. */
   q?: { acts: number; errs: number; dropped: string[]; back: string[]; readyAll: boolean }
+  /** Players who made at least one move. Only they are ranked for room points (see src/points.ts). */
+  moved?: string[]
+  /** Once it ends: the room points each player got, who won them, and who made no move. */
+  pts?: Record<string, number>
+  winners?: string[]
+  sat?: string[]
 }
 
 interface State {
@@ -57,6 +64,10 @@ interface State {
   rid?: string
   /** When each player's connection last dropped, to tell whether they came back. */
   drops?: Record<string, number>
+  /** Members whose line dropped (a phone that slept, a network that changed) rather than who left, and when. */
+  away?: Record<string, number>
+  /** Whether players not in the game may watch it. Off only when the host turns it off. */
+  watch?: boolean
 }
 
 interface Chat { id: string; text: string; at: number }
@@ -152,7 +163,7 @@ export class Room extends DurableObject<Env> {
     // Players removed from the room keep their name in a game they were part of.
     for (const id of inst.players) names[id] ??= 'Someone'
     return {
-      now, config: inst.config, players: inst.players, names, colors, online: this.online(),
+      now, config: inst.config, players: inst.players, names, colors, online: this.online(), host: s.host,
       ...this.r,
       deal: <T>(key: string, items: readonly T[], n: number) => {
         const d = (s.decks ??= {})
@@ -216,7 +227,7 @@ export class Room extends DurableObject<Env> {
     this.blobs.clear()
     const inst: Inst = {
       id, n: ++s.seq, config, players: seats.slice(), s: null, wake: now + INTRO_MS, startedAt: 0, chosen: now, endedAt: 0, standings: null, night,
-      intro: { until: now + INTRO_MS, ready: [] }, q: { acts: 0, errs: 0, dropped: [], back: [], readyAll: false },
+      intro: { until: now + INTRO_MS, ready: [] }, q: { acts: 0, errs: 0, dropped: [], back: [], readyAll: false }, moved: [],
     }
     s.inst = inst
     s.phase = 'game'
@@ -274,18 +285,24 @@ export class Room extends DurableObject<Env> {
     inst.endedAt = now
     inst.wake = 0
     s.phase = 'results'
+    // Room points go to those who took part: a move, or (in a team game, where a teammate may do the tapping) being
+    // there at the end. A game saved before moves were counted treats everyone as having played.
+    const online = this.online(), teams = !!META[inst.id].teams
+    const took = (id: string) => !inst.moved || inst.moved.includes(id) || (teams && online.has(id))
+    const { pts, winners, sat } = award(standings, took, teams)
+    Object.assign(inst, { pts, winners, sat })
     for (const st of standings) {
+      if (sat.includes(st.id)) continue
       const t = (s.totals[st.id] ??= { pts: 0, wins: 0, games: 0 })
-      t.pts += placePoints(st.place)
+      t.pts += pts[st.id]
       t.games++
-      if (st.place === 1) t.wins++
+      if (winners.includes(st.id)) t.wins++
     }
-    s.history.unshift({ id: inst.id, at: now, winners: standings.filter(x => x.place === 1).map(x => x.id) })
+    s.history.unshift({ id: inst.id, at: now, winners })
     s.history.length = Math.min(s.history.length, 20)
     const n = s.night
     if (inst.night && n && !n.done) {
-      const pts: Record<string, number> = {}
-      for (const st of standings) { pts[st.id] = placePoints(st.place); n.points[st.id] = (n.points[st.id] ?? 0) + pts[st.id] }
+      for (const st of standings) n.points[st.id] = (n.points[st.id] ?? 0) + pts[st.id]
       const round = { id: inst.id, points: pts, out: [] as string[] }
       n.rounds.push(round)
       const last = n.idx >= n.plan.length - 1
@@ -313,15 +330,21 @@ export class Room extends DurableObject<Env> {
     this.reports.push(st => st.finished(code, stats?.guesses ?? 0, stats?.solved ?? 0, a))
   }
 
+  /**
+   * Who plays the next game: everyone here, and anyone whose line dropped in the last two minutes (a phone that slept
+   * while the host was choosing), so they find their seat when they come back. Those here come first if it is full.
+   */
   seatsFor(id: string): string[] | string {
     const s = this.s!
     const meta = META[id]
     const online = this.online()
-    let seats = Object.values(s.members).filter(m => online.has(m.id)).sort((a, b) => a.joinedAt - b.joinedAt).map(m => m.id)
+    const now = Date.now()
+    const back = (m: Member) => !online.has(m.id) && now - (s.away?.[m.id] ?? 0) < REJOIN_MS
+    let seats = Object.values(s.members).filter(m => online.has(m.id) || back(m)).sort((a, b) => Number(back(a)) - Number(back(b)) || a.joinedAt - b.joinedAt)
     const n = s.night
-    if (n && !n.done && n.length === 'tournament' && n.idx >= 0) seats = seats.filter(id => n.alive.includes(id))
+    if (n && !n.done && n.length === 'tournament' && n.idx >= 0) seats = seats.filter(m => n.alive.includes(m.id))
     if (seats.length < meta.min) return `${meta.name} needs at least ${meta.min} players`
-    return seats.slice(0, meta.max)
+    return seats.slice(0, meta.max).sort((a, b) => a.joinedAt - b.joinedAt).map(m => m.id)
   }
 
   /** Starts the night's next game, swapping it for one that fits if the room has changed size. */
@@ -392,8 +415,10 @@ export class Room extends DurableObject<Env> {
       ws.serializeAttachment({ id })
       this.sent.delete(ws)
       if (!s.host || !s.members[s.host]) s.host = id
-      // Someone arriving mid-game is seated if the game takes late joiners (never in a tournament). While the rules are
-      // up, anyone can still take a seat.
+      if (s.away) delete s.away[id]
+      // A player of this game who comes back is simply in it again: their seat was kept. Someone new takes a seat while
+      // the rules are up (never in a tournament); once play is under way they watch, unless the game is still in its
+      // own setup (Code Words' team picking), and play from the next game.
       const inst = s.inst
       if (inst && s.phase === 'game' && !inst.players.includes(id) && inst.players.length < META[inst.id].max) {
         const game = GAMES[inst.id]
@@ -427,7 +452,12 @@ export class Room extends DurableObject<Env> {
         if (inst.intro) { err('The game starts in a moment'); return bail() }
         if (inst.q) inst.q.acts++
         const game = GAMES[inst.id]
-        const e = this.run(g => game.act(g, inst.s, me, m), now)
+        // A move that is not refused counts as taking part; it is noted before the game can end on it.
+        const e = this.run(g => {
+          const r = game.act(g, inst.s, me, m)
+          if (typeof r !== 'string' && inst.moved && !inst.moved.includes(me)) inst.moved.push(me)
+          return r
+        }, now)
         if (typeof e === 'string') { err(e); if (!this.emits.length && !fired) return }
         break
       }
@@ -554,6 +584,11 @@ export class Room extends DurableObject<Env> {
         s.phase = 'lobby'
         break
       }
+      case 'watch': {
+        if (!hostOnly()) return bail()
+        s.watch = m.on !== false
+        break
+      }
       case 'host': {
         const to = String(m.id ?? '')
         if (!isHost || !s.members[to]) return bail()
@@ -607,6 +642,13 @@ export class Room extends DurableObject<Env> {
     const online = this.online(ws)
     const now = Date.now()
     const inst = s.phase === 'game' ? s.inst : null
+    // A line that dropped, not a player who left: they keep a seat in the next game for a while (see seatsFor).
+    if (id && s.members[id] && !online.has(id)) {
+      s.away ??= {}
+      for (const [k, at] of Object.entries(s.away)) if (now - at > REJOIN_MS) delete s.away[k]
+      if (CHOSEN_CLOSE.has(code)) delete s.away[id]
+      else s.away[id] = now
+    }
     // A seated player whose line dropped mid-game (not one who left on purpose).
     if (id && inst?.q && inst.players.includes(id) && !online.has(id) && !CHOSEN_CLOSE.has(code)) {
       s.drops ??= {}
@@ -670,12 +712,16 @@ export class Room extends DurableObject<Env> {
   sendEmits() {
     if (!this.emits.length) return
     const socks = this.ctx.getWebSockets()
+    const s = this.s
+    // With watching off, the game's own events (pen strokes, guesses) reach only its players.
+    const only = s?.watch === false && s.inst ? new Set(s.inst.players) : null
     for (const { msg, to } of this.emits) {
-      const wire = JSON.stringify((msg as { t?: string }).t === 'chat' ? msg : { t: 'ev', ev: msg })
+      const chat = (msg as { t?: string }).t === 'chat'
+      const wire = JSON.stringify(chat ? msg : { t: 'ev', ev: msg })
       const targets = to === undefined ? null : new Set(Array.isArray(to) ? to : [to])
       for (const ws of socks) {
         const id = attached(ws)
-        if (!id || (targets && !targets.has(id))) continue
+        if (!id || (targets && !targets.has(id)) || (!chat && only && !only.has(id))) continue
         try { ws.send(wire) } catch { /* closing */ }
       }
     }
@@ -736,8 +782,9 @@ export class Room extends DurableObject<Env> {
       inst: inst && {
         id: inst.id, n: inst.n, config: inst.config, players: inst.players, startedAt: inst.startedAt, endedAt: inst.endedAt, standings: inst.standings,
         summary: inst.summary, night: inst.night, again: inst.again ?? [], intro: inst.intro ? { until: inst.intro.until, ready: inst.intro.ready } : null,
+        pts: inst.pts ?? null, winners: inst.winners ?? null, sat: inst.sat ?? [],
       },
-      night: s.night,
+      night: s.night, watch: s.watch !== false,
     }
     const game = inst ? GAMES[inst.id] : null
     const ctx = inst ? this.ctxFor(inst, now) : null
@@ -746,7 +793,8 @@ export class Room extends DurableObject<Env> {
       if (!id || !s.members[id]) continue
       const base = JSON.stringify({ t: 's', now, you: id, room })
       let wire = base
-      if (inst && game && ctx && !inst.intro) {
+      // Players see their game; anyone else sees it only while the host lets people watch.
+      if (inst && game && ctx && !inst.intro && (s.watch !== false || inst.players.includes(id))) {
         let v: string
         try { v = JSON.stringify({ n: inst.n, v: game.view(ctx, inst.s, id) }) } catch (e) { console.error('view', inst.id, e); v = JSON.stringify({ n: inst.n, v: null }) }
         // Only send the game view when it changed for this player.

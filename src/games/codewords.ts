@@ -84,21 +84,49 @@ function results(g: Ctx<C>, s: S) {
     { winner, why, words: s.words, keys: s.keys })
 }
 
-function balance(g: Ctx<C>, s: S) {
-  const ids = g.shuffle(g.players.slice())
-  s.team = {}
-  ids.forEach((id, i) => { s.team[id] = i % 2 === 0 ? 'red' : 'blue' })
-  s.spy = { red: ids[0] ?? null, blue: ids[1] ?? null }
+/**
+ * New random teams that can be played: sizes within one of each other, a spymaster on each side who is here to give
+ * clues (so each team has a spymaster and, from four players, at least one guesser), and never the same teams and
+ * spymasters as before when another split exists.
+ */
+function shuffle(g: Ctx<C>, s: S) {
+  const same = (team: Record<string, Team>, spy: Record<Team, string | null>) =>
+    spy.red === s.spy.red && spy.blue === s.spy.blue && g.players.every(id => team[id] === s.team[id])
+  for (let tries = 0; ; tries++) {
+    // Players who are here first, in a random order, so they are split evenly and the two spymasters come from them.
+    const here = g.shuffle(g.players.filter(id => g.online.has(id)))
+    const ids = [...here, ...g.shuffle(g.players.filter(id => !g.online.has(id)))]
+    const a: Team = g.rand() < 0.5 ? 'red' : 'blue'
+    const team: Record<string, Team> = {}
+    ids.forEach((id, i) => { team[id] = i % 2 === 0 ? a : other(a) })
+    const spy = { [a]: ids[0] ?? null, [other(a)]: ids[1] ?? null } as Record<Team, string | null>
+    if (!same(team, spy) || tries >= 20) { s.team = team; s.spy = spy; return }
+  }
+}
+
+/** Who shuffles and starts: the host, or the first player here when the host is not in this game. */
+const boss = (g: Ctx<C>) => (g.host && g.players.includes(g.host) && g.online.has(g.host) ? g.host : g.players.find(id => g.online.has(id)) ?? null)
+
+/** Why the teams cannot start yet, if they cannot. */
+function notReady(g: Ctx<C>, s: S) {
+  for (const team of ['red', 'blue'] as Team[]) {
+    const name = team === 'red' ? 'Red' : 'Blue', spy = s.spy[team]
+    if (!spy) return `${name} needs a spymaster`
+    if (!g.online.has(spy)) return `${name}'s spymaster is not here. Pick another`
+    if (!guessers(s, team).length) return `${name} needs at least one guesser`
+  }
 }
 
 export const codewords: Game<S, C> = {
   setup(g) {
     const s = { phase: 'teams', team: {}, spy: { red: null, blue: null }, clue: null, left: 0, marks: {}, log: [], winner: null, why: '', until: 0, turnN: 0, turnAt: 0, handoff: null, clueAt: 0, final: null } as unknown as S
-    balance(g, s)
+    shuffle(g, s)
     deal(g, s)
     return s
   },
   join(g, s, id) {
+    // Only while the teams are being picked; after that, newcomers watch.
+    if (s.phase !== 'teams') return false
     const red = Object.values(s.team).filter(t => t === 'red').length, blue = Object.values(s.team).length - red
     s.team[id] = red <= blue ? 'red' : 'blue'
     return true
@@ -116,13 +144,12 @@ export const codewords: Game<S, C> = {
         s.team[id] = m.team
       } else if (m.a === 'spy') {
         s.spy[t] = s.spy[t] === id ? null : id
-      } else if (m.a === 'shuffle') {
-        balance(g, s)
-      } else if (m.a === 'go') {
-        for (const team of ['red', 'blue'] as Team[]) {
-          if (!s.spy[team]) return `${team === 'red' ? 'Red' : 'Blue'} needs a spymaster`
-          if (!guessers(s, team).length) return `${team === 'red' ? 'Red' : 'Blue'} needs at least one guesser`
-        }
+      } else if (m.a === 'shuffle' || m.a === 'go') {
+        // Everyone picks their own team and role; shuffling and starting are the host's.
+        if (id !== boss(g)) return 'Only the host can do that'
+        if (m.a === 'shuffle') return shuffle(g, s)
+        const why = notReady(g, s)
+        if (why) return why
         s.phase = 'play'
         newTurn(g, s)
       }
@@ -189,7 +216,7 @@ export const codewords: Game<S, C> = {
     const spy = !!t && s.spy[t] === id
     const over = s.phase === 'over'
     return {
-      phase: s.phase, team: s.team, spy: s.spy, you: { team: t ?? null, spy },
+      phase: s.phase, team: s.team, spy: s.spy, you: { team: t ?? null, spy }, boss: s.phase === 'teams' ? boss(g) : null,
       words: s.words, open: s.open,
       // Spymasters see the key; everyone else only the cards turned over.
       keys: s.keys.map((k, i) => (spy || over || s.open[i] ? k : null)),
@@ -200,7 +227,7 @@ export const codewords: Game<S, C> = {
   },
   bot(g, s, id) {
     const t = s.team[id]
-    if (s.phase === 'teams') return { a: 'go' }
+    if (s.phase === 'teams') return id === boss(g) ? { a: g.rand() < 0.2 ? 'shuffle' : 'go' } : null
     if (s.phase !== 'play' || t !== s.turn) return null
     if (s.spy[t] === id) return s.clue ? null : { a: 'clue', word: 'zzq' + 'abcdefgh'[g.int(8)], n: 1 + g.int(3) }
     if (!s.clue) return null

@@ -1,5 +1,6 @@
 // Connection, clock and shared state. The server owns every game; this file only carries messages both ways.
 import { VID, session, track } from './track.js'
+import { showText } from './dialog.js'
 
 const store = {
   get(k, d) { try { return localStorage.getItem(k) ?? d } catch { return d } },
@@ -185,7 +186,7 @@ export async function copy(text, done = 'Copied') {
   let ok = false
   try { ok = document.execCommand('copy') } catch { /* below */ }
   ta.remove()
-  if (ok) toast(done); else prompt('Copy this', text)
+  if (ok) toast(done); else showText({ title: 'Copy this', body: 'This browser would not copy it for you. Select it and copy.', text })
   return ok
 }
 

@@ -142,11 +142,6 @@ export const wordle: Game<S, C> = {
     return s
   },
 
-  join(g, s, id) {
-    s.p[id] = fresh(blitz(g.config) ? s.round : 0)
-    return true
-  },
-
   act(g, s, id, m) {
     const c = g.config
     const p = s.p[id]

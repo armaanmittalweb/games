@@ -89,7 +89,6 @@ export const make24: Game<S, C> = {
     open(g, s)
     return s
   },
-  join() { return true },
   act(g, s, id, m) {
     if (m.a !== 'solve' || s.phase !== 'play' || s.solved[id] !== undefined) return
     const err = check(s.hands[s.round].slice(0, 4) as number[], m.steps)

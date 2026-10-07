@@ -63,7 +63,6 @@ export const reaction: Game<S, C> = {
     open(g, s)
     return s
   },
-  join() { return true },
   act(g, s, id, m) {
     if (s.phase !== 'wait' || s.taps[id] !== undefined) return
     if (m.a === 'false' || g.now < s.goAt - 40) s.taps[id] = -1

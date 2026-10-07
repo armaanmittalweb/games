@@ -26,7 +26,7 @@ const nav = current => `<header class="site-nav">
 </header>`
 const foot = `<footer class="foot">
   <nav aria-label="Games">${CATALOG.map(m => `<a href="/games/${m.id}">${esc(m.name)}</a>`).join('')}</nav>
-  <p>Game Night is an independent site by <a href="https://www.amittal.dev/">Armaan Mittal</a>. It is not affiliated with the makers of Wordle, Codenames, Uno, Pictionary, Boggle or any other game named here. Trivia questions from the <a href="https://opentdb.com/">Open Trivia Database</a> (CC BY-SA 4.0).</p>
+  <p>Game Night is an independent site by <a href="https://www.amittal.dev/">Armaan Mittal</a>. It is not affiliated with the makers of Wordle, Codenames, Uno, Pictionary, Boggle or any other game named here. Trivia questions from the <a href="https://opentdb.com/">Open Trivia Database</a> (CC BY-SA 4.0). <a href="/privacy">Privacy</a>.</p>
 </footer>`
 const head = ({ title, description, path, type = 'website', ld }) => `<!doctype html>
 <html lang="en">
@@ -158,6 +158,7 @@ const urls = [
   ['/', '1.0', 'weekly'], ['/games', '0.9', 'weekly'],
   ...CATALOG.map(m => [`/games/${m.id}`, '0.8', 'monthly']),
   ['/how-to-play', '0.6', 'monthly'], ['/game-modes', '0.6', 'monthly'], ['/wordle-tips', '0.7', 'monthly'], ['/wordle-unlimited', '0.7', 'monthly'],
+  ['/privacy', '0.2', 'yearly'],
 ]
 writeFileSync('public/sitemap.xml', `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">

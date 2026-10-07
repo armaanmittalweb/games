@@ -48,7 +48,6 @@ export const mostlikely: Game<S, C> = {
     open(g, s)
     return s
   },
-  join() { return true },
   act(g, s, id, m) {
     if (m.a !== 'vote' || s.phase !== 'vote') return
     const to = String(m.id)

@@ -1,5 +1,5 @@
 // Code Words: pick teams, then spymasters give clues and teams reveal cards.
-import { html, useState, useEffect, useTick, fmt, Name, Avatar, nameOf } from '../ui.js'
+import { html, useState, useEffect, useTick, fmt, Name, Avatar, nameOf, member } from '../ui.js'
 import { act, ME, now } from '../core.js'
 import { confetti } from '../results.js'
 
@@ -16,20 +16,38 @@ const ICON = {
 }
 const iconFor = k => (k === 'red' || k === 'blue' ? ICON.agent : ICON[k])
 
+/** What still stops the teams from starting, as the host sees it (the server checks the same). */
+function missing(v, inst) {
+  const here = id => member(id)?.online
+  for (const t of ['red', 'blue']) {
+    const spy = v.spy[t]
+    if (!spy) return `${T[t]} needs a spymaster`
+    if (!here(spy)) return `${T[t]}'s spymaster is away`
+    if (!inst.players.some(id => v.team[id] === t && id !== spy)) return `${T[t]} needs a guesser`
+  }
+  return null
+}
+
 function Teams({ v, inst }) {
+  const seated = inst.players.includes(ME)
+  const boss = v.boss === ME
   const col = team => {
     const ids = inst.players.filter(id => v.team[id] === team)
     return html`<div class=${'team-col ' + team}>
       <h3><span>${T[team]} team</span><span class="cw-count">${ids.length}</span></h3>
-      <ul class="plain">${ids.map(id => html`<li key=${id} class="row"><${Avatar} id=${id} size=${24} /><${Name} id=${id} />${v.spy[team] === id ? html`<span class="pill cw-spy-pill">spymaster</span>` : ''}</li>`)}</ul>
-      ${v.you.team !== team ? html`<button onClick=${() => act({ a: 'team', team })}>Join ${T[team]}</button>` : html`<button class=${v.spy[team] === ME ? '' : 'primary'} onClick=${() => act({ a: 'spy' })}>${v.spy[team] === ME ? 'Stop being spymaster' : 'Be the spymaster'}</button>`}
+      <ul class="plain">${ids.map(id => html`<li key=${id} class=${'row' + (member(id)?.online ? '' : ' away')}><${Avatar} id=${id} size=${24} /><${Name} id=${id} />${v.spy[team] === id ? html`<span class="pill cw-spy-pill">spymaster</span>` : ''}${member(id)?.online ? '' : html`<span class="dim small">away</span>`}</li>`)}</ul>
+      ${!seated ? '' : v.you.team !== team ? html`<button onClick=${() => act({ a: 'team', team })}>Join ${T[team]}</button>` : html`<button class=${v.spy[team] === ME ? '' : 'primary'} onClick=${() => act({ a: 'spy' })}>${v.spy[team] === ME ? 'Stop being spymaster' : 'Be the spymaster'}</button>`}
     </div>`
   }
+  const why = missing(v, inst)
   return html`<div class="cw">
-    <div class="ghead"><div><div class="gtitle">Choose teams</div><div class="dim small">Each team needs a spymaster and at least one guesser.</div></div></div>
+    <div class="ghead"><div><div class="gtitle">Choose teams</div><div class="dim small">Pick your side and who gives the clues. Each team needs a spymaster and at least one guesser.</div></div></div>
     <div class="teams">${col('red')}${col('blue')}</div>
     ${v.black > 1 ? html`<p class="small dim center"><span class="cw-dot"></span> This board has ${v.black} black cards.</p>` : ''}
-    <div class="row"><button onClick=${() => act({ a: 'shuffle' })}>Shuffle teams</button><button class="primary big grow" onClick=${() => act({ a: 'go' })}>Start</button></div>
+    ${boss
+      ? html`${why ? html`<p class="cw-why" role="status">${why} to start.</p>` : ''}
+        <div class="row cw-go"><button onClick=${() => act({ a: 'shuffle' })}>Shuffle teams</button><button class="primary big grow" disabled=${!!why} onClick=${() => act({ a: 'go' })}>Start</button></div>`
+      : html`<p class="dim center cw-wait">${why ? `${why}. ` : ''}${v.boss ? html`<${Name} id=${v.boss} you=${false} /> starts the game.` : 'The host starts the game.'}</p>`}
   </div>`
 }
 

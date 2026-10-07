@@ -17,14 +17,22 @@ interface S {
   guessed: Record<string, number> // points gained this turn, in guessing order
   turnPts: Record<string, number>
   pts: Record<string, number>
+  /** Drawers whose turn was moved to the end because they were away. */
+  later?: string[]
 }
 
 const CHOOSE_MS = 15_000
 const REVEAL_MS = 6000
 
 function next(g: Ctx<C>, s: S) {
-  // Skip turns of drawers who have left.
-  while (s.turn < s.order.length && !g.players.includes(s.order[s.turn])) s.turn++
+  // Skip turns of drawers who have left. A drawer whose line is down draws at the end instead (once), so coming back
+  // still gets them their turn.
+  while (s.turn < s.order.length) {
+    const d = s.order[s.turn]
+    if (g.players.includes(d) && g.online.has(d)) break
+    if (g.players.includes(d) && !(s.later ??= []).includes(d)) { s.later.push(d); s.order.push(d) }
+    s.turn++
+  }
   if (s.turn >= s.order.length) return g.end(byPoints(s.pts, g.players))
   s.choices = g.deal(`draw:${g.config.theme}`, drawWords(g.config.theme), 3)
   s.phase = 'choose'
@@ -79,11 +87,6 @@ export const draw: Game<S, C> = {
     const s: S = { order, turn: 0, phase: 'choose', until: 0, started: 0, choices: [], word: '', shown: [], strokes: [], guessed: {}, turnPts: {}, pts: {} }
     next(g, s)
     return s
-  },
-  join(g, s, id) {
-    // A late arrival guesses straight away and gets a turn to draw at the end.
-    s.order.push(id)
-    return true
   },
   leave(g, s, id) {
     if (s.order[s.turn] === id && s.phase !== 'reveal') finishTurn(g, s)
@@ -149,7 +152,7 @@ export const draw: Game<S, C> = {
     const knows = id === drawer || s.guessed[id] !== undefined || s.phase === 'reveal'
     return {
       drawer, phase: s.phase, until: s.until, turn: s.turn, turns: s.order.length,
-      round: Math.floor(s.turn / Math.max(1, g.players.length)) + 1, rounds: g.config.rounds,
+      round: Math.min(g.config.rounds, Math.floor(s.turn / Math.max(1, g.players.length)) + 1), rounds: g.config.rounds,
       choices: id === drawer && s.phase === 'choose' ? s.choices : null,
       word: knows ? s.word : null,
       hint: s.phase === 'draw' ? [...s.word].map((ch, i) => /[a-z]/i.test(ch) ? (s.shown.includes(i) || knows ? ch : '_') : ch).join('') : null,

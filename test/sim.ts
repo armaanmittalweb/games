@@ -4,6 +4,7 @@ import { GAMES } from '../src/games'
 import { CATALOG, settings } from '../src/catalog'
 import { checkContent } from './content'
 import { checkAnalytics } from './analytics'
+import { checkPoints } from './points'
 import { dealAt, rng, type Ctx, type Standing } from '../src/engine'
 
 const r = rng()
@@ -20,7 +21,7 @@ function play(id: string, n: number, config: Record<string, string | number>, la
   const blobs = new Map<string, unknown>()
   const decks: Record<string, number> = {}
   const ctx = (): Ctx => ({
-    now, config, players, names, colors: {}, online, ...r,
+    now, config, players, names, colors: {}, online, host: players[0], ...r,
     deal: (key, items, n) => { const at = decks[key] ?? r.int(1000); decks[key] = at + n; return dealAt(key, items, n, at) },
     wake: at => { inst.wake = at },
     end: (standings, summary) => { if (ended) throw new Error('ended twice'); ended = { standings, summary } },
@@ -30,7 +31,7 @@ function play(id: string, n: number, config: Record<string, string | number>, la
   const fail = (msg: string) => { failures++; console.log(`FAIL ${label}: ${msg}`) }
   try {
     const s = game.setup(ctx())
-    let steps = 0, acts = 0, joined = false, left = false
+    let steps = 0, acts = 0, joined = false, left = false, back = false, gone = ''
     while (!ended && steps++ < 30_000) {
       for (const p of r.shuffle(players.slice())) {
         if (ended) break
@@ -40,20 +41,22 @@ function play(id: string, n: number, config: Record<string, string | number>, la
       }
       if (ended) break
       for (const p of [...players, 'watcher']) JSON.stringify(game.view(ctx(), s, p))
-      // Someone arrives a third of the way in, and someone drops off later.
-      if (!joined && steps === 40 && game.join && players.length < 30) {
+      // Someone arrives a third of the way in: once play is under way they only watch (a game may still seat them
+      // during its own setup). Later someone's line drops; half the time it comes back and they carry on in their seat,
+      // half the time the host removes them.
+      if (!joined && steps === 40 && players.length < 30) {
         joined = true
         const id = `p${players.length + 1}`
         names[id] = id.toUpperCase()
-        online.add(id)
-        if (game.join(ctx(), s, id)) players.push(id)
+        if (game.join?.(ctx(), s, id)) { players.push(id); online.add(id) }
       }
       if (!left && steps === 90 && players.length > 3) {
         left = true
-        const gone = players[1]
+        gone = players[1]
         online.delete(gone)
-        if (r.rand() < 0.5) game.leave?.(ctx(), s, gone)
+        if (r.rand() < 0.5) { game.leave?.(ctx(), s, gone); gone = '' }
       }
+      if (!back && gone && steps === 140) { back = true; online.add(gone) }
       now += 300 + r.int(900)
       if (inst.wake && (now >= inst.wake || r.rand() < 0.05)) now = Math.max(now, inst.wake)
       if (inst.wake && now >= inst.wake) { inst.wake = 0; game.tick?.(ctx(), s) }
@@ -85,6 +88,6 @@ for (const meta of CATALOG) {
     for (const [v] of o.choices!) play(meta.id, Math.max(meta.min, 4), settings(meta.id, { ...meta.night, [o.key]: v }), `${meta.id} ${o.key}=${v}`)
   }
 }
-if (!only) failures += checkContent() + checkAnalytics()
+if (!only) failures += checkContent() + checkAnalytics() + checkPoints()
 console.log(failures ? `${failures} failures` : 'all games ended cleanly')
 process.exitCode = failures ? 1 : 0

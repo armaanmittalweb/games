@@ -3,6 +3,7 @@ import { html, render, useState, useEffect, useRef } from './preact.js'
 import { S, ME, connect, disconnect, send, subscribe, changed, toast, share, copy, codeFrom, keepAwake, getName, setName, now } from './core.js'
 import { Avatar, Name, nameOf, plural, useTick } from './ui.js'
 import { pageView, track } from './track.js'
+import { ask, dismiss, dialogOpen } from './dialog.js'
 import { Results } from './results.js'
 import { CATALOG } from '/catalog.js'
 
@@ -11,7 +12,6 @@ const MOODS = { think: '🧠 Think', chaos: '😂 Chaos', competitive: '🎯 Com
 const LENGTHS = [['quick', 'Quick', '15 min'], ['standard', 'Standard', '30 min'], ['chaos', 'Chaos', '45 min'], ['tournament', 'Tournament', 'knockout'], ['endless', 'Endless', '∞']]
 const CATS = ['Word', 'Drawing', 'Party', 'Deception', 'Trivia', 'Puzzle', 'Strategy', 'Cards', 'Reflex']
 const DNA = [['skill', 'Skill'], ['luck', 'Luck'], ['social', 'Social'], ['brain', 'Brain'], ['chaos', 'Chaos'], ['replay', 'Replay']]
-export const placePoints = p => [10, 7, 5, 4, 3, 2, 1][p - 1] ?? 1
 const estMinutes = (m, n) => Math.round(m.minutes[0] + m.minutes[1] * n)
 const players = (m) => m.min === m.max ? `${m.min}` : `${m.min}–${m.max}`
 
@@ -30,6 +30,8 @@ function route() {
   const m = location.pathname.match(/^\/r\/([A-Za-z0-9]{5})\/?$/)
   document.body.dataset.view = m ? 'room' : 'home'
   if (m) return { room: m[1].toUpperCase() }
+  guarded = null
+  leaving = false
   disconnect()
   document.title = HOME_TITLE
   return { room: null }
@@ -62,15 +64,58 @@ async function createRoom(pick, start = false) {
   go('/r/' + j.code)
 }
 
+// ---------- leaving a room ----------
+
+// Back (often a stray edge swipe on a phone) should not drop anyone out of a room. Once in a room the page adds a
+// second history entry for it, the guard, so Back first lands on the room's own entry: we ask, and either put the
+// guard back (stay) or carry on back to wherever they came from (leave).
+let guarded = null // the room whose guard entry is in the history
+let leaving = false // the player chose to leave: the next Back is let through
+
+function guard(code) {
+  if (guarded === code && history.state?.guard === code) return
+  guarded = code
+  if (history.state?.guard !== code) history.pushState({ guard: code }, '', `/r/${code}`)
+}
+
+/** The question before leaving a room, with what leaving means right now. */
+function askLeave() {
+  const room = S.room
+  const inGame = room?.phase === 'game' && room.inst
+  const playing = inGame && room.inst.players.includes(ME)
+  const host = room?.host === ME && room.members.some(m => m.online && m.id !== ME)
+  const body = [
+    playing ? `You are playing ${META[room.inst.id].name}. It goes on without you.` : '',
+    `You can come back with the code ${room?.code ?? ''}.`,
+    host ? 'Someone else becomes the host.' : '',
+  ].filter(Boolean).join(' ')
+  return ask({ title: 'Leave the room?', body, ok: 'Leave', cancel: 'Stay', danger: true })
+}
+
+/** Back was pressed in a room. `onRoom`: it landed on the room's own entry (the usual case) rather than past it. */
+async function backPressed(code, onRoom, setWhere) {
+  const leave = await askLeave()
+  if (leaving || guarded !== code) return // a second Back already took them out
+  if (!leave) { history.pushState({ guard: code }, '', `/r/${code}`); return }
+  leaving = true
+  if (onRoom) history.back() // on to the page before the room
+  else setWhere(route())
+}
+
 // ---------- app ----------
 
 function App() {
   const [where, setWhere] = useState(route())
   useEffect(() => {
     const on = e => {
-      // Back (often a stray edge swipe on Android) in the middle of a game asks first; staying puts the room back.
-      if (e?.type === 'popstate' && S.room?.phase === 'game' && !location.pathname.startsWith(`/r/${S.room.code}`) && !confirm('Leave the game?')) {
-        history.pushState(null, '', `/r/${S.room.code}`)
+      if (e?.type === 'popstate' && guarded && S.room && !S.closed && !leaving) {
+        const code = guarded
+        if (location.pathname === `/r/${code}` && history.state?.guard === code) return setWhere(route())
+        const onRoom = location.pathname === `/r/${code}`
+        // Back again while we are asking: that is a clear answer.
+        if (!onRoom && dialogOpen()) { leaving = true; dismiss(); return setWhere(route()) }
+        dismiss()
+        backPressed(code, onRoom, setWhere)
         return
       }
       setWhere(route())
@@ -145,6 +190,8 @@ function RoomGate({ code }) {
   const [name, setN] = useState(getName())
   const [ready, setReady] = useState(!!getName())
   useEffect(() => { if (ready) connect(code); document.title = `Room ${code} · Game Night` }, [ready, code])
+  // In the room: Back asks before leaving (see guard).
+  useEffect(() => { if (s.room) guard(code) }, [!!s.room, code])
   // The screen stays on while in a room (see keepAwake).
   useEffect(() => { if (!ready) return; keepAwake(true); return () => keepAwake(false) }, [ready])
   if (!ready) {
@@ -176,7 +223,7 @@ function Room() {
     if (p.start) send({ t: 'start', id: p.pick })
   }, [room.phase, isHost])
 
-  const leave = () => { if (room.phase === 'game' && !confirm('Leave the room?')) return; go('/') }
+  const leave = async () => { if (await askLeave()) { leaving = true; go('/') } }
   const inGame = room.phase === 'game' && room.inst
   const meta = room.inst ? META[room.inst.id] : null
   return html`<div class=${'room' + (s.chatOpen ? ' chat-on' : '')}>
@@ -186,7 +233,7 @@ function Room() {
       ${inGame ? html`<span class="bar-game ell"><${GameIcon} m=${meta} size="small" /> ${meta.name}</span>` : html`<span class="bar-game dim ell">${plural(room.members.filter(m => m.online).length, 'player')} here</span>`}
       ${s.status !== 'open' ? html`<span class="pill warn">reconnecting</span>` : ''}
       ${inGame ? html`<button class="icon rules-btn" id="rules-btn" onClick=${() => setRules(room.inst.id)} aria-label="How to play" title="How to play">?</button>` : ''}
-      ${inGame && isHost ? html`<button class="icon" onClick=${() => confirm('End this game for everyone? No points are given.') && send({ t: 'abort' })} aria-label="End the game" title="End the game">✕</button>` : ''}
+      ${inGame && isHost ? html`<button class="icon" onClick=${async () => (await ask({ title: 'End this game for everyone?', body: 'Everyone goes back to the lobby and nobody gets points for it.', ok: 'End game', cancel: 'Keep playing', danger: true })) && send({ t: 'abort' })} aria-label="End the game" title="End the game">✕</button>` : ''}
       <${ThemeButton} />
       <button class="icon chat-btn" onClick=${toggleChat} aria-label="Chat" title="Chat">💬${s.unread ? html`<i>${s.unread}</i>` : ''}</button>
     </header>
@@ -337,12 +384,34 @@ function Players({ isHost }) {
       <${Avatar} id=${m.id} /><span class="grow ell"><${Name} id=${m.id} />${m.id === room.host ? html` <span title="Host">👑</span>` : ''}${m.online ? '' : html` <span class="dim small">away</span>`}</span>
       ${played ? html`<span class="small dim">${m.wins ? `🏆${m.wins}` : ''}</span><b>${m.pts}</b>` : ''}
       ${isHost && m.id !== ME ? html`<button class="icon small" onClick=${() => setMenu(menu === m.id ? null : m.id)} aria-label=${`Options for ${m.name}`}>⋯</button>` : ''}
-      ${menu === m.id ? html`<div class="pmenu"><button onClick=${() => { send({ t: 'host', id: m.id }); setMenu(null) }}>Make host</button><button onClick=${() => { if (confirm(`Remove ${m.name}?`)) send({ t: 'kick', id: m.id }); setMenu(null) }}>Remove</button></div>` : ''}
+      ${menu === m.id ? html`<div class="pmenu"><button onClick=${() => { send({ t: 'host', id: m.id }); setMenu(null) }}>Make host</button><button onClick=${async () => { setMenu(null); if (await ask({ title: `Remove ${m.name}?`, body: 'They are taken out of the room and any game they are in.', ok: 'Remove', danger: true })) send({ t: 'kick', id: m.id }) }}>Remove</button></div>` : ''}
     </li>`)}</ul>
     <div class="invite-box"><div class="small">Invite friends to <b class="code-sm">${room.code}</b></div><${InviteButtons} code=${room.code} /></div>
-    <p class="dim small">Room points: 10 for a win, then 7, 5, 4, 3, 2, 1.</p>
-    ${room.history.length ? html`<details class="hist"><summary class="small">Played here (${room.history.length})</summary><ul class="small">${room.history.map(h => html`<li><${GameIcon} m=${META[h.id]} size="small" /> ${META[h.id]?.name}: ${h.winners.map(nameOf).join(' & ')}</li>`)}</ul></details>` : ''}
+    <${WatchSwitch} isHost=${isHost} />
+    <${PointsHelp} />
+    ${room.history.length ? html`<details class="hist"><summary class="small">Played here (${room.history.length})</summary><ul class="small">${room.history.map(h => html`<li><${GameIcon} m=${META[h.id]} size="small" /> ${META[h.id]?.name}: ${h.winners.length ? h.winners.map(nameOf).join(' & ') : html`<span class="dim">no winner</span>`}</li>`)}</ul></details>` : ''}
   </div>`
+}
+
+/** Whether people who are not in a game (late arrivals, knocked-out players) can follow it. On unless the host says. */
+function WatchSwitch({ isHost }) {
+  const on = S.room.watch !== false
+  if (!isHost) return on ? '' : html`<p class="dim small">Watching is off: anyone not in a game waits for the next one.</p>`
+  return html`<label class="switch-row">
+    <span><b class="small">Let people watch</b><span class="dim small">Anyone who arrives mid-game can follow it live and plays from the next game.</span></span>
+    <button type="button" role="switch" aria-checked=${on} class=${'switch' + (on ? ' on' : '')} onClick=${() => send({ t: 'watch', on: !on })}><i></i></button>
+  </label>`
+}
+
+// The same table as src/points.ts, for the lobby's explanation.
+const POINTS = [[2, '10 · 0'], [3, '10 · 5 · 0'], [4, '10 · 7 · 3 · 0'], [5, '10 · 7 · 5 · 3 · 0'], [6, '10 · 7 · 5 · 4 · 2 · 0'], ['8+', '10 · 7 · 5 · 4 · 3 · 2 · 1 … 0']]
+
+function PointsHelp() {
+  return html`<details class="hist points-help"><summary class="small">How room points work</summary>
+    <p class="small">Every game adds to the room's table. A win is worth 10 and last place 0; the places between depend on how many played.</p>
+    <table class="tbl small"><tr><th>Players</th><th>Points by place</th></tr>${POINTS.map(([n, row]) => html`<tr key=${n}><td>${n}</td><td>${row}</td></tr>`)}</table>
+    <p class="small dim">Level players share their places' points. In team games every winner gets 10. Make no move in a game and you score 0 for it.</p>
+  </details>`
 }
 
 function Library({ isHost, onRules }) {
@@ -486,12 +555,23 @@ function GameScreen() {
     import(`./games/${inst.id}.js`).then(m => { mods[inst.id] = m; setMod(m) }).catch(() => toast('Could not load the game. Refresh the page.'))
   }, [inst.id])
   if (inst.intro) return html`<${IntroWait} inst=${inst} />`
-  if (!mod || !s.game) return html`<div class="wrap"><p class="dim">Loading…</p></div>`
   const seated = inst.players.includes(ME)
+  if (!seated && !s.room.watch) return html`<${NoWatching} inst=${inst} />`
+  if (!mod || !s.game) return html`<div class="wrap"><p class="dim">Loading…</p></div>`
   const Game = mod.default
   return html`<div class=${'game-area g-' + inst.id} ref=${area}>
     ${!seated ? html`<div class="watch">You are watching this game. You will be in the next one.</div>` : ''}
     <${Game} v=${s.game} inst=${inst} seated=${seated} />
+  </div>`
+}
+
+/** Not in this game, and the host has turned watching off: who is playing, and that the next game is theirs. */
+function NoWatching({ inst }) {
+  const m = META[inst.id]
+  return html`<div class="wrap narrow stack intro-wait">
+    <div class="center stack"><${GameIcon} m=${m} size="huge" /><h2 class="nomargin">${m.name} is on</h2>
+      <p class="dim">The host has turned off watching, so the game is hidden. You will be in the next one.</p></div>
+    <ul class="ready-list">${inst.players.map(id => html`<li key=${id}><${Avatar} id=${id} /><span class="grow ell"><${Name} id=${id} /></span><span class="small dim">playing</span></li>`)}</ul>
   </div>`
 }
 

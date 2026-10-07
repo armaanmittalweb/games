@@ -59,7 +59,6 @@ export const stopwatch: Game<S, C> = {
     open(g, s)
     return s
   },
-  join() { return true },
   act(g, s, id, m) {
     if (m.a !== 'stop' || s.phase !== 'run' || s.stops[id] !== undefined) return
     const ms = Math.round(Number(m.ms))

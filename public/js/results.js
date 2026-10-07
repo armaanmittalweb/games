@@ -3,8 +3,9 @@
 // share. The game's own summary, the game night table and the feedback card follow.
 import { html, useState, useEffect, useRef } from './preact.js'
 import { S, ME, send, toast, copy } from './core.js'
+import { ask } from './dialog.js'
 import { Avatar, Name, nameOf, colorOf, plural } from './ui.js'
-import { META, placePoints, mods, GameIcon, NightTable, Feedback } from './app.js'
+import { META, mods, GameIcon, NightTable, Feedback } from './app.js'
 
 const still = () => matchMedia('(prefers-reduced-motion: reduce)').matches
 const ordinal = n => n + (n % 100 >= 11 && n % 100 <= 13 ? 'th' : ['th', 'st', 'nd', 'rd'][n % 10] ?? 'th')
@@ -12,10 +13,18 @@ const num = x => (typeof x?.score === 'number' ? x.score : null)
 const fmtNum = n => (Number.isInteger(n) ? n.toLocaleString('en-IN') : n.toFixed(1))
 const and = list => (list.length < 2 ? list.join('') : `${list.slice(0, -1).join(', ')} & ${list[list.length - 1]}`)
 
-/** The line at the top, about you: won, tied, or where you came and how far off the place above you were. */
-function headline(st, winners, meta) {
+/** The line at the top, about you: won, tied, or where you came and how far off the place above you were. `st` holds
+ * only the players who took part; `sat` the seated players who made no move. */
+function headline(st, winners, meta, sat) {
+  if (!st.length) return { big: 'Nobody played this one', sub: 'No moves were made, so no room points were given.', win: false }
+  if (sat.includes(ME)) return { big: 'You sat this one out', sub: 'Make at least one move to score room points.', win: false }
   const mine = st.find(x => x.id === ME)
-  if (!mine) return { big: `${and(winners.map(nameOf))} ${winners.length > 1 ? 'win' : 'wins'}!`, sub: `${meta.name} is over.`, win: false }
+  if (!mine) return { big: winners.length ? `${and(winners.map(nameOf))} ${winners.length > 1 ? 'win' : 'wins'}!` : `${meta.name} is over`, sub: winners.length ? `${meta.name} is over.` : '', win: false }
+  // Alone, there is nobody to beat: just the score.
+  if (st.length === 1) {
+    const score = num(mine) !== null ? `You scored ${fmtNum(num(mine))}. ` : ''
+    return { big: 'Game over', sub: score + (sat.length ? 'Nobody else made a move, so there were no room points.' : ''), win: false }
+  }
   const level = st.filter(x => x.place === mine.place && x.id !== ME)
   // A team game (Code Words) gives words, not numbers, and everyone on a team the same place.
   const team = num(mine) === null && level.length > 0
@@ -37,7 +46,7 @@ function headline(st, winners, meta) {
 
 /** What is worth talking about, from what the room already knows: up to three. Told to `me` ("You have won…"), or
  * with everyone by name when `me` is null (the shared picture). */
-function moments(room, st, winners, me = ME) {
+function moments(room, inst, st, winners, me = ME) {
   const out = []
   const who = id => (id === me ? 'You' : nameOf(id))
   const history = room.history // newest first; this game is history[0]
@@ -57,7 +66,7 @@ function moments(room, st, winners, me = ME) {
   }
   // The room's leaderboard before this game: take off the points this game gave.
   if (history.length > 1) {
-    const gained = Object.fromEntries(st.map(x => [x.id, placePoints(x.place)]))
+    const gained = inst.pts ?? {}
     const now = room.members.map(m => [m.id, m.pts]), before = room.members.map(m => [m.id, m.pts - (gained[m.id] ?? 0)])
     const top = list => { const max = Math.max(...list.map(x => x[1])); const ids = list.filter(x => x[1] === max).map(x => x[0]); return ids.length === 1 && max > 0 ? ids[0] : null }
     const lead = top(now), was = top(before)
@@ -226,13 +235,18 @@ export function Results({ isHost }) {
   const inst = room.inst
   const meta = META[inst.id]
   const night = room.night && inst.night ? room.night : null
-  const st = inst.standings ?? []
+  const all = inst.standings ?? []
+  // Only the players who made a move are ranked; those who sat out are listed after them with no place.
+  const sat = inst.sat ?? []
+  const played = all.filter(x => !sat.includes(x.id))
+  const st = played.map(x => ({ ...x, place: 1 + played.filter(y => y.place < x.place).length }))
+  const pts = inst.pts ?? {}
   const [mod, setMod] = useState(mods[inst.id] ?? null)
   const [busy, setBusy] = useState(false)
   useEffect(() => { if (!mods[inst.id]) import(`./games/${inst.id}.js`).then(m => { mods[inst.id] = m; setMod(m) }) }, [inst.id])
   const winners = st.filter(x => x.place === 1).map(x => x.id)
-  const head = headline(st, winners, meta)
-  const lines = moments(room, st, winners)
+  const head = headline(st, winners, meta, sat)
+  const lines = st.length > 1 ? moments(room, inst, st, winners) : []
   const next = night && !night.done ? night.plan[night.idx + 1] ?? (night.length === 'endless' ? 'more' : null) : null
   const Summary = mod?.Summary
   const champs = night?.done ? night.champions : []
@@ -241,12 +255,12 @@ export function Results({ isHost }) {
   const mins = inst.startedAt && inst.endedAt ? Math.max(1, Math.round((inst.endedAt - inst.startedAt) / 60000)) : null
   const key = room.code + ':' + inst.n
   useEffect(() => {
-    if (celebrated.has(key)) return
+    if (celebrated.has(key) || !st.length) return
     celebrated.add(key)
     const t = setTimeout(() => confetti(head.win || night?.done), 1250)
     return () => clearTimeout(t)
   }, [key])
-  const card = async () => { setBusy(true); try { await shareCard({ meta, st, winners, lines: moments(room, st, winners, null) }) } finally { setBusy(false) } }
+  const card = async () => { setBusy(true); try { await shareCard({ meta, st, winners, lines: st.length > 1 ? moments(room, inst, st, winners, null) : [] }) } finally { setBusy(false) } }
   const inBtn = html`<button class=${'grow' + (again.includes(ME) ? ' in' : ' primary')} onClick=${() => send({ t: 'again' })} aria-pressed=${again.includes(ME)}>${again.includes(ME) ? '✓ You’re in' : night && !night.done ? 'Ready for the next one' : 'I’m in for another'}</button>`
   const ready = again.length ? html`<span class="in-list" title=${again.map(nameOf).join(', ')}>${again.slice(0, 6).map(id => html`<${Avatar} key=${id} id=${id} size=${22} />`)}<span class="small">${again.length} in</span></span>` : ''
 
@@ -256,7 +270,7 @@ export function Results({ isHost }) {
       <div class="res-game"><${GameIcon} m=${meta} size="small" /> ${meta.name}${mins ? ` · ${mins} min` : ''} · ${plural(inst.players.length, 'player')}</div>
       <h1 class="res-big">${head.big}</h1>
       ${head.sub ? html`<p class="res-sub">${head.sub}</p>` : ''}
-      <div class="podium">${[2, 1, 3].map(p => {
+      ${st.length ? html`<div class="podium">${[2, 1, 3].map(p => {
         const at = st.filter(x => x.place === p)
         // Players level on a place share its step, side by side; empty steps keep the podium's shape unless nobody
         // is below 1st at all.
@@ -264,7 +278,7 @@ export function Results({ isHost }) {
         return at.length ? html`<div class=${'pod p' + p + (at.length > 1 ? ' tied' : '')} style=${`--n:${at.length}`}>
           <div class="pod-names">${at.map(x => html`<div key=${x.id} class=${x.id === ME ? 'me' : ''}>${p === 1 ? html`<span class="crown" aria-hidden="true">👑</span>` : ''}<${Avatar} id=${x.id} size=${p === 1 ? 48 : 36} /><div class="ell pod-name"><${Name} id=${x.id} /></div><div class="pod-score"><${Count} to=${x.score} delay=${1300} /></div></div>`)}</div>
           <div class="pod-block">${p}</div></div>` : html`<div class=${'pod p' + p + ' empty'}></div>`
-      })}</div>
+      })}</div>` : ''}
       ${lines.length ? html`<ul class="moments">${lines.map(([e, t], i) => html`<li key=${i} style=${`--i:${i}`}><span aria-hidden="true">${e}</span>${t}</li>`)}</ul>` : ''}
     </section>
 
@@ -274,20 +288,22 @@ export function Results({ isHost }) {
         ${night?.done ? html`<button class="primary big grow" onClick=${() => send({ t: 'nightEnd' })}>Back to the lobby</button>` : ''}
         ${!night ? html`<button class="primary big grow" onClick=${() => send({ t: 'start', id: inst.id })}>Play again</button>` : ''}
         ${ready}
-        <button class="ghost-btn" onClick=${card} disabled=${busy} aria-label="Share the result as a picture">Share result</button>
+        ${st.length ? html`<button class="ghost-btn" onClick=${card} disabled=${busy} aria-label="Share the result as a picture">Share result</button>` : ''}
         ${!night ? html`<button class="ghost-btn" onClick=${() => send({ t: 'lobby' })}>Other game</button>` : ''}
-        ${night && !night.done ? html`<button class="ghost-btn" onClick=${() => confirm('End the game night now?') && send({ t: 'nightEnd' })}>End night</button>` : ''}`
+        ${night && !night.done ? html`<button class="ghost-btn" onClick=${async () => (await ask({ title: 'End the game night now?', body: 'The table so far stays in the room.', ok: 'End night', danger: true })) && send({ t: 'nightEnd' })}>End night</button>` : ''}`
       : html`
         ${inBtn}
         ${ready}
-        <button class="ghost-btn" onClick=${card} disabled=${busy} aria-label="Share the result as a picture">Share result</button>`}
+        ${st.length ? html`<button class="ghost-btn" onClick=${card} disabled=${busy} aria-label="Share the result as a picture">Share result</button>` : ''}`}
     </div>
     ${!isHost ? html`<p class="dim small center nomargin">${night && !night.done ? `Up next: ${next && next !== 'more' ? META[next].name : 'another game'}. The host starts it.` : 'The host picks what is next.'}</p>` : ''}
 
     <div class="card">
       <table class="tbl res-table"><tr><th>#</th><th>Player</th><th>Score</th><th></th><th title="Room points">+pts</th></tr>
-        ${st.map((x, i) => html`<tr key=${x.id} class=${x.id === ME ? 'me' : ''} style=${`--i:${i}`}><td>${x.place}</td><td><${Name} id=${x.id} /></td><td><b><${Count} to=${x.score} delay=${1300} /></b></td><td class="dim small">${x.detail ?? ''}</td><td class="plus">+${placePoints(x.place)}</td></tr>`)}
+        ${st.map((x, i) => html`<tr key=${x.id} class=${x.id === ME ? 'me' : ''} style=${`--i:${i}`}><td>${x.place}</td><td><${Name} id=${x.id} /></td><td><b><${Count} to=${x.score} delay=${1300} /></b></td><td class="dim small">${x.detail ?? ''}</td><td class=${pts[x.id] ? 'plus' : 'dim'}>+${pts[x.id] ?? 0}</td></tr>`)}
+        ${all.filter(x => sat.includes(x.id)).map((x, i) => html`<tr key=${x.id} class=${'sat' + (x.id === ME ? ' me' : '')} style=${`--i:${st.length + i}`}><td>–</td><td><${Name} id=${x.id} /></td><td class="dim">–</td><td class="dim small">no moves</td><td class="dim">+0</td></tr>`)}
       </table>
+      ${st.length === 1 && !sat.length ? '' : html`<p class="dim small nomargin res-pts-note">Room points: 10 for a win down to 0 for last, by how many you beat. No moves, no points.</p>`}
     </div>
     ${Summary && html`<${Summary} inst=${inst} summary=${inst.summary} />`}
     ${seated && html`<${Feedback} key=${key} inst=${inst} code=${room.code} />`}

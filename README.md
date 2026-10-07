@@ -43,14 +43,23 @@ Every game's rules, settings, player range, length and Game DNA (skill, luck, so
 live in `src/catalog.ts`. That one file drives the room's settings checks, the game-night planner, the library on the
 page and the guide page for each game.
 
+## Room points
+
+Every game adds to the room's leaderboard (and a game night's table) through `src/points.ts`. Only players who made at
+least one move are ranked; anyone who sat a game out scores 0 for it. Among the n who played, a place is worth 10 × the
+share of the others you finished ahead of, capped by the ladder 10, 7, 5, 4, 3, 2, 1: 2 players 10 · 0, 3 players
+10 · 5 · 0, 4 players 10 · 7 · 3 · 0, 8 players 10 · 7 · 5 · 4 · 3 · 2 · 1 · 0. Last place scores 0; anyone who beat
+somebody scores at least 1. Level players share the points of the places they cover. Team games rank the teams, so
+every winner gets 10. A game played alone, or where nobody beat anybody, has no winner. `npm test` checks the table.
+
 ## Game nights
 
 The host picks a length (Quick 15 min, Standard 30, Chaos 45, Tournament, Endless) and up to four moods (think, chaos,
 competitive, deception, creative, fast, social, strategic). `src/night.ts` scores every game that fits the number of
 players against the moods, fills the time without letting one game take most of it, spreads categories out, and the
-host can swap or drop any game before starting. Each game gives places points on the night's table (10, 7, 5, 4, 3, 2,
-1; ties share). In a tournament the bottom of the table is knocked out after each game (anyone level with the last
-place kept stays in) until two play a final; knocked-out players watch.
+host can swap or drop any game before starting. Each game adds room points (above) to the night's table. In a
+tournament the bottom of the table is knocked out after each game (anyone level with the last place kept stays in)
+until two play a final; knocked-out players watch.
 
 ## How it works
 
@@ -58,14 +67,25 @@ place kept stays in) until two play a final; knocked-out players watch.
 - Each room is a Durable Object (`src/room.ts`). It seats players, keeps the clock with alarms, saves state, and sends
   every player their own view over a WebSocket. Rooms delete themselves a day after the last activity.
 - A game is a set of plain functions over its own state (`src/engine.ts` has the contract, `src/games/*.ts` the
-  games): `setup`, `act`, `tick` for deadlines, `join` for late arrivals, and `view`, which decides what each player
-  may see (the spymaster's key, your own dice, only words you have finished). The server checks every move.
+  games): `setup`, `act`, `tick` for deadlines, `leave`, and `view`, which decides what each player may see (the
+  spymaster's key, your own dice, only words you have finished). The server checks every move. `join` exists only for a
+  game's own setup step (Code Words seats newcomers while teams are picked).
+- Seats: a game seats everyone in the room, plus anyone whose line dropped in the last two minutes. A player of a game
+  who drops out and comes back is in it again, in the same seat. Someone new arriving during the rules gets a seat;
+  after that they watch and play from the next game. The host can turn watching off in the lobby, and then players who
+  are not in the game get neither its view nor its live events. A drawer who is away when their turn comes draws at the
+  end instead.
+- Code Words: everyone picks their own team and role; only the host shuffles and starts. A shuffle always gives teams
+  within one of each other, a spymaster on each side who is connected, and a different split from the last one.
 - Pen strokes are passed straight through to the other players and saved every few seconds rather than on every
   stroke; Telephone keeps each drawing in its own storage key.
 - The page is plain ES modules with Preact and htm (`public/js/preact.js`, vendored, no build step). `public/js/app.js`
   is the room, lobby, inviting, game nights and chat; `public/js/results.js` the results screen (headline, podium,
   moments, "I'm in" votes, the shareable 1080 × 1350 result picture); `public/js/games/<id>.js` is one screen per game.
-  `public/js/qr.js` is qrcode-generator (MIT), loaded only when someone opens the room's QR code.
+  `public/js/qr.js` is qrcode-generator (MIT), loaded only when someone opens the room's QR code. `public/js/dialog.js`
+  is the site's own dialog: nothing calls the browser's `confirm()`, `alert()` or `prompt()`.
+- Back in a room asks first. Entering a room adds a second history entry (the guard), so Back lands on the room's own
+  entry and the page asks "Leave the room?": Stay puts the guard back, Leave carries on back. The ← button asks the same.
 - Players are a random id and secret in `localStorage`, so a refresh or a dropped connection rejoins the same seat.
   A line that goes quiet for 60 s is replaced, and coming back to the page (unlocking the phone, switching back from
   another app, the network returning) reconnects at once. While in a room the screen is kept on (Wake Lock).
@@ -82,7 +102,7 @@ All content is in plain English for friend groups in India.
 - Trivia (`scripts/build-trivia.mjs`): the [Open Trivia Database](https://opentdb.com) (CC BY-SA 4.0), minus anime,
   comics, US sports and politics, plus about 500 questions about India in `data/india-trivia.mjs`. "Mixed" difficulty
   leaves out the hard questions. `npm run trivia` downloads the bank again.
-- Most Likely To has a Clean pack (any group) and a Spicy pack (dating, exes, parties, roasts), about 10,000 prompts
+- Most Likely To has a Clean pack (any group, and the default) and a Spicy pack (dating, exes, parties, roasts), about 10,000 prompts
   in `src/content/likely/`. After adding prompts, `node scripts/dedupe-likely.mjs` removes repeats and rebuilds the index.
 - Connections groups (`src/content/connections.ts`) list the themes their words could also belong to; two groups with a
   theme in common never share a board, so every board has one answer.
@@ -139,6 +159,12 @@ to the Stats object, on this site's own domain:
 
 `npm test` checks the numbers on a scenario spread over weeks (`test/analytics.ts`), and `node test/analytics-sim.mjs`
 plays a known night against `npm run dev` and checks every figure the page shows.
+
+## Privacy
+
+`/privacy` (`public/privacy.html`, hand-written) lists exactly what the browser stores, what a room keeps and for how
+long, the anonymous counts, and the outside services involved (Cloudflare, Apple's song previews). Change it whenever
+any of those change. Every page's footer links to it.
 
 ## Search
 

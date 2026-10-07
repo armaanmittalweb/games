@@ -68,7 +68,6 @@ export const auction: Game<S, C> = {
     openLot(g, s)
     return s
   },
-  join(g, s, id) { s.coins[id] = START_COINS; return true },
   act(g, s, id, m) {
     if (m.a !== 'bid' || s.phase !== 'bid') return
     const raise = Number(m.by)
