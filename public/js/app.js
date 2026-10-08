@@ -178,17 +178,20 @@ function Home() {
     <section class="hero">
       <div class="hero-text">
         <h1>Play together, each on your own phone</h1>
-        <p class="lead">${CATALOG.length} party games for 2 to 30 people. Make a room, share the code, and everyone joins from their own phone or laptop. Free, no sign-up.</p>
-        <div class="hero-card">
+        <div class="hero-card start">
+          <div class="start-head"><h2>Start playing</h2><p>Type your name and make a room. You get a code to send your friends.</p></div>
           <${NameField} value=${name} onInput=${setN} onEnter=${() => make(null)} />
           <button class="primary big" disabled=${busy} onClick=${() => make(null)}>Create a room</button>
-          <div class="join-row"><input class="code-in" value=${code} onInput=${e => { const c = codeFrom(e.target.value); setCode(c); e.target.value = c }} onKeyDown=${e => e.key === 'Enter' && join()} placeholder="Have a code?" autocapitalize="characters" autocomplete="off" spellcheck="false" enterkeyhint="go" aria-label="Room code, or paste the room link" /><button class="tint" onClick=${join}>Join</button></div>
+          <div class="or" role="separator"><span>Got a code from a friend?</span></div>
+          <div class="join-row"><input class="code-in" value=${code} onInput=${e => { const c = codeFrom(e.target.value); setCode(c); e.target.value = c }} onKeyDown=${e => e.key === 'Enter' && join()} placeholder="Room code or link" autocapitalize="characters" autocomplete="off" spellcheck="false" enterkeyhint="go" aria-label="Room code, or paste the room link" /><button class="tint" onClick=${join}>Join</button></div>
+          <ul class="start-facts"><li>Free</li><li>No sign-up</li><li>No app needed</li></ul>
         </div>
       </div>
       <div class="hero-art" aria-hidden="true"><${KindCard} id="wordle" cls="c1" /><${KindCard} id="mindmeld" cls="c2" /><${KindCard} id="draw" cls="c3" /></div>
     </section>
     <section class="games-sec">
       <div class="sec-head"><h2>Games</h2><a href="/games">Rules for every game</a></div>
+      <p class="sec-lead">${CATALOG.length} party games for 2 to 30 people. Tap one to make a room with it ready to play.</p>
       <div class="chips scroller" role="group" aria-label="Kind of game">${['All', ...CATS].map(c => html`<button key=${c} class=${'chipbtn' + (cat === c ? ' sel' : '')} aria-pressed=${cat === c} onClick=${() => setCat(c)}><i class="kdot" style=${`--k:${c === 'All' ? 'var(--text)' : KINDS[c][0]}`}></i>${c}</button>`)}</div>
       <ul class="lib">${list.map(m => html`<li key=${m.id}><button class="gcard" disabled=${busy} onClick=${() => make(m.id)} aria-label=${`Play ${m.name}`}>
         <span class="gc-top"><${GameIcon} m=${m} /><span><b class="gc-name">${m.name}</b><span class="gc-meta">${players(m)} players</span></span></span>
