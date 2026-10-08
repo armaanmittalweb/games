@@ -10,7 +10,7 @@ export default function Territory({ v, inst, seated }) {
   return html`<div class="play2">
     <div class="pmain">
       <${Head} title=${`Turn ${v.turn}`} sub=${can ? (v.mine === null ? 'Pick a glowing square next to your land' : 'Picked. You can still change it.') : seated ? 'No free square next to your land' : 'Watching'} until=${v.until} />
-      <div class="tt-frame"><div class="tt-grid" style=${`--w:${v.w}`} role="grid" aria-label="The map">
+      <div class="tt-frame"><div class="tt-grid" style=${`--w:${v.w}`} role="group" aria-label="The map">
         ${v.cells.map((c, i) => {
           const owner = c >= 0 ? v.seats[c] : null
           let cls = 'tt-cell'

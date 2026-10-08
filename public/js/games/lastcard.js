@@ -7,6 +7,7 @@ import { act, ME, now, local } from '../core.js'
 
 const COL = { r: 'Red', y: 'Yellow', g: 'Green', b: 'Blue' }
 const HEX = { r: '#e5383b', y: '#f5b700', g: '#2fa84f', b: '#1f6fe0' }
+const CHIP = { r: ['#cc2b2e', '#fff'], y: ['#f5b700', '#15161a'], g: ['#2fa84f', '#15161a'], b: ['#1f6fe0', '#fff'] }
 const NAMES = { s: 'Skip', r: 'Reverse', d: 'Draw two', w: 'Wild', f: 'Wild draw four' }
 const isWild = c => c[1] === 'w' || c[1] === 'f'
 const say = c => isWild(c) ? `${NAMES[c[1]]}${COL[c[0]] ? `, ${COL[c[0]]}` : ''}` : `${COL[c[0]]} ${NAMES[c[1]] ?? c[1]}`
@@ -33,8 +34,8 @@ export function Card({ c, small, ok, dim, onClick, style, extra = '' }) {
   const wild = isWild(c)
   const cls = `lc${wild ? ' wild' : ''}${wild && COL[c[0]] ? ' chosen' : ''}${small ? ' sm' : ''}${ok ? ' ok' : ''}${dim ? ' dimc' : ''}${extra ? ' ' + extra : ''}`
   const k = wild ? HEX[c[0]] ?? '#1b1b1f' : HEX[c[0]]
-  return html`<button class=${cls} style=${`--k:${k};${style ?? ''}`} onClick=${onClick} disabled=${!onClick} aria-label=${say(c)}>
-    <span class="lc-face"><i class="lc-oval"></i><span class="lc-mid"><${Face} c=${c} /></span>
+  return html`<button class=${cls} style=${`--k:${k};${style ?? ''}`} onClick=${onClick} disabled=${!onClick}><span class="vh">${say(c)}</span>
+    <span class="lc-face" aria-hidden="true"><i class="lc-oval"></i><span class="lc-mid"><${Face} c=${c} /></span>
     ${small ? '' : html`<span class="lc-corner tl">${corner(c)}</span><span class="lc-corner br">${corner(c)}</span>`}</span></button>`
 }
 const Back = ({ cls = '', style }) => html`<i class=${'lc-back ' + cls} style=${style} aria-hidden="true"><b>LAST<br />CARD</b></i>`
@@ -296,10 +297,10 @@ export default function LastCard({ v }) {
         <g class="lc-dir-spin"><circle cx="100" cy="100" r="90" />
           ${[0, 120, 240].map(r => html`<path key=${r} transform=${`rotate(${r} 100 100)${v.dir < 0 ? ' scale(-1 1) translate(-200 0)' : ''}`} d="M94 2 L110 10 L94 18 Z" />`)}</g></svg>
       <button class=${'lc-deck' + (myTurn && !v.drawn ? ' can' : '') + (riffle ? ' riffle' : '')} key=${'r' + riffle} ref=${deckRef}
-        onClick=${() => myTurn && !v.drawn && act({ a: 'draw' })} disabled=${!myTurn || !!v.drawn} aria-label=${`Draw a card, ${v.pile} left`}>
+        onClick=${() => myTurn && !v.drawn && act({ a: 'draw' })} disabled=${!myTurn || !!v.drawn}><span class="vh">Draw a card, ${v.pile} left</span>
         ${Array.from({ length: pileDepth }, (_, i) => html`<${Back} key=${i} cls="stacked" style=${`--i:${pileDepth - i}`} />`)}
         <${Back} cls="top" />
-        <span class="lc-deck-n">${v.pile}</span>
+        <span class="lc-deck-n" aria-hidden="true">${v.pile}</span>
         <${Pops} list=${at('deck')} />
       </button>
       <div class="lc-discard" ref=${topRef}>
@@ -307,7 +308,7 @@ export default function LastCard({ v }) {
         <${Card} key="top" c=${v.top} extra="top" style=${`--t:${tilt(v.top)}deg`} />
       </div>
       <div class="lc-now">
-        <span class="lc-chip" style=${`--k:${HEX[v.color]}`}>${COL[v.color]}</span>
+        <span class="lc-chip" style=${`--k:${CHIP[v.color][0]};color:${CHIP[v.color][1]}`}>${COL[v.color]}</span>
         ${v.owed ? html`<span class="lc-chip owe">+${v.owed} waiting</span>` : ''}
         ${v.winner ? '' : html`<${Clock} until=${v.until} />`}
       </div>

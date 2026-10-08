@@ -298,13 +298,13 @@ export function Results({ isHost }) {
         ${night?.done ? html`<button class="primary big grow" onClick=${() => send({ t: 'nightEnd' })}>Back to the lobby</button>` : ''}
         ${!night ? html`<button class="primary big grow" onClick=${() => send({ t: 'start', id: inst.id })}>Play again</button>` : ''}
         ${ready}
-        ${st.length ? html`<button class="ghost-btn" onClick=${card} disabled=${busy} aria-label="Share the result as a picture">Share result</button>` : ''}
+        ${st.length ? html`<button class="ghost-btn" onClick=${card} disabled=${busy} aria-label="Share result as a picture">Share result</button>` : ''}
         ${!night ? html`<button class="ghost-btn" onClick=${() => send({ t: 'lobby' })}>Other game</button>` : ''}
         ${night && !night.done ? html`<button class="ghost-btn" onClick=${async () => (await ask({ title: 'End the game night now?', body: 'The table so far stays in the room.', ok: 'End night', danger: true })) && send({ t: 'nightEnd' })}>End night</button>` : ''}`
       : html`
         ${inBtn}
         ${ready}
-        ${st.length ? html`<button class="ghost-btn" onClick=${card} disabled=${busy} aria-label="Share the result as a picture">Share result</button>` : ''}`}
+        ${st.length ? html`<button class="ghost-btn" onClick=${card} disabled=${busy} aria-label="Share result as a picture">Share result</button>` : ''}`}
     </div>
     ${!isHost ? html`<p class="dim small center nomargin">${night && !night.done ? `Up next: ${next && next !== 'more' ? META[next].name : 'another game'}. The host starts it.` : 'The host picks what is next.'}</p>` : ''}
 

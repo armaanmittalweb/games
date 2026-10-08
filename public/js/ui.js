@@ -5,8 +5,9 @@ import { S, ME, now, onEvent } from './core.js'
 export { html, useState, useEffect, useRef }
 
 export const PLAYER_COLORS = ['#ff6b6b', '#4dabf7', '#69db7c', '#ffd43b', '#da77f2', '#ff922b', '#38d9a9', '#f783ac', '#a9e34b', '#748ffc', '#e599f7', '#ffa94d']
-/** The same colours, dark enough to read as text on the light theme. */
-export const PLAYER_INK = ['#c92a2a', '#1864ab', '#2b8a3e', '#946c00', '#9c36b5', '#c2410c', '#0c7a6b', '#c2255c', '#5c940d', '#3b5bdb', '#ae3ec9', '#b45309']
+/** The same colours, dark enough to read as text on the light theme: at least 4.5:1 on white, the tinted rows
+ *  (you, right, red and blue team) and Code Words' paper desk. */
+export const PLAYER_INK = ['#a51d1d', '#145591', '#1a6229', '#6f5100', '#86289e', '#9a3209', '#085f53', '#a01a4a', '#3b5e08', '#2f49b8', '#8f2aa8', '#8d3f06']
 export const INK = ['#111111', '#868e96', '#ffffff', '#e03131', '#f76707', '#fcc419', '#2f9e44', '#8ce99a', '#74c0fc', '#1971c2', '#7048e8', '#f06595', '#8b5a2b', '#f1c9a5', '#a61e4d', '#1b2a6b']
 export const PEN = [3, 6, 12, 24, 48]
 
@@ -38,6 +39,32 @@ export function Name({ id, you = true }) {
 export function Avatar({ id, size = 28, off = false }) {
   const n = nameOf(id)
   return html`<span class=${'av' + (off ? ' off' : '')} style=${`${off ? '' : `background:${colorOf(id)};`}width:${size}px;height:${size}px;font-size:${Math.round(size * 0.42)}px`} aria-hidden="true">${n.slice(0, 1).toUpperCase()}</span>`
+}
+
+const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+
+/** Keyboard focus for a box that sits over the page (a sheet, a dialog, the room menu): focus moves into it when
+ *  it opens (unless something inside already has it), Tab and Shift+Tab go round inside it, and focus goes back to
+ *  where it was when it closes. `key` re-arms it for a box that stays mounted and changes content (the dialog). */
+export function useFocusTrap(ref, key = true) {
+  useEffect(() => {
+    const box = ref.current
+    if (!box || !key) return
+    const back = document.activeElement
+    const items = () => [...box.querySelectorAll(FOCUSABLE)].filter(e => e.offsetParent !== null || e === document.activeElement)
+    if (!box.contains(document.activeElement)) (items()[0] ?? box).focus({ preventScroll: true })
+    const onKey = e => {
+      if (e.key !== 'Tab') return
+      const list = items()
+      if (!list.length) { e.preventDefault(); return }
+      const first = list[0], last = list[list.length - 1], at = document.activeElement
+      if (!box.contains(at)) { e.preventDefault(); first.focus() }
+      else if (e.shiftKey && at === first) { e.preventDefault(); last.focus() }
+      else if (!e.shiftKey && at === last) { e.preventDefault(); first.focus() }
+    }
+    addEventListener('keydown', onKey)
+    return () => { removeEventListener('keydown', onKey); if (back?.isConnected) back.focus?.({ preventScroll: true }) }
+  }, [key])
 }
 
 export const fmt = ms => {

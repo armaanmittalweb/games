@@ -1,7 +1,7 @@
 // Game Night: the page around the games. Home, rooms, the library, game nights, results and chat.
 import { html, render, useState, useEffect, useRef } from './preact.js'
 import { S, ME, connect, disconnect, send, subscribe, changed, toast, share, copy, codeFrom, keepAwake, getName, setName, now } from './core.js'
-import { Avatar, Name, nameOf, plural, useTick } from './ui.js'
+import { Avatar, Name, nameOf, plural, useTick, useFocusTrap } from './ui.js'
 import { pageView, track } from './track.js'
 import { ask, dismiss, dialogOpen } from './dialog.js'
 import { Results } from './results.js'
@@ -193,7 +193,7 @@ function Home() {
       <div class="sec-head"><h2>Games</h2><a href="/games">Rules for every game</a></div>
       <p class="sec-lead">${CATALOG.length} party games for 2 to 30 people. Tap one to make a room with it ready to play.</p>
       <div class="chips scroller" role="group" aria-label="Kind of game">${['All', ...CATS].map(c => html`<button key=${c} class=${'chipbtn' + (cat === c ? ' sel' : '')} aria-pressed=${cat === c} onClick=${() => setCat(c)}><i class="kdot" style=${`--k:${c === 'All' ? 'var(--text)' : KINDS[c][0]}`}></i>${c}</button>`)}</div>
-      <ul class="lib">${list.map(m => html`<li key=${m.id}><button class="gcard" disabled=${busy} onClick=${() => make(m.id)} aria-label=${`Play ${m.name}`}>
+      <ul class="lib">${list.map(m => html`<li key=${m.id}><button class="gcard" disabled=${busy} onClick=${() => make(m.id)}>
         <span class="gc-top"><${GameIcon} m=${m} /><span><b class="gc-name">${m.name}</b><span class="gc-meta">${players(m)} players</span></span></span>
         <span class="gc-blurb">${m.blurb}</span></button></li>`)}</ul>
     </section>
@@ -254,12 +254,12 @@ function Room() {
     <header class="bar">
       <button class="icon bar-btn" onClick=${leave} aria-label="Leave the room" title="Leave">${ICONS.back}</button>
       ${inGame
-        ? html`<button class="bar-game" id="rules-btn" onClick=${() => setRules(room.inst.id)} aria-label=${`How to play ${meta.name}`} title="How to play"><${GameIcon} m=${meta} size="tiny" /><span class="ell">${meta.name}</span>${ICONS.help}</button>`
+        ? html`<button class="bar-game" id="rules-btn" onClick=${() => setRules(room.inst.id)} title="How to play"><${GameIcon} m=${meta} size="tiny" /><span class="vh">How to play </span><span class="ell">${meta.name}</span>${ICONS.help}</button>`
         : html`<span class="bar-here ell">${plural(here, 'player')} here</span>`}
       ${s.status !== 'open' ? html`<span class="pill warn">reconnecting</span>` : ''}
       <button class="bar-code" onClick=${() => { S.invite = true; changed() }} aria-label=${`Invite friends to room ${room.code}`} title="Invite friends: share, copy the link or show a QR code"><span class="code">${room.code}</span>${ICONS.share}</button>
       <button class="icon bar-btn chat-btn" onClick=${toggleChat} aria-label=${s.unread ? `Chat, ${s.unread} new` : 'Chat'} title="Chat">${ICONS.chat}${s.unread ? html`<i>${s.unread}</i>` : ''}</button>
-      <button class="icon bar-btn" onClick=${() => setMenu(!menu)} aria-label=${inGame ? 'More: light or dark, how to play, end the game' : 'More: light or dark'} aria-haspopup="menu" aria-expanded=${menu} title="More">${ICONS.more}</button>
+      <button class="icon bar-btn" onClick=${() => setMenu(!menu)} aria-label=${inGame ? 'More: light or dark, how to play, end the game' : 'More: light or dark'} aria-haspopup="dialog" aria-expanded=${menu} title="More">${ICONS.more}</button>
     </header>
     ${menu && html`<${RoomMenu} meta=${inGame ? meta : null} isHost=${isHost} onRules=${() => setRules(room.inst.id)} onClose=${() => setMenu(false)} />`}
     <div class="room-body">
@@ -300,6 +300,8 @@ export const ICONS = {
 /** The menu behind the dots in the room's top bar: light or dark, the rules, and (for the host) ending the game. */
 function RoomMenu({ meta, isHost, onRules, onClose }) {
   const [theme, setTheme] = useState(document.documentElement.dataset.theme)
+  const box = useRef()
+  useFocusTrap(box)
   const pick = t => { if (document.documentElement.dataset.theme !== t) window.toggleTheme?.(); setTheme(t) }
   useEffect(() => {
     const onKey = e => e.key === 'Escape' && onClose()
@@ -311,14 +313,14 @@ function RoomMenu({ meta, isHost, onRules, onClose }) {
     if (await ask({ title: 'End this game for everyone?', body: 'Everyone goes back to the lobby and nobody gets points for it.', ok: 'End game', cancel: 'Keep playing', danger: true })) send({ t: 'abort' })
   }
   return html`<div class="menu-shade" onClick=${onClose}></div>
-    <div class="room-menu" role="menu" aria-label="Room menu">
+    <div class="room-menu" role="dialog" aria-label="Room menu" ref=${box}>
       <div class="menu-look"><span>Look</span>
         <div class="seg" role="radiogroup" aria-label="Light or dark">
           <button type="button" role="radio" aria-checked=${theme === 'light'} class=${theme === 'light' ? 'on' : ''} onClick=${() => pick('light')}>${ICONS.sun}Light</button>
           <button type="button" role="radio" aria-checked=${theme !== 'light'} class=${theme !== 'light' ? 'on' : ''} onClick=${() => pick('dark')}>${ICONS.moon}Dark</button>
         </div></div>
-      ${meta ? html`<hr /><button type="button" role="menuitem" class="menu-item" onClick=${() => { onClose(); onRules() }}>${ICONS.help}How to play ${meta.name}</button>` : ''}
-      ${meta && isHost ? html`<hr /><button type="button" role="menuitem" class="menu-item danger-text" onClick=${end}>${ICONS.stop}<span>End the game for everyone<small>Only the host sees this</small></span></button>` : ''}
+      ${meta ? html`<hr /><button type="button" class="menu-item" onClick=${() => { onClose(); onRules() }}>${ICONS.help}How to play ${meta.name}</button>` : ''}
+      ${meta && isHost ? html`<hr /><button type="button" class="menu-item danger-text" onClick=${end}>${ICONS.stop}<span>End the game for everyone<small>Only the host sees this</small></span></button>` : ''}
     </div>`
 }
 
@@ -347,13 +349,15 @@ const RulesHead = ({ m, id }) => html`<div class="rules-head"><${GameIcon} m=${m
 
 function RulesModal({ id, onClose }) {
   const m = META[id]
+  const box = useRef()
+  useFocusTrap(box)
   useEffect(() => {
     const onKey = e => e.key === 'Escape' && onClose()
     addEventListener('keydown', onKey)
     return () => removeEventListener('keydown', onKey)
   }, [])
   return html`<div class="modal" onClick=${e => e.target === e.currentTarget && onClose()} role="dialog" aria-modal="true" aria-labelledby="rules-title">
-    <div class="card stack modal-card rules-card"><div class="row between nowrap"><${RulesHead} m=${m} id="rules-title" /><button class="icon" onClick=${onClose} aria-label="Close">${ICONS.close}</button></div>
+    <div class="card stack modal-card rules-card" ref=${box}><div class="row between nowrap"><${RulesHead} m=${m} id="rules-title" /><button class="icon" onClick=${onClose} aria-label="Close">${ICONS.close}</button></div>
     <${RulesList} m=${m} /></div></div>`
 }
 
@@ -370,6 +374,7 @@ function RulesIntro({ inst, code }) {
   const key = code + ':' + inst.n
   const [state, setState] = useState(() => inst.intro && !inst.intro.ready.includes(ME) && !introClosed.has(key) ? 'open' : 'closed')
   const card = useRef()
+  useFocusTrap(card, state === 'open')
   useTick(250)
   const close = (tell = true) => {
     if (state !== 'open') return
@@ -692,6 +697,8 @@ function InviteButtons({ code }) {
 /** The room's QR code (the camera app opens the room), its code in big letters and its link. */
 function InviteModal({ code, onClose }) {
   const [svg, setSvg] = useState('')
+  const box = useRef()
+  useFocusTrap(box)
   useEffect(() => {
     track('share', { method: 'qr' })
     import('./qr.js').then(({ default: qrcode }) => {
@@ -708,7 +715,7 @@ function InviteModal({ code, onClose }) {
     return () => removeEventListener('keydown', onKey)
   }, [code])
   return html`<div class="modal" onClick=${e => e.target === e.currentTarget && onClose()} role="dialog" aria-modal="true" aria-labelledby="inv-title">
-    <div class="card stack modal-card invite-card">
+    <div class="card stack modal-card invite-card" ref=${box}>
       <div class="row between"><h2 class="nomargin" id="inv-title">Invite friends</h2><button class="icon" onClick=${onClose} aria-label="Close">${ICONS.close}</button></div>
       <div class="inv-body">
         <div class="stack inv-qr"><div class="qr" dangerouslySetInnerHTML=${{ __html: svg }}></div>

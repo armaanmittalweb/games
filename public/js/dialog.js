@@ -1,6 +1,7 @@
 // Our own dialogs, in place of the browser's confirm() and prompt(): styled like the rest of the site, one at a time,
 // and closed by Escape or a tap outside (which count as "no").
 import { html, render, useState, useEffect, useRef } from './preact.js'
+import { useFocusTrap } from './ui.js'
 
 let open = null // { title, body, ok, cancel, danger, text, resolve }
 const subs = new Set()
@@ -67,9 +68,11 @@ function Dialog() {
     addEventListener('keydown', onKey)
     return () => { removeEventListener('keydown', onKey); back?.focus?.({ preventScroll: true }) }
   }, [d])
+  const card = useRef()
+  useFocusTrap(card, d)
   if (!d) return null
   return html`<div class="modal dialog" onClick=${e => e.target === e.currentTarget && close(false)}>
-    <div class="card stack modal-card dialog-card" role="alertdialog" aria-modal="true" aria-labelledby="dlg-title" aria-describedby=${d.body ? 'dlg-body' : undefined}>
+    <div class="card stack modal-card dialog-card" ref=${card} role="alertdialog" aria-modal="true" aria-labelledby="dlg-title" aria-describedby=${d.body ? 'dlg-body' : undefined}>
       <h2 id="dlg-title" class="nomargin">${d.title}</h2>
       ${d.body ? html`<p id="dlg-body" class="nomargin dlg-body">${d.body}</p>` : ''}
       ${d.text !== undefined ? html`<input ref=${field} readonly value=${d.text} onFocus=${e => e.target.select()} aria-label="Text to copy" />` : ''}

@@ -52,7 +52,8 @@ const rnd = a => a[Math.floor(Math.random() * a.length)]
 
 /** One move for one player: whatever the screen offers. */
 async function step(page, id) {
-  const tryClick = async sel => { const l = page.locator(sel); const n = await l.count(); if (!n) return false; try { await l.nth(Math.floor(Math.random() * n)).click({ timeout: 800 }); return true } catch { return false } }
+  // `force` taps something that never holds still (the pulsing Last card! button) without waiting for it to stop.
+  const tryClick = async (sel, force = false) => { const l = page.locator(sel); const n = await l.count(); if (!n) return false; try { await l.nth(Math.floor(Math.random() * n)).click({ timeout: 800, force }); return true } catch { return false } }
   if (await tryClick('.choose button')) return
   if (id === 'territory' && await tryClick('.tt-cell.can')) return
   if (id === 'auction' && Math.random() < 0.5 && await tryClick('.au-raise button.primary:not([disabled])')) return
@@ -98,10 +99,10 @@ async function step(page, id) {
   if (await visible(page, '.clue-form')) { await page.fill('.clue-form input', 'zebra' + 'abcdefgh'[Math.floor(Math.random() * 8)]); await page.click('.clue-form button'); return }
   if (id === 'codewords' && await tryClick('button:has-text("Start")')) return
   if (await tryClick('.cwc:not([disabled])')) return
-  if (await tryClick('.lc-call')) return
-  if (await tryClick('.lc-hand .lc.ok')) { await tryClick('.lc-wheelpick button'); return }
+  if (await tryClick('.lc-call', true)) return
+  if (await tryClick('.lc-hand .lc.ok', true)) { await tryClick('.lc-wheelpick button'); return }
   if (await tryClick('.lc-wheelpick button')) return
-  if (await tryClick('button:has-text("Draw a card"), button:has-text("Keep it and pass"), button:has-text("Take ")')) return
+  if (await tryClick('.lc-actions button:has-text("Draw a card"), .lc-actions button:has-text("Keep it and pass"), .lc-actions button:has-text("Take ")')) return
   if (await tryClick('.who:not([disabled])')) return
   if (await tryClick('.choice:not([disabled])')) return
   if (await tryClick('.def:not([disabled])')) return
@@ -160,7 +161,8 @@ async function play(id) {
     console.log(`${done ? 'ok  ' : 'FAIL'} ${id}: ${Math.round((Date.now() - t0) / 1000)}s, ${rows - 1} rows in the standings`)
     await send(host, { t: 'lobby' })
   } else {
-    errors.push(`${id}: did not reach the results in time`)
+    errors.push(`${id}: did not reach the results in time (screens saved as ${id}-stuck-*.png)`)
+    await Promise.all(pages.map((p, i) => p.screenshot({ path: `${SHOTS}/${id}-stuck-${NAMES[i]}.png` }).catch(() => {})))
     await send(host, { t: 'abort' })
   }
   await host.waitForTimeout(500)
