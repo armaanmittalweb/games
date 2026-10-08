@@ -1,5 +1,5 @@
 // Most Likely To: everyone points at someone at once.
-import { html, Head, Scores, Waiting, Name, Avatar, nameOf, plural } from '../ui.js'
+import { html, Head, Scores, Waiting, Name, Avatar, nameOf, plural, Mark } from '../ui.js'
 import { act, ME } from '../core.js'
 
 export default function MostLikely({ v, inst, seated }) {
@@ -14,13 +14,13 @@ export default function MostLikely({ v, inst, seated }) {
           <${Avatar} id=${id} size=${40} /><${Name} id=${id} /></button>`)}</div>
         <${Waiting} ids=${inst.players} done=${v.voted} label="voted" />`
       : html`<div class="votes">
-        ${v.top.length ? html`<p class="center crown">👑 ${v.top.map((id, i) => html`${i ? ' & ' : ''}<${Name} key=${id} id=${id} />`)}</p>` : html`<p class="center dim">No clear winner this time.</p>`}
+        ${v.top.length ? html`<p class="center top-pick">${Mark.crown()} ${v.top.map((id, i) => html`${i ? ' & ' : ''}<${Name} key=${id} id=${id} />`)}</p>` : html`<p class="center dim">No clear winner this time.</p>`}
         ${ranked.filter(id => v.counts[id]).map(id => html`<div key=${id} class=${'vrow' + (v.top.includes(id) ? ' top' : '')}>
           <${Avatar} id=${id} /><div class="grow"><div><${Name} id=${id} /> <span class="dim small">${plural(v.counts[id].length, 'vote')}</span></div>
           <div class="dim small">from ${v.counts[id].map(x => (x === ME ? 'you' : nameOf(x))).join(', ')}</div></div>
           <span class="bar-v"><i style=${`width:${(v.counts[id].length / inst.players.length) * 100}%`}></i></span></div>`)}
         ${v.mine && v.top.includes(v.mine) ? html`<p class="center plus">You voted with the room: +2</p>` : ''}</div>`}
     </div>
-    <aside class="pside"><${Scores} pts=${v.pts} note=${id => (v.crowns[id] ? `👑${v.crowns[id] > 1 ? v.crowns[id] : ''}` : '')} /></aside>
+    <aside class="pside"><${Scores} pts=${v.pts} note=${id => (v.crowns[id] ? html`<span class="crowns" title="Times the room picked them">${Mark.crown()}${v.crowns[id] > 1 ? v.crowns[id] : ''}</span>` : '')} /></aside>
   </div>`
 }

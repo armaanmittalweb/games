@@ -332,7 +332,7 @@ export default function LastCard({ v }) {
         ${v.exposed === ME ? html`<p class="lc-warn">One card and you haven't called it. Tap <b>Last card!</b> before someone catches you.</p>` : ''}
         <div class="lc-tools">
           <button class="lc-tbtn" onClick=${() => toggle('lc.sort', !sorted, setSorted)}>${sorted ? 'Sorted by colour' : 'As dealt'}</button>
-          <button class="lc-tbtn" onClick=${() => toggle('lc.mute', !muted, setMuted)}>${muted ? '🔇 Sound off' : '🔊 Sound on'}</button>
+          <button class="lc-tbtn" onClick=${() => toggle('lc.mute', !muted, setMuted)}>${muted ? 'Sound off' : 'Sound on'}</button>
         </div>
       </div>` : ''}
 

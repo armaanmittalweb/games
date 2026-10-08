@@ -5,7 +5,7 @@ import { html, useState, useEffect, useRef } from './preact.js'
 import { S, ME, send, toast, copy } from './core.js'
 import { ask } from './dialog.js'
 import { Avatar, Name, nameOf, colorOf, plural } from './ui.js'
-import { META, mods, GameIcon, NightTable, Feedback } from './app.js'
+import { META, mods, GameIcon, NightTable, Feedback, ICONS } from './app.js'
 
 const still = () => matchMedia('(prefers-reduced-motion: reduce)').matches
 const ordinal = n => n + (n % 100 >= 11 && n % 100 <= 13 ? 'th' : ['th', 'st', 'nd', 'rd'][n % 10] ?? 'th')
@@ -73,6 +73,16 @@ function moments(room, inst, st, winners, me = ME) {
     if (lead && lead !== was) out.push(['👑', `${who(lead)} ${lead === me ? 'lead' : 'leads'} the room now`])
   }
   return out.slice(0, 3)
+}
+
+// The moments' marks on screen (the shared picture keeps the emoji).
+const MARKS = {
+  '🔥': () => html`<svg viewBox="0 0 24 24" aria-hidden="true" class="mk flame"><path d="M12 2c1 3.5 5 5.5 5 10.5a5 5 0 0 1-10 0c0-2 1-3.5 2-4.5 0 2 1 3 2 3 0-3-1-6 1-9z" /></svg>`,
+  '🎉': () => html`<svg viewBox="0 0 24 24" aria-hidden="true" class="mk star"><path d="M12 3l2.7 5.6 6.1.8-4.5 4.2 1.2 6.1L12 16.8l-5.5 2.9 1.2-6.1-4.5-4.2 6.1-.8z" /></svg>`,
+  '🤝': () => html`<svg viewBox="0 0 24 24" aria-hidden="true" class="mk line"><path d="M5 9h14M5 15h14" /></svg>`,
+  '📸': () => html`<svg viewBox="0 0 24 24" aria-hidden="true" class="mk line"><path d="M4 8h3l2-3h6l2 3h3v11H4z" /><circle cx="12" cy="13" r="3.5" /></svg>`,
+  '🚀': () => html`<svg viewBox="0 0 24 24" aria-hidden="true" class="mk line"><path d="M5 19L19 5M10 5h9v9" /></svg>`,
+  '👑': () => html`<svg viewBox="0 0 24 24" aria-hidden="true" class="mk crown"><path d="M3 8l4 4 5-7 5 7 4-4-2 11H5L3 8z" /></svg>`,
 }
 
 /** Counts up to a score once the podium is up. */
@@ -261,13 +271,13 @@ export function Results({ isHost }) {
     return () => clearTimeout(t)
   }, [key])
   const card = async () => { setBusy(true); try { await shareCard({ meta, st, winners, lines: st.length > 1 ? moments(room, inst, st, winners, null) : [] }) } finally { setBusy(false) } }
-  const inBtn = html`<button class=${'grow' + (again.includes(ME) ? ' in' : ' primary')} onClick=${() => send({ t: 'again' })} aria-pressed=${again.includes(ME)}>${again.includes(ME) ? '✓ You’re in' : night && !night.done ? 'Ready for the next one' : 'I’m in for another'}</button>`
+  const inBtn = html`<button class=${'big grow' + (again.includes(ME) ? ' in' : ' primary')} onClick=${() => send({ t: 'again' })} aria-pressed=${again.includes(ME)}>${again.includes(ME) ? '✓ You’re in' : night && !night.done ? 'Ready for the next one' : 'I’m in for another'}</button>`
   const ready = again.length ? html`<span class="in-list" title=${again.map(nameOf).join(', ')}>${again.slice(0, 6).map(id => html`<${Avatar} key=${id} id=${id} size=${22} />`)}<span class="small">${again.length} in</span></span>` : ''
 
   return html`<div class="wrap results stack">
-    ${night?.done ? html`<div class="card champion"><div class="trophy">🏆</div><h1>${and(champs.map(nameOf))} ${champs.length > 1 ? 'share' : 'wins'} the night!</h1><p class="dim">${night.rounds.length} games played</p></div>` : ''}
+    ${night?.done ? html`<div class="champion"><span class="trophy">${ICONS.trophy}</span><h1>${and(champs.map(nameOf))} ${champs.length > 1 ? 'share' : 'wins'} the night!</h1><p>${night.rounds.length} games played</p></div>` : ''}
     <section class=${'card res-hero' + (head.win ? ' won' : '')}>
-      <div class="res-game"><${GameIcon} m=${meta} size="small" /> ${meta.name}${mins ? ` · ${mins} min` : ''} · ${plural(inst.players.length, 'player')}</div>
+      <div class="res-game"><${GameIcon} m=${meta} size="tiny" /> ${meta.name}${mins ? ` · ${mins} min` : ''} · ${plural(inst.players.length, 'player')}</div>
       <h1 class="res-big">${head.big}</h1>
       ${head.sub ? html`<p class="res-sub">${head.sub}</p>` : ''}
       ${st.length ? html`<div class="podium">${[2, 1, 3].map(p => {
@@ -276,10 +286,10 @@ export function Results({ isHost }) {
         // is below 1st at all.
         if (!at.length && !st.some(x => x.place > 1)) return ''
         return at.length ? html`<div class=${'pod p' + p + (at.length > 1 ? ' tied' : '')} style=${`--n:${at.length}`}>
-          <div class="pod-names">${at.map(x => html`<div key=${x.id} class=${x.id === ME ? 'me' : ''}>${p === 1 ? html`<span class="crown" aria-hidden="true">👑</span>` : ''}<${Avatar} id=${x.id} size=${p === 1 ? 48 : 36} /><div class="ell pod-name"><${Name} id=${x.id} /></div><div class="pod-score"><${Count} to=${x.score} delay=${1300} /></div></div>`)}</div>
+          <div class="pod-names">${at.map(x => html`<div key=${x.id} class=${x.id === ME ? 'me' : ''}>${p === 1 ? html`<span class="crown" aria-hidden="true">${ICONS.crown}</span>` : ''}<${Avatar} id=${x.id} size=${p === 1 ? 50 : 40} /><div class="ell pod-name"><${Name} id=${x.id} /></div><div class="pod-score"><${Count} to=${x.score} delay=${1300} /></div></div>`)}</div>
           <div class="pod-block">${p}</div></div>` : html`<div class=${'pod p' + p + ' empty'}></div>`
       })}</div>` : ''}
-      ${lines.length ? html`<ul class="moments">${lines.map(([e, t], i) => html`<li key=${i} style=${`--i:${i}`}><span aria-hidden="true">${e}</span>${t}</li>`)}</ul>` : ''}
+      ${lines.length ? html`<ul class="moments">${lines.map(([e, t], i) => html`<li key=${i} style=${`--i:${i}`}>${MARKS[e]?.() ?? ''}${t}</li>`)}</ul>` : ''}
     </section>
 
     <div class="res-actions">
@@ -299,10 +309,10 @@ export function Results({ isHost }) {
     ${!isHost ? html`<p class="dim small center nomargin">${night && !night.done ? `Up next: ${next && next !== 'more' ? META[next].name : 'another game'}. The host starts it.` : 'The host picks what is next.'}</p>` : ''}
 
     <div class="card">
-      <table class="tbl res-table"><tr><th>#</th><th>Player</th><th>Score</th><th></th><th title="Room points">+pts</th></tr>
-        ${st.map((x, i) => html`<tr key=${x.id} class=${x.id === ME ? 'me' : ''} style=${`--i:${i}`}><td>${x.place}</td><td><${Name} id=${x.id} /></td><td><b><${Count} to=${x.score} delay=${1300} /></b></td><td class="dim small">${x.detail ?? ''}</td><td class=${pts[x.id] ? 'plus' : 'dim'}>+${pts[x.id] ?? 0}</td></tr>`)}
-        ${all.filter(x => sat.includes(x.id)).map((x, i) => html`<tr key=${x.id} class=${'sat' + (x.id === ME ? ' me' : '')} style=${`--i:${st.length + i}`}><td>–</td><td><${Name} id=${x.id} /></td><td class="dim">–</td><td class="dim small">no moves</td><td class="dim">+0</td></tr>`)}
-      </table>
+      <div class="scroll"><table class="tbl res-table"><tr><th>#</th><th>Player</th><th>Score</th><th></th><th class="r" title="Room points">Room pts</th></tr>
+        ${st.map((x, i) => html`<tr key=${x.id} class=${x.id === ME ? 'me' : ''} style=${`--i:${i}`}><td>${x.place}</td><td><${Name} id=${x.id} /></td><td><b><${Count} to=${x.score} delay=${1300} /></b></td><td class="dim small">${x.detail ?? ''}</td><td class="r"><b class=${'ptspill' + (pts[x.id] ? '' : ' zero')}>+${pts[x.id] ?? 0}</b></td></tr>`)}
+        ${all.filter(x => sat.includes(x.id)).map((x, i) => html`<tr key=${x.id} class=${'sat' + (x.id === ME ? ' me' : '')} style=${`--i:${st.length + i}`}><td>–</td><td><${Name} id=${x.id} /></td><td class="dim">–</td><td class="dim small">no moves</td><td class="r"><b class="ptspill zero">+0</b></td></tr>`)}
+      </table></div>
       ${st.length === 1 && !sat.length ? '' : html`<p class="dim small nomargin res-pts-note">Room points: 10 for a win down to 0 for last, by how many you beat. No moves, no points.</p>`}
     </div>
     ${Summary && html`<${Summary} inst=${inst} summary=${inst.summary} />`}

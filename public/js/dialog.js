@@ -74,7 +74,7 @@ function Dialog() {
       ${d.body ? html`<p id="dlg-body" class="nomargin dlg-body">${d.body}</p>` : ''}
       ${d.text !== undefined ? html`<input ref=${field} readonly value=${d.text} onFocus=${e => e.target.select()} aria-label="Text to copy" />` : ''}
       <div class="dialog-btns">
-        ${d.cancel ? html`<button ref=${safe} onClick=${() => close(false)}>${d.cancel}</button>` : ''}
+        ${d.cancel ? html`<button ref=${safe} class=${d.danger ? 'primary' : ''} onClick=${() => close(false)}>${d.cancel}</button>` : ''}
         <button ref=${main} class=${d.danger ? 'danger' : 'primary'} onClick=${() => close(true)}>${d.ok}</button>
       </div>
     </div>

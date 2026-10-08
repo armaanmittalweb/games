@@ -19,3 +19,6 @@
 
 /geo/*
   Cache-Control: public, max-age=86400
+
+/fonts/*
+  Cache-Control: public, max-age=31536000, immutable

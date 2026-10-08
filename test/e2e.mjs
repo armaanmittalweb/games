@@ -169,7 +169,7 @@ for (const id of ids) await play(id)
 
 if (!only || only.includes('night')) {
   // A game night: plan one, start it, check the banner, stop.
-  await host.click('text=🎲 Game night')
+  await host.click('button[role="tab"]:has-text("Game night")')
   await host.click('text=Plan the night')
   await host.waitForSelector('.plan li')
   const planned = await host.locator('.plan li').count()

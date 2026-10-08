@@ -22,13 +22,22 @@ export const colorOf = id => PLAYER_COLORS[(member(id)?.color ?? 0) % PLAYER_COL
 const inkOf = id => PLAYER_INK[(member(id)?.color ?? 0) % PLAYER_INK.length]
 export const plural = (n, one, many = one + 's') => `${n} ${n === 1 ? one : many}`
 
+/** Small drawn marks the games use in place of emoji. */
+export const Mark = {
+  crown: () => html`<svg viewBox="0 0 24 24" aria-hidden="true" class="mk crown"><path d="M3 8l4 4 5-7 5 7 4-4-2 11H5L3 8z" /></svg>`,
+  flame: () => html`<svg viewBox="0 0 24 24" aria-hidden="true" class="mk flame"><path d="M12 2c1 3.5 5 5.5 5 10.5a5 5 0 0 1-10 0c0-2 1-3.5 2-4.5 0 2 1 3 2 3 0-3-1-6 1-9z" /></svg>`,
+  pencil: () => html`<svg viewBox="0 0 24 24" aria-hidden="true" class="mk line"><path d="M4 20l1-5L16 4l4 4L9 19zM14 6l4 4" /></svg>`,
+  stopwatch: () => html`<svg viewBox="0 0 48 48" aria-hidden="true" class="mk watch"><circle cx="24" cy="27" r="16" /><path d="M20 5h8M24 5v6M36 13l3-3" /><path d="M24 27V18" class="hand" /></svg>`,
+}
+
 export function Name({ id, you = true }) {
   return html`<b class="nm" style=${`--c:${colorOf(id)};--cd:${inkOf(id)}`}>${nameOf(id)}${you && id === ME ? html`<span class="dim"> (you)</span>` : ''}</b>`
 }
 
-export function Avatar({ id, size = 28 }) {
+/** A player's initial in their colour; `off` (away) leaves a dashed ring instead. */
+export function Avatar({ id, size = 28, off = false }) {
   const n = nameOf(id)
-  return html`<span class="av" style=${`background:${colorOf(id)};width:${size}px;height:${size}px;font-size:${Math.round(size * 0.45)}px`} aria-hidden="true">${n.slice(0, 1).toUpperCase()}</span>`
+  return html`<span class=${'av' + (off ? ' off' : '')} style=${`${off ? '' : `background:${colorOf(id)};`}width:${size}px;height:${size}px;font-size:${Math.round(size * 0.42)}px`} aria-hidden="true">${n.slice(0, 1).toUpperCase()}</span>`
 }
 
 export const fmt = ms => {

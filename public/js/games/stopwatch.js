@@ -1,6 +1,6 @@
 // Stop the Clock: tap Start, count in your head, tap Stop. No running clock is ever shown; your real time appears
 // only once you have stopped. The run is timed on this device between the two taps, so network lag does not matter.
-import { html, useState, useEffect, useRef, Scores, Name, Waiting, useTick } from '../ui.js'
+import { html, useState, useEffect, useRef, Scores, Name, Waiting, useTick, Mark } from '../ui.js'
 import { act, now, ME } from '../core.js'
 
 const sec = ms => (ms / 1000).toFixed(2)
@@ -45,7 +45,7 @@ export default function Stopwatch({ v, inst, seated }) {
   const rows = Object.entries(v.stops).map(([id, ms]) => ({ id, ms, d: ms - v.target })).sort((a, b) => Math.abs(a.d) - Math.abs(b.d))
   let face
   if (!ready) face = html`<span class="sw-count">${Math.max(1, Math.ceil((v.openAt - now()) / 1000))}</span>`
-  else if (running) face = html`<span class="sw-hidden">⏱ <span class="sw-dots"><i></i><i></i><i></i></span></span>`
+  else if (running) face = html`<span class="sw-hidden">${Mark.stopwatch()}<span class="sw-dots"><i></i><i></i><i></i></span></span>`
   else if (r.ms !== null) face = html`<span>${sec(r.ms)}</span>`
   else if (stopped) face = html`<span class="dim">done</span>`
   else face = html`<span class="dim">0.00</span>`

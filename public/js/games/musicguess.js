@@ -29,7 +29,7 @@ export default function MusicGuess({ v, inst, seated }) {
       <${Head} title=${`Song ${v.round + 1} of ${v.rounds}`} sub=${reveal ? '' : v.long ? 'Five-second clip unlocked · worth 5' : 'Two seconds · worth 10'} until=${v.until} />
       <audio ref=${audio} preload="auto" onError=${() => setFailed(true)}></audio>
       <div class="mg-player">
-        <button class="mg-play primary" onClick=${() => play(reveal ? 10 : v.clip)} aria-label="Play the clip">▶</button>
+        <button class="mg-play" onClick=${() => play(reveal ? 10 : v.clip)} aria-label="Play the clip"><svg viewBox="0 0 24 24" aria-hidden="true" class="ico fillico"><path d="M7 4.5v15l13-7.5z" /></svg></button>
         <div><b>${reveal ? 'Listen again' : `Play ${v.clip} seconds`}</b>
           <div class="dim small">${failed ? 'This clip did not load. Pick your best guess; the round still counts.' : blocked ? 'Tap play to hear it.' : 'Same moment for everyone.'}</div></div>
       </div>

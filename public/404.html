@@ -5,17 +5,20 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Page not found | Game Night</title>
 <meta name="robots" content="noindex">
-<meta name="theme-color" content="#121213">
-<script>/* Light or dark: the saved choice, else the system setting. Runs before the page draws. */(function(){var d=document.documentElement;function set(t){d.dataset.theme=t;var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==='light'?'#f6f6f4':'#121213'}var t;try{t=localStorage.getItem('gn.theme')}catch(e){}set(t||(matchMedia('(prefers-color-scheme: light)').matches?'light':'dark'));window.toggleTheme=function(){var n=d.dataset.theme==='light'?'dark':'light';set(n);try{localStorage.setItem('gn.theme',n)}catch(e){}}})()</script>
+<meta name="theme-color" content="#121318">
+<script>/* Light or dark: the saved choice, else the system setting. Runs before the page draws. */(function(){var d=document.documentElement;function set(t){d.dataset.theme=t;var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==='light'?'#eef0f3':'#121318'}var t;try{t=localStorage.getItem('gn.theme')}catch(e){}set(t||(matchMedia('(prefers-color-scheme: light)').matches?'light':'dark'));window.toggleTheme=function(){var n=d.dataset.theme==='light'?'dark':'light';set(n);try{localStorage.setItem('gn.theme',n)}catch(e){}}})()</script>
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="preload" href="/fonts/onest-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/unbounded-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/style.css">
 </head>
 <body>
-<header class="site-nav">
-  <a class="brand" href="/">🎲 Game Night</a>
-  <nav aria-label="Main"><a href="/games">All games</a><a class="play" href="/">Play</a><button class="theme-btn" type="button" onclick="toggleTheme()" aria-label="Switch between light and dark mode" title="Light or dark"></button></nav>
-</header>
-<main class="doc">
+<header class="site-nav"><div class="sn">
+  <a class="brand" href="/"><span class="mark" aria-hidden="true"><i></i><i></i></span>Game Night</a>
+  <nav aria-label="Main"><a href="/games">All games</a><button class="theme-btn" type="button" onclick="toggleTheme()" aria-label="Switch between light and dark mode" title="Light or dark"><svg class="moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg><svg class="sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg></button></nav>
+</div></header>
+<main class="doc lost">
+  <div class="lost-art" aria-hidden="true"><i></i><i>?</i></div>
   <h1>That page isn't here</h1>
   <p class="lead">The link may be mistyped. If a friend sent you a room, check the five-character code, or ask them to tap the code at the top of their screen to share it again.</p>
   <p class="cta"><a class="button" href="/">Go to Game Night</a> <a class="button alt" href="/games">See all games</a></p>

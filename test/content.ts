@@ -92,7 +92,7 @@ export function checkContent(): number {
   for (const c of COUNTRIES) if (distanceTo(c, c).km > 0) { failures++; console.log(`FAIL content geo: ${c.n}'s marker is outside it`) }
   // Icons are drawn into the shareable result card as image files, where an attribute given twice breaks the SVG.
   for (const id of ICON_IDS) {
-    for (const tag of iconSvg(id).match(/<[a-z][^>]*>/g) ?? []) {
+    for (const tag of iconSvg(id, 'Word').match(/<[a-z][^>]*>/g) ?? []) {
       const attrs = [...tag.matchAll(/\s([a-z-]+)=/g)].map(x => x[1])
       const twice = attrs.find((x, i) => attrs.indexOf(x) !== i)
       if (twice) { failures++; console.log(`FAIL content icons: ${id} has ${twice} twice in ${tag.slice(0, 40)}`) }

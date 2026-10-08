@@ -131,7 +131,7 @@ const send = (page, m) => page.evaluate(async m => (await import('/js/core.js'))
 for (const ph of phones) {
   await audit(ph.page, `lobby · ${ph.label}`)
   await shot(ph.page, `lobby-${ph.name}`)
-  await ph.page.click('.invite-btns button:has-text("QR code")')
+  await ph.page.click('.invite-btns button[aria-label="Show a QR code"]')
   await ph.page.waitForSelector('.qr svg', { timeout: 5000 }).catch(() => fail(`invite · ${ph.label}`, 'no QR code'))
   await audit(ph.page, `invite · ${ph.label}`)
   await shot(ph.page, `invite-${ph.name}`)

@@ -3,7 +3,7 @@
 Party games for a group of friends, in the browser: https://games.amittal.dev
 
 One person makes a room and shares the 5-letter code; everyone joins from their own phone or laptop. The host picks a
-game, or plans a whole game night, and the room keeps one leaderboard across every game played in it. There is a light and a dark theme (the switch is in the top bar).
+game, or plans a whole game night, and the room keeps one leaderboard across every game played in it. There is a light and a dark theme (the switch is in the top bar of the site, and in the ⋯ menu in a room).
 
 ## Games
 
@@ -32,11 +32,13 @@ game, or plans a whole game night, and the room keeps one leaderboard across eve
 | Auction | 2–10 | 100 coins each; bid on lots, collect sets, keep some cash. |
 | 24 Game | 1–30 | Four numbers; combine them with + − × ÷ to make 24. |
 
-Each game has its own icon, drawn in `src/icons.ts` (a coloured tile with a white drawing); the build puts the SVGs
-into `public/catalog.js` and the guide pages.
+Each game has its own icon, drawn in `src/icons.ts`: a drawing on a tile in the colour of its kind of game (word games
+blue, drawing games red, party games yellow and so on); the build puts the SVGs into `public/catalog.js` and the guide
+pages. The site uses two typefaces, Onest and Unbounded, served from `public/fonts` (SIL Open Font License, in
+`public/fonts/OFL.txt`); `node scripts/make-images.mjs` redraws the share picture and app icons in the same look.
 
 Before every game the rules are up for everyone for 30 seconds. Tapping anywhere closes them, and they shrink into the
-**?** button at the top, where they can be opened again. The game is set up only when every player here has closed
+game's name in the top bar, where they can be opened again. The game is set up only when every player here has closed
 them or the 30 seconds are over, so its clock starts then and nobody loses playing time.
 
 Every game's rules, settings, player range, length and Game DNA (skill, luck, social, brain, chaos and replay, 1 to 5)

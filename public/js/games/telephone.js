@@ -9,7 +9,7 @@ function Show({ v, inst }) {
     <div class="book">${v.entries.map((e, i) => html`<div key=${i} class="entry">
       <div class="entry-by"><${Avatar} id=${e.by} size=${22} /> <${Name} id=${e.by} /> <span class="dim small">${i === 0 ? 'wrote' : e.kind === 'draw' ? 'drew' : 'saw'}</span></div>
       ${e.kind === 'text' ? html`<div class="entry-text">${e.text}</div>` : html`<${Canvas} strokes=${e.strokes} small=${true} />`}
-      <button class=${'like' + (e.likes.includes(ME) ? ' on' : '')} disabled=${e.by === ME} onClick=${() => act({ a: 'like', e: i })}>👍 ${e.likes.length || ''}</button>
+      <button class=${'like' + (e.likes.includes(ME) ? ' on' : '')} disabled=${e.by === ME} onClick=${() => act({ a: 'like', e: i })} aria-label=${`Like${e.likes.length ? `, ${e.likes.length} so far` : ''}`}><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 10v11H4V10zM7 10l4-7c1.5 0 2.5 1.2 2.2 2.7L12.6 9H19a2 2 0 0 1 2 2.3l-1.3 7.6A2.5 2.5 0 0 1 17.2 21H7" /></svg>${e.likes.length || ''}</button>
     </div>`)}</div>
     <div class="center">${owner || !inst.players.includes(v.owner) ? html`<button class="primary big" onClick=${() => act({ a: 'next' })}>${v.entries.length < v.total ? 'Show next' : v.book + 1 < v.books ? 'Next book' : 'Finish'}</button>` : html`<p class="dim small">${nameOf(v.owner)} is showing their book. It moves on by itself too.</p>`}</div>
   </div><aside class="pside"><div class="dim small">Likes</div><${Scores} pts=${v.pts} /></aside></div>`

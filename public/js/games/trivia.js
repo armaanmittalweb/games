@@ -1,5 +1,5 @@
 // Trivia: four choices (or true or false), a clock, points for speed.
-import { html, Head, Scores, Waiting, Name, useTick } from '../ui.js'
+import { html, Head, Scores, Waiting, Name, useTick, Mark } from '../ui.js'
 import { act, now, ME } from '../core.js'
 
 const CATS = { india: 'India', general: 'General knowledge', science: 'Science & nature', geography: 'Geography', history: 'History', screen: 'Film & TV', music: 'Music', sports: 'Sports', tech: 'Computers & gadgets', games: 'Video games' }
@@ -11,7 +11,7 @@ export default function Trivia({ v, inst, seated }) {
   const mine = v.gained?.[ME]
   return html`<div class="play2">
     <div class="pmain">
-      <${Head} title=${`Question ${v.round + 1} of ${v.rounds}`} sub=${CATS[v.cat] ?? ''} until=${reading ? 0 : v.until}>${v.streak >= 2 && !reveal ? html`<span class="pill hot">🔥 ${v.streak} in a row</span>` : ''}</${Head}>
+      <${Head} title=${`Question ${v.round + 1} of ${v.rounds}`} sub=${CATS[v.cat] ?? ''} until=${reading ? 0 : v.until}>${v.streak >= 2 && !reveal ? html`<span class="pill hot">${Mark.flame()}${v.streak} in a row</span>` : ''}</${Head}>
       <div class="prompt">${v.q}</div>
       <div class=${'choices' + (v.choices.length === 2 ? ' two' : '')} style=${reading ? 'visibility:hidden' : ''}>${v.choices.map((c, i) => {
         let cls = 'choice'

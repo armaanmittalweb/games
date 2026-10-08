@@ -1,5 +1,5 @@
 // Draw & Guess: the drawer draws, everyone else guesses in the feed.
-import { html, useState, useEffect, useRef, Canvas, Head, Scores, Name, AnswerBox, nameOf } from '../ui.js'
+import { html, useState, useEffect, useRef, Canvas, Head, Scores, Name, AnswerBox, nameOf, Mark } from '../ui.js'
 import { act, onEvent, ME } from '../core.js'
 
 function Feed({ turn }) {
@@ -35,7 +35,7 @@ export default function Draw({ v, inst, seated }) {
       ${v.phase === 'reveal' ? html`<div class="turn-pts">${Object.entries(v.turnPts).sort((a, b) => b[1] - a[1]).map(([id, p]) => html`<span key=${id}><${Name} id=${id} /> +${p}</span>`)}${!Object.keys(v.turnPts).length ? html`<span class="dim">Nobody got it.</span>` : ''}</div>` : ''}
     </div>
     <aside class="draw-side">
-      <${Scores} pts=${v.pts} note=${id => (id === v.drawer ? '✏️' : v.guessed[id] !== undefined ? '✓' : '')} />
+      <${Scores} pts=${v.pts} note=${id => (id === v.drawer ? html`<span title="Drawing">${Mark.pencil()}</span>` : v.guessed[id] !== undefined ? '✓' : '')} />
       <${Feed} turn=${v.turn} />
       ${seated ? html`<${AnswerBox} onSend=${t => act({ a: 'guess', text: t })} placeholder=${drawing || got ? 'Chat with others who know' : 'Type your guess'} max=${60} autoFocus=${!drawing} />` : ''}
     </aside>

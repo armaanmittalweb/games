@@ -5,11 +5,11 @@ import { Avatar, Name, nameOf, plural, useTick } from './ui.js'
 import { pageView, track } from './track.js'
 import { ask, dismiss, dialogOpen } from './dialog.js'
 import { Results } from './results.js'
-import { CATALOG } from '/catalog.js'
+import { CATALOG, KINDS } from '/catalog.js'
 
 export const META = Object.fromEntries(CATALOG.map(m => [m.id, m]))
-const MOODS = { think: '🧠 Think', chaos: '😂 Chaos', competitive: '🎯 Competitive', deception: '🕵️ Deception', creative: '🎨 Creative', fast: '⚡ Fast', social: '🗣️ Social', strategic: '♟️ Strategic' }
-const LENGTHS = [['quick', 'Quick', '15 min'], ['standard', 'Standard', '30 min'], ['chaos', 'Chaos', '45 min'], ['tournament', 'Tournament', 'knockout'], ['endless', 'Endless', '∞']]
+const MOODS = { think: 'Think', chaos: 'Chaos', competitive: 'Competitive', deception: 'Deception', creative: 'Creative', fast: 'Fast', social: 'Social', strategic: 'Strategic' }
+const LENGTHS = [['quick', 'Quick', '15 min'], ['standard', 'Standard', '30 min'], ['chaos', 'Chaos', '45 min'], ['tournament', 'Tournament', 'knockout'], ['endless', 'Endless', 'keeps going']]
 const CATS = ['Word', 'Drawing', 'Party', 'Deception', 'Trivia', 'Puzzle', 'Strategy', 'Cards', 'Reflex']
 const DNA = [['skill', 'Skill'], ['luck', 'Luck'], ['social', 'Social'], ['brain', 'Brain'], ['chaos', 'Chaos'], ['replay', 'Replay']]
 const estMinutes = (m, n) => Math.round(m.minutes[0] + m.minutes[1] * n)
@@ -128,8 +128,21 @@ function App() {
 }
 
 function NameField({ value, onInput, onEnter }) {
-  return html`<div><label for="name">Your name</label>
-    <input id="name" maxlength="16" autocomplete="nickname" placeholder="e.g. Armaan" value=${value} onInput=${e => onInput(e.target.value)} onKeyDown=${e => e.key === 'Enter' && onEnter?.()} /></div>`
+  return html`<label class="name-row" for="name"><span>Your name</span>
+    <input id="name" maxlength="16" autocomplete="nickname" placeholder="e.g. Armaan" value=${value} onInput=${e => onInput(e.target.value)} onKeyDown=${e => e.key === 'Enter' && onEnter?.()} /></label>`
+}
+
+/** The site's top bar, as on every other page. */
+function SiteNav() {
+  return html`<header class="site-nav"><div class="sn">
+    <a class="brand" href="/"><span class="mark" aria-hidden="true"><i></i><i></i></span>Game Night</a>
+    <nav aria-label="Main"><a href="/games">All games</a><${ThemeButton} /></nav></div></header>`
+}
+
+/** A game as a big card in its kind's colour (the three beside the welcome). */
+function KindCard({ id, cls }) {
+  const m = META[id], [bg, ink] = KINDS[m.cat]
+  return html`<div class=${'kcard ' + cls} style=${`--k:${bg};--ink:${ink}`}><small>${m.cat}</small><${GameIcon} m=${m} /><b>${m.name}</b></div>`
 }
 
 function Home() {
@@ -160,27 +173,26 @@ function Home() {
     go('/r/' + c)
   }
   const list = CATALOG.filter(m => cat === 'All' || m.cat === cat)
-  return html`<div class="wrap home">
-    <div class="brandline"><span>🎲 Game Night</span><span class="row"><a href="/games">All games</a><${ThemeButton} /></span></div>
+  return html`<${SiteNav} />
+  <div class="wrap home">
     <section class="hero">
       <div class="hero-text">
-        <h1>Game night with your friends, in the browser</h1>
-        <p class="lead">${CATALOG.length} party games for 2 to 30 people. Make a room, share the code, play on any phone or laptop. Free, no sign-up.</p>
+        <h1>Play together, each on your own phone</h1>
+        <p class="lead">${CATALOG.length} party games for 2 to 30 people. Make a room, share the code, and everyone joins from their own phone or laptop. Free, no sign-up.</p>
+        <div class="hero-card">
+          <${NameField} value=${name} onInput=${setN} onEnter=${() => make(null)} />
+          <button class="primary big" disabled=${busy} onClick=${() => make(null)}>Create a room</button>
+          <div class="join-row"><input class="code-in" value=${code} onInput=${e => { const c = codeFrom(e.target.value); setCode(c); e.target.value = c }} onKeyDown=${e => e.key === 'Enter' && join()} placeholder="Have a code?" autocapitalize="characters" autocomplete="off" spellcheck="false" enterkeyhint="go" aria-label="Room code, or paste the room link" /><button class="tint" onClick=${join}>Join</button></div>
+        </div>
       </div>
-      <div class="card stack hero-card">
-        <${NameField} value=${name} onInput=${setN} onEnter=${() => make(null)} />
-        <button class="primary big" disabled=${busy} onClick=${() => make(null)}>Create a room</button>
-        <div class="or"><span>or join one</span></div>
-        <div class="row"><input class="grow code-in" value=${code} onInput=${e => { const c = codeFrom(e.target.value); setCode(c); e.target.value = c }} onKeyDown=${e => e.key === 'Enter' && join()} placeholder="CODE" autocapitalize="characters" autocomplete="off" spellcheck="false" enterkeyhint="go" aria-label="Room code, or paste the room link" /><button onClick=${join}>Join</button></div>
-      </div>
+      <div class="hero-art" aria-hidden="true"><${KindCard} id="wordle" cls="c1" /><${KindCard} id="mindmeld" cls="c2" /><${KindCard} id="draw" cls="c3" /></div>
     </section>
-    <section>
-      <div class="row between"><h2>Games</h2><div class="chips">${['All', ...CATS].map(c => html`<button key=${c} class=${'chipbtn' + (cat === c ? ' sel' : '')} onClick=${() => setCat(c)}>${c}</button>`)}</div></div>
-      <div class="lib">${list.map(m => html`<div key=${m.id} class="gcard">
-        <div class="gc-top"><${GameIcon} m=${m} /><div><a class="gname" href=${'/games/' + m.id}>${m.name}</a><div class="dim small">${players(m)} players · ${m.cat}</div></div></div>
-        <p class="small">${m.blurb}</p>
-        <button class="primary" disabled=${busy} onClick=${() => make(m.id)}>Play</button>
-      </div>`)}</div>
+    <section class="games-sec">
+      <div class="sec-head"><h2>Games</h2><a href="/games">Rules for every game</a></div>
+      <div class="chips scroller" role="group" aria-label="Kind of game">${['All', ...CATS].map(c => html`<button key=${c} class=${'chipbtn' + (cat === c ? ' sel' : '')} aria-pressed=${cat === c} onClick=${() => setCat(c)}><i class="kdot" style=${`--k:${c === 'All' ? 'var(--text)' : KINDS[c][0]}`}></i>${c}</button>`)}</div>
+      <ul class="lib">${list.map(m => html`<li key=${m.id}><button class="gcard" disabled=${busy} onClick=${() => make(m.id)} aria-label=${`Play ${m.name}`}>
+        <span class="gc-top"><${GameIcon} m=${m} /><span><b class="gc-name">${m.name}</b><span class="gc-meta">${players(m)} players</span></span></span>
+        <span class="gc-blurb">${m.blurb}</span></button></li>`)}</ul>
     </section>
   </div>`
 }
@@ -196,13 +208,20 @@ function RoomGate({ code }) {
   useEffect(() => { if (!ready) return; keepAwake(true); return () => keepAwake(false) }, [ready])
   if (!ready) {
     const ok = () => { const n = name.trim(); if (!n) return toast('Enter your name'); setName(n); setReady(true) }
-    return html`<div class="wrap narrow stack"><h1>Join room <span class="code">${code}</span></h1>
-      <div class="card stack"><${NameField} value=${name} onInput=${setN} onEnter=${ok} /><button class="primary big" onClick=${ok}>Join</button></div></div>`
+    return html`<${SiteNav} /><main class="gate">
+      <div class="gate-art" aria-hidden="true"><i></i><i></i><span>${ICONS.people}</span></div>
+      <span class="gate-sub">You're invited to room</span>
+      <span class="gate-code code">${code}</span>
+      <p class="lead">Party games you play together, each on your own phone.</p>
+      <div class="hero-card"><${NameField} value=${name} onInput=${setN} onEnter=${ok} /><button class="primary big" onClick=${ok}>Join the room</button></div>
+      <p class="gate-foot">Free. No sign-up, no app. Only people in this room see your name. <a href="/privacy">Privacy</a></p>
+    </main>`
   }
-  if (s.closed === 'elsewhere') return html`<div class="wrap narrow stack"><p>This room is open in another tab.</p><button class="primary" onClick=${() => location.reload()}>Use it here</button></div>`
-  if (s.closed === 'removed') return html`<div class="wrap narrow stack"><p>The host removed you from this room.</p><button onClick=${() => go('/')}>Home</button></div>`
-  if (s.closed === 'missing') return html`<div class="wrap narrow stack"><p>Room <b>${code}</b> was not found. Rooms close a day after they were last used.</p><button class="primary" onClick=${() => go('/')}>Make a new one</button></div>`
-  if (!s.room) return html`<div class="wrap narrow"><p class="dim">Connecting to ${code}…</p></div>`
+  const gate = (text, btn) => html`<${SiteNav} /><main class="gate"><p class="lead">${text}</p>${btn}</main>`
+  if (s.closed === 'elsewhere') return gate('This room is open in another tab.', html`<button class="primary big" onClick=${() => location.reload()}>Use it here</button>`)
+  if (s.closed === 'removed') return gate('The host removed you from this room.', html`<button class="big" onClick=${() => go('/')}>Home</button>`)
+  if (s.closed === 'missing') return gate(html`Room <b class="code">${code}</b> was not found. Rooms close a day after they were last used.`, html`<button class="primary big" onClick=${() => go('/')}>Make a new one</button>`)
+  if (!s.room) return html`<main class="gate"><p class="dim">Connecting to ${code}…</p></main>`
   return html`<${Room} />`
 }
 
@@ -224,19 +243,22 @@ function Room() {
   }, [room.phase, isHost])
 
   const leave = async () => { if (await askLeave()) { leaving = true; go('/') } }
+  const [menu, setMenu] = useState(false)
   const inGame = room.phase === 'game' && room.inst
   const meta = room.inst ? META[room.inst.id] : null
+  const here = room.members.filter(m => m.online).length
   return html`<div class=${'room' + (s.chatOpen ? ' chat-on' : '')}>
     <header class="bar">
-      <button class="icon" onClick=${leave} aria-label="Leave the room" title="Leave">←</button>
-      <button class="code" onClick=${() => { S.invite = true; changed() }} title="Invite friends: share, copy the link or show a QR code">${room.code} <span class="small">invite</span></button>
-      ${inGame ? html`<span class="bar-game ell"><${GameIcon} m=${meta} size="small" /> ${meta.name}</span>` : html`<span class="bar-game dim ell">${plural(room.members.filter(m => m.online).length, 'player')} here</span>`}
+      <button class="icon bar-btn" onClick=${leave} aria-label="Leave the room" title="Leave">${ICONS.back}</button>
+      ${inGame
+        ? html`<button class="bar-game" id="rules-btn" onClick=${() => setRules(room.inst.id)} aria-label=${`How to play ${meta.name}`} title="How to play"><${GameIcon} m=${meta} size="tiny" /><span class="ell">${meta.name}</span>${ICONS.help}</button>`
+        : html`<span class="bar-here ell">${plural(here, 'player')} here</span>`}
       ${s.status !== 'open' ? html`<span class="pill warn">reconnecting</span>` : ''}
-      ${inGame ? html`<button class="icon rules-btn" id="rules-btn" onClick=${() => setRules(room.inst.id)} aria-label="How to play" title="How to play">?</button>` : ''}
-      ${inGame && isHost ? html`<button class="icon" onClick=${async () => (await ask({ title: 'End this game for everyone?', body: 'Everyone goes back to the lobby and nobody gets points for it.', ok: 'End game', cancel: 'Keep playing', danger: true })) && send({ t: 'abort' })} aria-label="End the game" title="End the game">✕</button>` : ''}
-      <${ThemeButton} />
-      <button class="icon chat-btn" onClick=${toggleChat} aria-label="Chat" title="Chat">💬${s.unread ? html`<i>${s.unread}</i>` : ''}</button>
+      <button class="bar-code" onClick=${() => { S.invite = true; changed() }} aria-label=${`Invite friends to room ${room.code}`} title="Invite friends: share, copy the link or show a QR code"><span class="code">${room.code}</span>${ICONS.share}</button>
+      <button class="icon bar-btn chat-btn" onClick=${toggleChat} aria-label=${s.unread ? `Chat, ${s.unread} new` : 'Chat'} title="Chat">${ICONS.chat}${s.unread ? html`<i>${s.unread}</i>` : ''}</button>
+      <button class="icon bar-btn" onClick=${() => setMenu(!menu)} aria-label=${inGame ? 'More: light or dark, how to play, end the game' : 'More: light or dark'} aria-haspopup="menu" aria-expanded=${menu} title="More">${ICONS.more}</button>
     </header>
+    ${menu && html`<${RoomMenu} meta=${inGame ? meta : null} isHost=${isHost} onRules=${() => setRules(room.inst.id)} onClose=${() => setMenu(false)} />`}
     <div class="room-body">
       <main class="room-main">
         ${room.night && html`<${NightBanner} night=${room.night} isHost=${isHost} />`}
@@ -252,6 +274,51 @@ function Room() {
   </div>`
 }
 
+const svg = d => html`<svg viewBox="0 0 24 24" aria-hidden="true" class="ico">${d}</svg>`
+/** The room's small line icons (a fresh copy each time one is used). */
+export const ICONS = {
+  get back() { return svg(html`<path d="M15 18l-6-6 6-6" />`) },
+  get help() { return svg(html`<circle cx="12" cy="12" r="9" /><path d="M9.6 9.3a2.5 2.5 0 1 1 3.6 2.3c-.8.4-1.2 1-1.2 1.9M12 16.8v.2" />`) },
+  get share() { return svg(html`<path d="M12 3v12M7 8l5-5 5 5M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6" />`) },
+  get chat() { return svg(html`<path d="M21 12a8 8 0 0 1-11.6 7.1L4 20.5l1.4-4.9A8 8 0 1 1 21 12z" />`) },
+  get more() { return html`<svg viewBox="0 0 24 24" aria-hidden="true" class="ico fillico"><circle cx="5.5" cy="12" r="1.9" /><circle cx="12" cy="12" r="1.9" /><circle cx="18.5" cy="12" r="1.9" /></svg>` },
+  get close() { return svg(html`<path d="M6 6l12 12M18 6L6 18" />`) },
+  get sun() { return svg(html`<circle cx="12" cy="12" r="4.2" /><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M5.3 18.7l1.6-1.6M17.1 6.9l1.6-1.6" />`) },
+  get moon() { return svg(html`<path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z" />`) },
+  get stop() { return svg(html`<rect x="5" y="5" width="14" height="14" rx="3" />`) },
+  get copy() { return svg(html`<rect x="8" y="8" width="12" height="12" rx="2" /><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2" />`) },
+  get qr() { return svg(html`<path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h2v2h-2zM18 14h2v2h-2zM14 18h2v2h-2zM18 18h2v2h-2z" />`) },
+  get play() { return html`<svg viewBox="0 0 24 24" aria-hidden="true" class="ico fillico"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l10.5-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5z" /></svg>` },
+  get crown() { return html`<svg viewBox="0 0 24 24" aria-hidden="true" class="crown-ico"><path d="M3 8l4 4 5-7 5 7 4-4-2 11H5L3 8z" /></svg>` },
+  get trophy() { return svg(html`<path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0zM7 6H4a3 3 0 0 0 3 4M17 6h3a3 3 0 0 1-3 4" />`) },
+  get people() { return svg(html`<path d="M16 20v-1a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v1M9.5 11a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7zM21 20v-1a4 4 0 0 0-3-3.87M16 4.13a3.5 3.5 0 0 1 0 6.75" />`) },
+}
+
+/** The menu behind the dots in the room's top bar: light or dark, the rules, and (for the host) ending the game. */
+function RoomMenu({ meta, isHost, onRules, onClose }) {
+  const [theme, setTheme] = useState(document.documentElement.dataset.theme)
+  const pick = t => { if (document.documentElement.dataset.theme !== t) window.toggleTheme?.(); setTheme(t) }
+  useEffect(() => {
+    const onKey = e => e.key === 'Escape' && onClose()
+    addEventListener('keydown', onKey)
+    return () => removeEventListener('keydown', onKey)
+  }, [])
+  const end = async () => {
+    onClose()
+    if (await ask({ title: 'End this game for everyone?', body: 'Everyone goes back to the lobby and nobody gets points for it.', ok: 'End game', cancel: 'Keep playing', danger: true })) send({ t: 'abort' })
+  }
+  return html`<div class="menu-shade" onClick=${onClose}></div>
+    <div class="room-menu" role="menu" aria-label="Room menu">
+      <div class="menu-look"><span>Look</span>
+        <div class="seg" role="radiogroup" aria-label="Light or dark">
+          <button type="button" role="radio" aria-checked=${theme === 'light'} class=${theme === 'light' ? 'on' : ''} onClick=${() => pick('light')}>${ICONS.sun}Light</button>
+          <button type="button" role="radio" aria-checked=${theme !== 'light'} class=${theme !== 'light' ? 'on' : ''} onClick=${() => pick('dark')}>${ICONS.moon}Dark</button>
+        </div></div>
+      ${meta ? html`<hr /><button type="button" role="menuitem" class="menu-item" onClick=${() => { onClose(); onRules() }}>${ICONS.help}How to play ${meta.name}</button>` : ''}
+      ${meta && isHost ? html`<hr /><button type="button" role="menuitem" class="menu-item danger-text" onClick=${end}>${ICONS.stop}<span>End the game for everyone<small>Only the host sees this</small></span></button>` : ''}
+    </div>`
+}
+
 /** A game's icon (an SVG made by scripts/build-site.mjs from src/icons.ts). */
 export function GameIcon({ m, size }) {
   return html`<span class=${'gicon' + (size ? ' ' + size : '')} dangerouslySetInnerHTML=${{ __html: m?.icon ?? '' }} />`
@@ -259,7 +326,9 @@ export function GameIcon({ m, size }) {
 
 /** Light or dark. The page's head script owns the setting; the icon comes from CSS. */
 function ThemeButton() {
-  return html`<button class="theme-btn" type="button" onClick=${() => window.toggleTheme?.()} aria-label="Switch between light and dark mode" title="Light or dark"></button>`
+  return html`<button class="theme-btn" type="button" onClick=${() => window.toggleTheme?.()} aria-label="Switch between light and dark mode" title="Light or dark">
+    <svg class="moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+    <svg class="sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg></button>`
 }
 
 function toggleChat() {
@@ -269,11 +338,20 @@ function toggleChat() {
   if (S.chatOpen) setTimeout(() => document.getElementById('chat-in')?.focus(), 50)
 }
 
+/** A game's rules as a numbered list. */
+const RulesList = ({ m }) => html`<ol class="rules">${m.rules.map((r, i) => html`<li key=${i}><span>${i + 1}</span>${r}</li>`)}</ol>`
+const RulesHead = ({ m, id }) => html`<div class="rules-head"><${GameIcon} m=${m} size="rule" /><div><div class="dim small">How to play</div><h2 class="nomargin" id=${id}>${m.name}</h2></div></div>`
+
 function RulesModal({ id, onClose }) {
   const m = META[id]
-  return html`<div class="modal" onClick=${e => e.target === e.currentTarget && onClose()}>
-    <div class="card stack modal-card"><div class="row between"><h2 class="with-icon"><${GameIcon} m=${m} />${m.name}</h2><button class="icon" onClick=${onClose} aria-label="Close">✕</button></div>
-    <ul class="rules">${m.rules.map(r => html`<li>${r}</li>`)}</ul></div></div>`
+  useEffect(() => {
+    const onKey = e => e.key === 'Escape' && onClose()
+    addEventListener('keydown', onKey)
+    return () => removeEventListener('keydown', onKey)
+  }, [])
+  return html`<div class="modal" onClick=${e => e.target === e.currentTarget && onClose()} role="dialog" aria-modal="true" aria-labelledby="rules-title">
+    <div class="card stack modal-card rules-card"><div class="row between nowrap"><${RulesHead} m=${m} id="rules-title" /><button class="icon" onClick=${onClose} aria-label="Close">${ICONS.close}</button></div>
+    <${RulesList} m=${m} /></div></div>`
 }
 
 // ---------- the rules before each game ----------
@@ -282,7 +360,7 @@ const INTRO_S = 30
 const introClosed = new Set() // games whose rules this page has closed, so a reconnect does not show them again
 
 /**
- * Before every game the rules are up for everyone. Tapping anywhere closes them: they shrink into the ? button at the
+ * Before every game the rules are up for everyone. Tapping anywhere closes them: they shrink into the game's name at the
  * top, where they can be opened again. The game (and its clock) starts when everyone has closed them, or after 30 s.
  */
 function RulesIntro({ inst, code }) {
@@ -310,18 +388,18 @@ function RulesIntro({ inst, code }) {
   const left = inst.intro ? Math.max(0, (inst.intro.until - now()) / 1000) : 0
   return html`<div class=${'modal intro' + (state === 'leaving' ? ' leaving' : '')} onClick=${() => close()} role="dialog" aria-modal="true" aria-labelledby="intro-title">
     <div class="card stack modal-card intro-card" ref=${card}>
-      <div class="with-icon"><${GameIcon} m=${m} size="big" /><div><div class="dim small">How to play</div><h2 class="nomargin" id="intro-title">${m.name}</h2></div></div>
-      <ul class="rules">${m.rules.map(r => html`<li>${r}</li>`)}</ul>
+      <${RulesHead} m=${m} id="intro-title" />
+      <${RulesList} m=${m} />
       <div class="intro-time" aria-hidden="true"><i style=${{ width: `${(left / INTRO_S) * 100}%` }}></i></div>
-      <div class="row between wrapgap">
+      <div class="intro-foot">
         <span class="dim small">The game starts in ${Math.ceil(left)} s, or when everyone has read this. Your time starts then.</span>
-        <button class="primary" onClick=${e => { e.stopPropagation(); close() }}>Got it</button>
+        <button class="primary big" onClick=${e => { e.stopPropagation(); close() }}>Got it</button>
       </div>
     </div>
   </div>`
 }
 
-/** Shrinks an element into another (the rules into the ? button), then gives the button a nudge. */
+/** Shrinks an element into another (the rules into the game's name at the top), then gives the button a nudge. */
 function flyTo(el, target) {
   if (!el) return Promise.resolve()
   if (!target || matchMedia('(prefers-reduced-motion: reduce)').matches) return el.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 160, fill: 'forwards' }).finished.catch(() => {})
@@ -333,7 +411,7 @@ function flyTo(el, target) {
     { transform: `translate(${dx * 0.35}px, ${dy * 0.2}px) scale(.62)`, opacity: 0.95, borderRadius: '22px', offset: 0.35 },
     { transform: `translate(${dx}px, ${dy}px) scale(${s})`, opacity: 0.35, borderRadius: '50%' },
   ], { duration: 560, easing: 'cubic-bezier(.55,0,.7,.4)', fill: 'forwards' }).finished.then(() => {
-    target.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.5)', offset: 0.35 }, { transform: 'scale(1)' }], { duration: 650, easing: 'ease-out' })
+    target.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.1)', offset: 0.35 }, { transform: 'scale(1)' }], { duration: 650, easing: 'ease-out' })
     target.classList.add('hint')
     setTimeout(() => target.classList.remove('hint'), 2600)
   }).catch(() => {})
@@ -347,11 +425,11 @@ function IntroWait({ inst }) {
   const online = new Set(S.room.members.filter(x => x.online).map(x => x.id))
   const here = inst.players.filter(id => online.has(id))
   const left = Math.max(0, Math.ceil((inst.intro.until - now()) / 1000))
-  return html`<div class="wrap narrow stack intro-wait">
-    <div class="center stack"><${GameIcon} m=${m} size="huge" /><h2 class="nomargin">${m.name}</h2>
-      <p class="dim">Starting in <b>${left} s</b>, or as soon as everyone has read the rules.</p></div>
-    <ul class="ready-list">${here.map(id => html`<li key=${id} class=${ready.includes(id) ? 'ok' : ''}><${Avatar} id=${id} /><span class="grow ell"><${Name} id=${id} /></span><span class="small">${ready.includes(id) ? 'ready' : 'reading…'}</span></li>`)}</ul>
-    <p class="dim small center">Need the rules again? They are behind the <b>?</b> at the top.</p>
+  return html`<div class="wrap narrow intro-wait">
+    <div class="center intro-top"><${GameIcon} m=${m} size="huge" /><h2 class="nomargin">${m.name}</h2>
+      <p class="dim nomargin">Starting in <b class="ink">${left} s</b>, or as soon as everyone has read the rules.</p></div>
+    <ul class="ready-list">${here.map(id => html`<li key=${id} class=${ready.includes(id) ? 'ok' : ''}><${Avatar} id=${id} size=${30} /><span class="grow ell"><${Name} id=${id} /></span><span class="small">${ready.includes(id) ? 'ready' : 'reading…'}</span></li>`)}</ul>
+    <p class="dim small center">Need the rules again? Tap the game's name at the top.</p>
   </div>`
 }
 
@@ -362,11 +440,24 @@ function Lobby({ isHost, onRules }) {
   const [tab, setTab] = useState(room.night && room.night.idx === -1 ? 'night' : 'games')
   useEffect(() => { if (room.night && room.night.idx === -1) setTab('night') }, [!!room.night])
   return html`<div class="lobby">
-    <aside class="card players-card"><${Players} isHost=${isHost} /></aside>
+    <aside class="lobby-side">
+      <section class="card code-card">
+        <div class="dim small">Room code</div>
+        <div class="code big-code">${room.code}</div>
+        <div class="dim small">${roomLink(room.code).replace(/^https?:\/\//, '')}</div>
+        <${InviteButtons} code=${room.code} />
+      </section>
+      <section class="card players-card"><${Players} isHost=${isHost} /></section>
+      <${WatchSwitch} isHost=${isHost} />
+      <div class="card folds">
+        <${PointsHelp} />
+        ${room.history.length ? html`<details class="fold hist"><summary>Played here (${room.history.length})</summary><ul class="plain small">${room.history.map((h, i) => html`<li key=${i} class="with-icon"><${GameIcon} m=${META[h.id]} size="tiny" />${META[h.id]?.name}: ${h.winners.length ? h.winners.map(nameOf).join(' & ') : html`<span class="dim">no winner</span>`}</li>`)}</ul></details>` : ''}
+      </div>
+    </aside>
     <section class="lobby-main">
-      <div class="tabs" role="tablist">
-        <button role="tab" class=${tab === 'games' ? 'sel' : ''} onClick=${() => setTab('games')}>Pick a game</button>
-        <button role="tab" class=${tab === 'night' ? 'sel' : ''} onClick=${() => setTab('night')}>🎲 Game night</button>
+      <div class="seg tabs" role="tablist">
+        <button role="tab" aria-selected=${tab === 'games'} class=${tab === 'games' ? 'on' : ''} onClick=${() => setTab('games')}>Pick a game</button>
+        <button role="tab" aria-selected=${tab === 'night'} class=${tab === 'night' ? 'on' : ''} onClick=${() => setTab('night')}>Game night</button>
       </div>
       ${tab === 'games' ? html`<${Library} isHost=${isHost} onRules=${onRules} />` : html`<${NightSetup} isHost=${isHost} />`}
     </section>
@@ -379,27 +470,23 @@ function Players({ isHost }) {
   const list = room.members.slice().sort((a, b) => b.pts - a.pts || (b.online - a.online))
   const played = room.members.some(m => m.games)
   return html`<div>
-    <div class="row between"><h2>Players <span class="dim">${room.members.filter(m => m.online).length}</span></h2>${played ? html`<span class="dim small">room points</span>` : ''}</div>
+    <div class="row between"><h2 class="plain-h">Players <span class="dim">${room.members.filter(m => m.online).length} here</span></h2>${played ? html`<span class="dim small strong">room points</span>` : ''}</div>
     <ul class="plist">${list.map(m => html`<li key=${m.id} class=${m.online ? '' : 'off'}>
-      <${Avatar} id=${m.id} /><span class="grow ell"><${Name} id=${m.id} />${m.id === room.host ? html` <span title="Host">👑</span>` : ''}${m.online ? '' : html` <span class="dim small">away</span>`}</span>
-      ${played ? html`<span class="small dim">${m.wins ? `🏆${m.wins}` : ''}</span><b>${m.pts}</b>` : ''}
-      ${isHost && m.id !== ME ? html`<button class="icon small" onClick=${() => setMenu(menu === m.id ? null : m.id)} aria-label=${`Options for ${m.name}`}>⋯</button>` : ''}
-      ${menu === m.id ? html`<div class="pmenu"><button onClick=${() => { send({ t: 'host', id: m.id }); setMenu(null) }}>Make host</button><button onClick=${async () => { setMenu(null); if (await ask({ title: `Remove ${m.name}?`, body: 'They are taken out of the room and any game they are in.', ok: 'Remove', danger: true })) send({ t: 'kick', id: m.id }) }}>Remove</button></div>` : ''}
+      <${Avatar} id=${m.id} size=${34} off=${!m.online} /><span class="grow pname"><span class="ell"><${Name} id=${m.id} /></span>${m.id === room.host ? html`<span class="host" title="Host" role="img" aria-label="Host">${ICONS.crown}</span>` : ''}${m.online ? '' : html`<span class="dim small strong">away</span>`}</span>
+      ${played && m.wins ? html`<span class="wins" title="Wins">${ICONS.trophy}${m.wins}</span>` : ''}${played ? html`<b class="ppts">${m.pts}</b>` : ''}
+      ${isHost && m.id !== ME ? html`<button class="icon pdots" onClick=${() => setMenu(menu === m.id ? null : m.id)} aria-label=${`Options for ${m.name}`} aria-expanded=${menu === m.id}>${ICONS.more}</button>` : ''}
+      ${menu === m.id ? html`<div class="pmenu"><button onClick=${() => { send({ t: 'host', id: m.id }); setMenu(null) }}>Make host</button><button class="danger-text" onClick=${async () => { setMenu(null); if (await ask({ title: `Remove ${m.name}?`, body: 'They are taken out of the room and any game they are in.', ok: 'Remove', danger: true })) send({ t: 'kick', id: m.id }) }}>Remove</button></div>` : ''}
     </li>`)}</ul>
-    <div class="invite-box"><div class="small">Invite friends to <b class="code-sm">${room.code}</b></div><${InviteButtons} code=${room.code} /></div>
-    <${WatchSwitch} isHost=${isHost} />
-    <${PointsHelp} />
-    ${room.history.length ? html`<details class="hist"><summary class="small">Played here (${room.history.length})</summary><ul class="small">${room.history.map(h => html`<li><${GameIcon} m=${META[h.id]} size="small" /> ${META[h.id]?.name}: ${h.winners.length ? h.winners.map(nameOf).join(' & ') : html`<span class="dim">no winner</span>`}</li>`)}</ul></details>` : ''}
   </div>`
 }
 
 /** Whether people who are not in a game (late arrivals, knocked-out players) can follow it. On unless the host says. */
 function WatchSwitch({ isHost }) {
   const on = S.room.watch !== false
-  if (!isHost) return on ? '' : html`<p class="dim small">Watching is off: anyone not in a game waits for the next one.</p>`
-  return html`<label class="switch-row">
-    <span><b class="small">Let people watch</b><span class="dim small">Anyone who arrives mid-game can follow it live and plays from the next game.</span></span>
-    <button type="button" role="switch" aria-checked=${on} class=${'switch' + (on ? ' on' : '')} onClick=${() => send({ t: 'watch', on: !on })}><i></i></button>
+  if (!isHost) return on ? '' : html`<p class="dim small watch-note">Watching is off: anyone not in a game waits for the next one.</p>`
+  return html`<label class="card switch-row">
+    <span><b>Let people watch</b><span class="dim small">Anyone who arrives mid-game can follow it live and plays from the next game.</span></span>
+    <button type="button" role="switch" aria-checked=${on} aria-label="Let people watch" class=${'switch' + (on ? ' on' : '')} onClick=${() => send({ t: 'watch', on: !on })}><i></i></button>
   </label>`
 }
 
@@ -407,7 +494,7 @@ function WatchSwitch({ isHost }) {
 const POINTS = [[2, '10 · 0'], [3, '10 · 5 · 0'], [4, '10 · 7 · 3 · 0'], [5, '10 · 7 · 5 · 3 · 0'], [6, '10 · 7 · 5 · 4 · 2 · 0'], ['8+', '10 · 7 · 5 · 4 · 3 · 2 · 1 … 0']]
 
 function PointsHelp() {
-  return html`<details class="hist points-help"><summary class="small">How room points work</summary>
+  return html`<details class="fold points-help"><summary>How room points work</summary>
     <p class="small">Every game adds to the room's table. A win is worth 10 and last place 0; the places between depend on how many played.</p>
     <table class="tbl small"><tr><th>Players</th><th>Points by place</th></tr>${POINTS.map(([n, row]) => html`<tr key=${n}><td>${n}</td><td>${row}</td></tr>`)}</table>
     <p class="small dim">Level players share their places' points. In team games every winner gets 10. Make no move in a game and you score 0 for it.</p>
@@ -423,21 +510,23 @@ function Library({ isHost, onRules }) {
   const pick = META[room.pick] ?? CATALOG[0]
   return html`<div class="stack">
     <${GameDetail} meta=${pick} isHost=${isHost} n=${n} onRules=${onRules} />
-    <div class="row between wrapgap"><div class="chips">
-      <button class=${'chipbtn' + (fit ? ' sel' : '')} onClick=${() => setFit(!fit)}>Fits ${n} ${n === 1 ? 'player' : 'players'}</button>
-      ${Object.entries(MOODS).map(([k, label]) => html`<button key=${k} class=${'chipbtn' + (mood === k ? ' sel' : '')} onClick=${() => setMood(mood === k ? null : k)}>${label}</button>`)}
-    </div></div>
-    <div class="lib small-cards">${list.map(m => html`<button key=${m.id} class=${'gcard pick' + (m.id === pick.id ? ' sel' : '')} disabled=${!isHost && m.id !== pick.id} onClick=${() => isHost && send({ t: 'pick', id: m.id })}>
-      <div class="gc-top"><${GameIcon} m=${m} /><div><b>${m.name}</b><div class="dim small">${players(m)} · ~${estMinutes(m, Math.max(n, m.min))} min</div></div></div>
-      <p class="small">${m.blurb}</p></button>`)}
-      ${!list.length ? html`<p class="dim">No game fits these filters.</p>` : ''}</div>
-    ${!isHost ? html`<p class="dim small">The host picks the game. You can browse the rules meanwhile.</p>` : ''}
+    <div class="chips scroller" role="group" aria-label="Filters">
+      <button class=${'chipbtn' + (fit ? ' sel' : '')} aria-pressed=${fit} onClick=${() => setFit(!fit)}>Fits ${n} ${n === 1 ? 'player' : 'players'}</button>
+      ${Object.entries(MOODS).map(([k, label]) => html`<button key=${k} class=${'chipbtn' + (mood === k ? ' sel' : '')} aria-pressed=${mood === k} onClick=${() => setMood(mood === k ? null : k)}>${label}</button>`)}
+    </div>
+    <ul class="picks">${list.map(m => html`<li key=${m.id}><button class=${'pick' + (m.id === pick.id ? ' sel' : '')} aria-pressed=${m.id === pick.id} disabled=${!isHost && m.id !== pick.id} onClick=${() => isHost && send({ t: 'pick', id: m.id })}>
+      <${GameIcon} m=${m} size="pick" /><span><b>${m.name}</b><span class="dim">${players(m)} · ~${estMinutes(m, Math.max(n, m.min))} min</span></span></button></li>`)}
+      ${!list.length ? html`<li class="dim">No game fits these filters.</li>` : ''}</ul>
+    ${!isHost ? html`<p class="dim small center">The host picks the game. You can read the rules meanwhile.</p>` : ''}
   </div>`
 }
 
 function DnaBars({ dna }) {
-  return html`<div class="dna">${DNA.map(([k, label]) => html`<div key=${k}><span class="small dim">${label}</span><span class="dots">${[1, 2, 3, 4, 5].map(i => html`<i class=${i <= dna[k] ? 'on' : ''}></i>`)}</span></div>`)}</div>`
+  return html`<div class="dna">${DNA.map(([k, label]) => html`<div key=${k}><span class="small dim">${label}</span><span class="dots" role="img" aria-label=${`${label} ${dna[k]} of 5`}>${[1, 2, 3, 4, 5].map(i => html`<i class=${i <= dna[k] ? 'on' : ''}></i>`)}</span></div>`)}</div>`
 }
+
+/** A choice with a few short options is a row of buttons; a longer one, or a number, keeps its box. */
+const asButtons = o => o.kind === 'choice' && o.choices.length <= 4 && o.choices.reduce((n, c) => n + String(c[1]).length, 0) <= 30
 
 function GameDetail({ meta, isHost, n, onRules }) {
   const room = S.room
@@ -446,18 +535,24 @@ function GameDetail({ meta, isHost, n, onRules }) {
   const set = (k, v) => send({ t: 'config', id: meta.id, config: { ...cfg, [k]: v } })
   const fits = n >= meta.min && n <= meta.max
   return html`<div class="card detail">
-    <div class="row between"><div class="gc-top"><${GameIcon} m=${meta} size="big" /><div><h2 class="nomargin">${meta.name}</h2><div class="dim small">${players(meta)} players · about ${estMinutes(meta, Math.max(n, meta.min))} min · ${meta.cat}</div></div></div>
+    <div class="detail-head"><${GameIcon} m=${meta} size="big" /><div class="grow"><h2 class="nomargin">${meta.name}</h2><div class="dim small">${players(meta)} players · about ${estMinutes(meta, Math.max(n, meta.min))} min · ${meta.cat}</div></div>
       <button class="link" onClick=${() => onRules(meta.id)}>How to play</button></div>
-    <p>${meta.blurb}</p>
+    <p class="detail-blurb">${meta.blurb}</p>
     <${DnaBars} dna=${meta.dna} />
-    <div class="opts">${meta.options.map(o => html`<label key=${o.key} class="opt"><span>${o.label}</span>
+    <div class="opts">${meta.options.map(o => asButtons(o)
+      ? html`<div key=${o.key} class="opt"><span id=${'opt-' + o.key}>${o.label}</span>
+          <div class="seg" role="radiogroup" aria-labelledby=${'opt-' + o.key}>${o.choices.map(([v, l]) => {
+            const on = String(val(o)) === String(v)
+            return html`<button key=${String(v)} type="button" role="radio" aria-checked=${on} class=${on ? 'on' : ''} disabled=${!isHost} onClick=${() => set(o.key, v)}>${l}</button>`
+          })}</div></div>`
+      : html`<label key=${o.key} class="opt"><span>${o.label}</span>
       ${o.kind === 'choice'
         ? html`<select disabled=${!isHost} value=${String(val(o))} onChange=${e => set(o.key, e.target.value)}>${o.choices.map(([v, l]) => html`<option value=${String(v)}>${l}</option>`)}</select>`
         : html`<span class="num"><input type="number" inputmode="numeric" disabled=${!isHost} min=${o.min} max=${o.max} value=${val(o)} onChange=${e => set(o.key, Number(e.target.value))} />${o.unit ? html`<span class="dim small">${o.unit === 's' ? 'sec' : o.unit}</span>` : ''}</span>`}
     </label>`)}</div>
     ${isHost
-      ? html`<button class="primary big wide" disabled=${!fits} onClick=${() => send({ t: 'start', id: meta.id })}>${fits ? `Start ${meta.name}` : n < meta.min ? `Needs ${meta.min}+ players (${n} here)` : `Up to ${meta.max} players`}</button>`
-      : html`<p class="dim center">Waiting for the host to start…</p>`}
+      ? html`<button class="primary big wide start-btn" disabled=${!fits} onClick=${() => send({ t: 'start', id: meta.id })}>${fits ? html`${ICONS.play}Start ${meta.name}` : n < meta.min ? `Needs ${meta.min}+ players (${n} here)` : `Up to ${meta.max} players`}</button>`
+      : html`<div class="host-wait"><span class="wait-dots" aria-hidden="true"><i></i><i></i><i></i></span>Waiting for ${nameOf(room.host)} to start</div>`}
   </div>`
 }
 
@@ -473,19 +568,19 @@ function NightSetup({ isHost }) {
   const planned = night && night.idx === -1
   const total = night ? night.plan.reduce((a, id) => a + estMinutes(META[id], n), 0) : 0
   return html`<div class="stack">
-    <div class="card stack">
-      <h2 class="nomargin">Plan a game night</h2>
-      <p class="dim small">Pick how long and what kind of fun. The games are chosen for ${plural(n, 'player')}, with one leaderboard across all of them.</p>
-      <div class="lengths">${LENGTHS.map(([k, label, sub]) => html`<button key=${k} class=${'len' + (length === k ? ' sel' : '')} disabled=${!isHost} onClick=${() => setLength(k)}><b>${label}</b><span class="small dim">${sub}</span></button>`)}</div>
-      ${length === 'tournament' ? html`<p class="small dim">Tournament: after each game the bottom of the table is knocked out. The last two play the final.</p>` : ''}
-      <div><div class="small dim">How are you feeling? (up to 4)</div><div class="chips">${Object.entries(MOODS).map(([k, label]) => html`<button key=${k} class=${'chipbtn' + (moods.includes(k) ? ' sel' : '')} disabled=${!isHost} onClick=${() => toggle(k)}>${label}</button>`)}</div></div>
-      ${isHost ? html`<button class=${planned ? '' : 'primary'} onClick=${() => send({ t: 'night', length, moods })}>${planned ? 'Plan again' : 'Plan the night'}</button>` : html`<p class="dim small">The host plans the night.</p>`}
+    <div class="card detail">
+      <div><h2 class="nomargin">Plan a game night</h2>
+      <p class="dim small nomargin">Pick how long and what kind of fun. The games are chosen for ${plural(n, 'player')}, with one table across all of them.</p></div>
+      <div class="lengths">${LENGTHS.map(([k, label, sub]) => html`<button key=${k} class=${'len' + (length === k ? ' sel' : '')} aria-pressed=${length === k} disabled=${!isHost} onClick=${() => setLength(k)}><b>${label}</b><span>${sub}</span></button>`)}</div>
+      ${length === 'tournament' ? html`<p class="small dim nomargin">Tournament: after each game the bottom of the table is knocked out. The last two play the final.</p>` : ''}
+      <div class="opt"><span>How are you feeling? (up to 4)</span><div class="chips">${Object.entries(MOODS).map(([k, label]) => html`<button key=${k} class=${'chipbtn sunk' + (moods.includes(k) ? ' sel' : '')} aria-pressed=${moods.includes(k)} disabled=${!isHost} onClick=${() => toggle(k)}>${label}</button>`)}</div></div>
+      ${isHost ? html`<button class=${planned ? '' : 'primary big'} onClick=${() => send({ t: 'night', length, moods })}>${planned ? 'Plan again' : 'Plan the night'}</button>` : html`<p class="dim small nomargin">The host plans the night.</p>`}
     </div>
-    ${planned && html`<div class="card stack">
+    ${planned && html`<div class="card detail">
       <div class="row between"><h2 class="nomargin">Tonight's games</h2><span class="dim small">${night.length === 'endless' ? 'keeps going' : `about ${total} min`}</span></div>
-      <ol class="plan">${night.plan.map((id, i) => html`<li key=${i}><${GameIcon} m=${META[id]} /><span class="grow"><b>${META[id].name}</b><span class="dim small"> · ~${estMinutes(META[id], n)} min${night.length === 'tournament' && i === night.plan.length - 1 ? ' · final' : ''}</span></span>
-        ${isHost ? html`<button class="link" onClick=${() => send({ t: 'nightSwap', i })}>swap</button>${night.length !== 'tournament' && night.plan.length > 1 ? html`<button class="link" onClick=${() => send({ t: 'nightDrop', i })}>remove</button>` : ''}` : ''}</li>`)}</ol>
-      ${isHost ? html`<div class="row"><button class="primary big grow" onClick=${() => send({ t: 'nightGo' })}>Start the night</button><button onClick=${() => send({ t: 'nightEnd' })}>Cancel</button></div>` : html`<p class="dim center">Waiting for the host to start the night…</p>`}
+      <ol class="plan">${night.plan.map((id, i) => html`<li key=${i}><${GameIcon} m=${META[id]} size="mid" /><span class="grow"><b>${META[id].name}</b><span class="dim small"> · ~${estMinutes(META[id], n)} min${night.length === 'tournament' && i === night.plan.length - 1 ? ' · final' : ''}</span></span>
+        ${isHost ? html`<span class="plan-acts"><button class="link" onClick=${() => send({ t: 'nightSwap', i })}>swap</button>${night.length !== 'tournament' && night.plan.length > 1 ? html`<button class="link" onClick=${() => send({ t: 'nightDrop', i })}>remove</button>` : ''}</span>` : ''}</li>`)}</ol>
+      ${isHost ? html`<div class="row nowrap"><button class="primary big grow" onClick=${() => send({ t: 'nightGo' })}>Start the night</button><button class="big" onClick=${() => send({ t: 'nightEnd' })}>Cancel</button></div>` : html`<p class="dim center nomargin">Waiting for the host to start the night</p>`}
     </div>`}
   </div>`
 }
@@ -496,7 +591,7 @@ function NightBanner({ night, isHost }) {
   const label = LENGTHS.find(l => l[0] === night.length)?.[1]
   const out = night.length === 'tournament' ? room.members.filter(m => night.alive.length && !night.alive.includes(m.id)).map(m => m.id) : []
   return html`<div class="night-banner">
-    <span>🎲 <b>${label} night</b> · game ${Math.min(night.idx + 1, night.plan.length)} of ${night.length === 'endless' ? '∞' : night.plan.length}</span>
+    <span><b>${label} night</b> · game ${Math.min(night.idx + 1, night.plan.length)} of ${night.length === 'endless' ? '∞' : night.plan.length}</span>
     <span class="plan-mini">${night.plan.map((id, i) => html`<span key=${i} class=${i < night.idx ? 'past' : i === night.idx ? 'now' : ''} title=${META[id].name}><${GameIcon} m=${META[id]} size="small" /></span>`)}</span>
     ${out.includes(ME) ? html`<span class="pill">knocked out: watching</span>` : ''}
   </div>`
@@ -506,14 +601,14 @@ export function NightTable({ night }) {
   const ids = Object.keys(night.points).sort((a, b) => night.points[b] - night.points[a])
   const last = night.rounds[night.rounds.length - 1]
   let place = 0
-  return html`<div class="card"><h2>Game night table</h2><table class="tbl">
-    <tr><th>#</th><th>Player</th>${night.rounds.map(r => html`<th title=${META[r.id].name}><${GameIcon} m=${META[r.id]} size="small" /></th>`)}<th>Total</th></tr>
+  return html`<div class="card"><h2>Game night table</h2><div class="scroll"><table class="tbl night-tbl">
+    <tr><th>#</th><th>Player</th>${night.rounds.map(r => html`<th class="num-c" title=${META[r.id].name}><${GameIcon} m=${META[r.id]} size="tiny" /></th>`)}<th class="total">Total</th></tr>
     ${ids.map((id, i) => {
       if (i === 0 || night.points[id] !== night.points[ids[i - 1]]) place = i + 1
       const out = night.length === 'tournament' && !night.alive.includes(id)
-      return html`<tr key=${id} class=${(id === ME ? 'me' : '') + (out ? ' out' : '')}><td>${place}</td><td><${Name} id=${id} />${last?.out.includes(id) ? html` <span class="pill warn">out</span>` : ''}</td>${night.rounds.map(r => html`<td class="dim">${r.points[id] ?? '–'}</td>`)}<td><b>${night.points[id]}</b></td></tr>`
+      return html`<tr key=${id} class=${(id === ME ? 'me' : '') + (out ? ' out' : '')}><td>${place}</td><td><${Name} id=${id} />${last?.out.includes(id) ? html` <span class="pill warn">out</span>` : ''}</td>${night.rounds.map(r => html`<td class="dim num-c">${r.points[id] ?? '–'}</td>`)}<td class="total"><b>${night.points[id]}</b></td></tr>`
     })}
-  </table></div>`
+  </table></div></div>`
 }
 
 // ---------- playing ----------
@@ -568,10 +663,10 @@ function GameScreen() {
 /** Not in this game, and the host has turned watching off: who is playing, and that the next game is theirs. */
 function NoWatching({ inst }) {
   const m = META[inst.id]
-  return html`<div class="wrap narrow stack intro-wait">
-    <div class="center stack"><${GameIcon} m=${m} size="huge" /><h2 class="nomargin">${m.name} is on</h2>
-      <p class="dim">The host has turned off watching, so the game is hidden. You will be in the next one.</p></div>
-    <ul class="ready-list">${inst.players.map(id => html`<li key=${id}><${Avatar} id=${id} /><span class="grow ell"><${Name} id=${id} /></span><span class="small dim">playing</span></li>`)}</ul>
+  return html`<div class="wrap narrow intro-wait">
+    <div class="center intro-top"><${KindCard} id=${inst.id} cls="solo" /><h1 class="nomargin">${m.name} is on</h1>
+      <p class="lead nomargin">The host has turned off watching, so the game is hidden. You will be in the next one.</p></div>
+    <ul class="ready-list">${inst.players.map(id => html`<li key=${id}><${Avatar} id=${id} size=${30} /><span class="grow ell"><${Name} id=${id} /></span><span class="small dim">playing</span></li>`)}</ul>
   </div>`
 }
 
@@ -585,9 +680,9 @@ const openQr = () => { S.invite = true; changed() }
 /** Share, Copy link and QR code: three ways to get the room link to someone. */
 function InviteButtons({ code }) {
   return html`<div class="invite-btns">
-    <button type="button" onClick=${() => shareRoom(code)}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12M7 8l5-5 5 5M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"/></svg>Share</button>
-    <button type="button" onClick=${() => copyRoom(code)}><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg>Copy link</button>
-    <button type="button" onClick=${openQr}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h2v2h-2zM18 14h2v2h-2zM14 18h2v2h-2zM18 18h2v2h-2z"/></svg>QR code</button>
+    <button type="button" class="primary" onClick=${() => shareRoom(code)}>${ICONS.share}Share</button>
+    <button type="button" onClick=${() => copyRoom(code)} aria-label="Copy the room link">${ICONS.copy}Copy</button>
+    <button type="button" onClick=${openQr} aria-label="Show a QR code">${ICONS.qr}QR</button>
   </div>`
 }
 
@@ -603,7 +698,7 @@ function InviteModal({ code, onClose }) {
       const n = q.getModuleCount(), pad = 4
       let d = ''
       for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) if (q.isDark(y, x)) d += `M${x + pad} ${y + pad}h1v1h-1z`
-      setSvg(`<svg viewBox="0 0 ${n + pad * 2} ${n + pad * 2}" shape-rendering="crispEdges" role="img" aria-label="QR code for the room link"><rect width="100%" height="100%" fill="#fff"/><path d="${d}" fill="#111"/></svg>`)
+      setSvg(`<svg viewBox="0 0 ${n + pad * 2} ${n + pad * 2}" shape-rendering="crispEdges" role="img" aria-label="QR code for the room link"><rect width="100%" height="100%" fill="#fff"/><path d="${d}" fill="#15161a"/></svg>`)
     }, () => setSvg(''))
     const onKey = e => e.key === 'Escape' && onClose()
     addEventListener('keydown', onKey)
@@ -611,16 +706,16 @@ function InviteModal({ code, onClose }) {
   }, [code])
   return html`<div class="modal" onClick=${e => e.target === e.currentTarget && onClose()} role="dialog" aria-modal="true" aria-labelledby="inv-title">
     <div class="card stack modal-card invite-card">
-      <div class="row between"><h2 class="nomargin" id="inv-title">Invite friends</h2><button class="icon" onClick=${onClose} aria-label="Close">✕</button></div>
+      <div class="row between"><h2 class="nomargin" id="inv-title">Invite friends</h2><button class="icon" onClick=${onClose} aria-label="Close">${ICONS.close}</button></div>
       <div class="inv-body">
         <div class="stack inv-qr"><div class="qr" dangerouslySetInnerHTML=${{ __html: svg }}></div>
           <p class="dim small center nomargin">Point a phone camera at this to join.</p></div>
         <div class="stack inv-info">
-          <div class="center"><div class="dim small">Room code</div><div class="code big-code">${code}</div></div>
+          <div class="center"><div class="dim small strong">Room code</div><div class="code big-code">${code}</div></div>
           <button type="button" class="link-line" onClick=${() => copyRoom(code)} title="Copy the link">${roomLink(code).replace(/^https?:\/\//, '')}</button>
-          <div class="invite-btns">
-            <button type="button" class="primary" onClick=${() => shareRoom(code)}>Share</button>
-            <button type="button" onClick=${() => copyRoom(code)}>Copy link</button>
+          <div class="invite-btns two">
+            <button type="button" class="primary big" onClick=${() => shareRoom(code)}>Share</button>
+            <button type="button" class="big" onClick=${() => copyRoom(code)}>Copy link</button>
           </div>
         </div>
       </div>
@@ -653,13 +748,13 @@ export function Feedback({ inst, code }) {
   }
   return html`<div class="card stack fb">
     <div class="row between wrapgap"><b>How was ${m.name}?</b>
-      <span class="stars" role="radiogroup" aria-label="Rating">${[1, 2, 3, 4, 5].map(i => html`<button key=${i} type="button" role="radio" aria-checked=${rating === i} aria-label=${`${i} star${i > 1 ? 's' : ''}`} class=${i <= rating ? 'on' : ''} onClick=${() => setRating(i)}>★</button>`)}</span></div>
+      <span class="stars" role="radiogroup" aria-label="Rating">${[1, 2, 3, 4, 5].map(i => html`<button key=${i} type="button" role="radio" aria-checked=${rating === i} aria-label=${`${i} star${i > 1 ? 's' : ''}`} class=${i <= rating ? 'on' : ''} onClick=${() => setRating(i)}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l2.7 5.6 6.1.8-4.5 4.2 1.2 6.1L12 16.8l-5.5 2.9 1.2-6.1-4.5-4.2 6.1-.8z" /></svg></button>`)}</span></div>
     ${rating ? html`<div class="row wrapgap"><span class="small">Would you play it again?</span>
-      <button type="button" class=${'chipbtn' + (again === true ? ' sel' : '')} onClick=${() => setAgain(true)}>Yes</button>
-      <button type="button" class=${'chipbtn' + (again === false ? ' sel' : '')} onClick=${() => setAgain(false)}>No</button></div>
+      <button type="button" class=${'chipbtn sunk' + (again === true ? ' sel' : '')} onClick=${() => setAgain(true)}>Yes</button>
+      <button type="button" class=${'chipbtn sunk' + (again === false ? ' sel' : '')} onClick=${() => setAgain(false)}>No</button></div>
     <div class="row wrapgap"><span class="chips">
-      <button type="button" class=${'chipbtn' + (kind === 'fix' ? ' sel' : '')} onClick=${() => setKind('fix')}>Something to fix</button>
-      <button type="button" class=${'chipbtn' + (kind === 'idea' ? ' sel' : '')} onClick=${() => setKind('idea')}>A game you want</button></span></div>
+      <button type="button" class=${'chipbtn sunk' + (kind === 'fix' ? ' sel' : '')} onClick=${() => setKind('fix')}>Something to fix</button>
+      <button type="button" class=${'chipbtn sunk' + (kind === 'idea' ? ' sel' : '')} onClick=${() => setKind('idea')}>A game you want</button></span></div>
     <div class="row"><input class="grow" maxlength="300" value=${text} onInput=${e => setText(e.target.value)} onKeyDown=${e => e.key === 'Enter' && submit()} placeholder=${kind === 'fix' ? 'What went wrong or felt off? (optional)' : 'Which game should we add? (optional)'} aria-label="Feedback" />
       <button class="primary" onClick=${submit}>Send</button></div>` : ''}
   </div>`
@@ -673,12 +768,16 @@ function Chat() {
   const [v, setV] = useState('')
   useEffect(() => { if (box.current) box.current.scrollTop = box.current.scrollHeight }, [s.chat.length])
   const submit = e => { e.preventDefault(); const t = v.trim(); if (!t) return; send({ t: 'chat', text: t }); setV('') }
-  return html`<aside class="chat">
-    <div class="row between chat-head"><b>Chat</b><button class="icon" onClick=${toggleChat} aria-label="Close chat">✕</button></div>
-    <div class="chat-list" ref=${box}>${s.chat.length ? s.chat.map((c, i) => html`<div key=${i} class="msg"><${Name} id=${c.id} you=${false} /> ${c.text}</div>`) : html`<p class="dim small">Say hi. Chat is handy for Imposter and Code Words discussions.</p>`}</div>
-    <form class="answer" onSubmit=${submit}><input id="chat-in" value=${v} onInput=${e => setV(e.target.value)} maxlength="200" placeholder="Message" autocomplete="off" aria-label="Chat message" /><button>Send</button></form>
+  return html`<aside class="chat" aria-label="Chat">
+    <div class="chat-head"><b>Chat</b><button class="icon" onClick=${toggleChat} aria-label="Close chat">${ICONS.close}</button></div>
+    <div class="chat-list" ref=${box}>${s.chat.length ? s.chat.map((c, i) => html`<div key=${i} class="msg"><${Avatar} id=${c.id} size=${28} /><span><${Name} id=${c.id} you=${false} /><span class="msg-text">${c.text}</span></span></div>`) : html`<p class="dim small">Say hi. Chat is handy for Imposter and Code Words discussions.</p>`}</div>
+    <form class="answer" onSubmit=${submit}><input id="chat-in" value=${v} onInput=${e => setV(e.target.value)} maxlength="200" placeholder="Message" autocomplete="off" aria-label="Chat message" /><button class="primary">Send</button></form>
   </aside>`
 }
 
-render(html`<${App} />`, document.getElementById('app'))
+// The page arrives with the home page's welcome already drawn (for first paint and for search engines); the app takes
+// over from there, so that copy goes first.
+const root = document.getElementById('app')
+root.replaceChildren()
+render(html`<${App} />`, root)
 countView()
