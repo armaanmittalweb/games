@@ -80,8 +80,10 @@ function open() {
       else { S.chat = [...S.chat.slice(-79), m.m]; if (!S.chatOpen && m.m.id !== ME) S.unread++ }
       changed()
     } else if (m.t === 'error') {
-      toast(m.msg)
-      for (const fn of evSubs) fn({ k: 'error', msg: m.msg })
+      // A game that shows the message in place (Word Grid under its word) returns true, and no toast covers it.
+      let shown = false
+      for (const fn of evSubs) if (fn({ k: 'error', msg: m.msg }) === true) shown = true
+      if (!shown) toast(m.msg)
     }
   }
   sock.onclose = e => {

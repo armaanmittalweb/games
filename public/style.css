@@ -71,6 +71,8 @@ button.icon.small { font-size: 15px; }
 button.icon svg { width: 20px; height: 20px; display: block; }
 .modal button.icon { background: var(--panel2); }
 button:disabled { opacity: .45; cursor: default; }
+/* A main button that is not ready yet sinks into the page (quiet fill, dim words) instead of turning a muddy grey. */
+button.primary:disabled { opacity: 1; background: var(--soft); color: var(--dim); box-shadow: inset 0 0 0 1px var(--line); }
 input, select, textarea { background: var(--input); border: 2px solid var(--line); border-radius: 24px; padding: 0 16px; min-height: 48px; width: 100%; min-width: 0; font-size: 16px; }
 textarea { padding: 12px 16px; border-radius: 18px; }
 select { appearance: none; padding-right: 40px; font-weight: 600; cursor: pointer;
@@ -167,11 +169,15 @@ button.tint { min-height: 52px; padding: 0 22px; background: #e6e9ff; color: #24
 .kcard > b { font-family: var(--display); font-size: 14px; font-weight: 700; line-height: 1.15; letter-spacing: -.01em; }
 .kcard .gicon { width: 96px; height: 96px; margin: -10px auto; }
 .kcard .gicon svg { filter: none; }
-.kcard.c1 { left: calc(50% - 168px); top: 46px; transform: rotate(-11deg); }
-.kcard.c2 { left: calc(50% + 28px); top: 46px; transform: rotate(11deg); }
+/* The side cards keep their words on the outer edge, clear of the middle card. */
+.kcard.c1 { left: calc(50% - 184px); top: 46px; transform: rotate(-11deg); }
+.kcard.c2 { left: calc(50% + 44px); top: 46px; transform: rotate(11deg); align-items: flex-end; text-align: right; }
 .kcard.c3 { left: calc(50% - 74px); top: 12px; width: 148px; height: 200px; border-radius: 24px; }
 .kcard.c3 .gicon { width: 102px; height: 102px; }
+.kcard.c1 > b, .kcard.c2 > b { font-size: 13px; }
 @media (max-width: 420px) { .hero-art { height: 228px; transform: scale(.88); transform-origin: 50% 40%; margin: -6px 0 -14px; } }
+/* Short phones (360×640): smaller cards, so Create a room is on the first screen. */
+@media (max-width: 420px) and (max-height: 700px) { .hero-art { height: 176px; transform: scale(.7); transform-origin: 50% 20%; margin: -4px 0 -10px; } }
 .sec-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
 .sec-head h2 { margin: 0; font-size: 24px; letter-spacing: -.03em; }
 .sec-head a { font-size: 15px; font-weight: 600; text-decoration: none; min-height: 44px; display: flex; align-items: center; }
@@ -206,6 +212,9 @@ button.tint { min-height: 52px; padding: 0 22px; background: #e6e9ff; color: #24
 .bar-game { flex: 0 1 auto; margin-right: auto; min-width: 0; height: 44px; background: transparent; padding: 0 10px 0 6px; display: flex; align-items: center; justify-content: flex-start; gap: 8px; text-align: left; font-size: 15px; font-weight: 700; border-radius: 22px; }
 .bar-game:hover:not(:disabled) { filter: none; background: var(--soft); }
 .bar-game .ico { width: 16px; height: 16px; color: var(--dim); }
+/* Long names (Dictionary Bluff, Stop the Clock) take two short lines on a phone instead of losing their end. */
+.bar-game > span { white-space: normal; line-height: 1.12; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; text-overflow: clip; overflow-wrap: anywhere; }
+@media (max-width: 420px) { .bar-game { font-size: 14px; padding-right: 6px; gap: 7px; } }
 .bar-game.hint { background: var(--sel-bg); box-shadow: inset 0 0 0 2px var(--sel); }
 .bar-here { flex: 1 1 0; min-width: 0; padding: 0 4px; font-size: 14px; font-weight: 600; color: var(--dim); }
 .bar-code { flex: none; height: 44px; padding: 0 10px 0 12px; gap: 6px; background: var(--panel); box-shadow: var(--shadow); display: flex; align-items: center; gap: 8px; }
@@ -457,6 +466,8 @@ button.len:disabled { opacity: 1; } button.len:disabled:not(.sel) { opacity: .6;
 .res-actions .grow { min-width: 0; flex: 1 1 200px; }
 .res-actions button { min-height: 48px; }
 .res-actions button.big { min-height: 56px; }
+/* On a phone the main action gets the whole row and the quieter ones share the next, side by side. */
+@media (max-width: 560px) { .res-actions .grow { flex-basis: 100%; } .res-actions .ghost-btn { flex: 1 1 0; min-width: 0; padding: 0 12px; } }
 .ghost-btn { background: var(--panel); box-shadow: var(--shadow); }
 button.in { background: var(--right-bg); color: var(--ok); box-shadow: inset 0 0 0 2px var(--ok); }
 .in-list { display: inline-flex; align-items: center; gap: 2px; padding: 0 6px; }
@@ -520,8 +531,18 @@ table.tbl, .tbl { border-collapse: collapse; width: 100%; font-size: 15px; }
 .ghead { display: flex; align-items: center; gap: 10px; justify-content: space-between; }
 .ghead > div:first-child { display: flex; flex-direction: column; gap: 2px; }
 .gtitle { font-weight: 800; font-size: 17px; }
-.clock { font-family: var(--display); font-variant-numeric: tabular-nums; font-weight: 800; font-size: 22px; min-width: 44px; text-align: right; }
-.clock.low { color: #ff5a3c; }
+/* The countdown: the number inside a ring that drains; in the last five seconds both turn hot and beat. */
+.clock { --size: 48px; position: relative; flex: none; width: var(--size); height: var(--size); display: inline-grid; place-items: center; font-family: var(--display); font-variant-numeric: tabular-nums; font-weight: 800; font-size: 17px; line-height: 1; }
+.clock svg { position: absolute; inset: 0; width: 100%; height: 100%; transform: rotate(-90deg); overflow: visible; }
+.clock .trk { fill: var(--panel); stroke: var(--soft); stroke-width: 3.5; }
+.clock .arc { fill: none; stroke: var(--accent); stroke-width: 3.5; stroke-linecap: round; stroke-dasharray: 100; transition: stroke-dashoffset .25s linear, stroke .3s; }
+.clock b { position: relative; font-weight: inherit; }
+.clock.long b { font-size: 12.5px; letter-spacing: -.02em; }
+.clock.low .arc { stroke: #ff5a3c; }
+.clock.low b { color: #ff5a3c; }
+.clock.low { animation: clock-beat 1s ease-in-out infinite; }
+@keyframes clock-beat { 0%, 100% { transform: scale(1) } 12% { transform: scale(1.1) } 30% { transform: scale(1) } }
+@media (prefers-reduced-motion: reduce) { .clock.low { animation: none; } .clock .arc { transition: none; } }
 .scores { list-style: none; margin: 0; padding: 0; }
 .scores li { min-height: 42px; display: flex; align-items: center; gap: 8px; padding: 0 6px; margin: 0 -6px; border-top: 1px solid var(--rule); }
 .scores li:first-child, .scores li.me, .scores li.me + li { border-top-color: transparent; }
@@ -595,7 +616,7 @@ table.tbl, .tbl { border-collapse: collapse; width: 100%; font-size: 15px; }
 .wordle .side { flex: 1 1 280px; overflow: auto; padding: 4px 12px; align-self: start; border-radius: 20px; }
 .status { display: flex; gap: 8px; align-items: center; justify-content: center; margin: 4px 0 8px; flex-wrap: wrap; font-size: 15px; }
 .status .pill { background: var(--panel); box-shadow: var(--shadow); }
-.status .clock { font-size: 18px; min-width: 0; }
+.status .clock { --size: 42px; font-size: 15px; }
 .board { display: grid; grid-template-rows: repeat(6, 1fr); gap: 5px; width: min(330px, 78vw, calc((100dvh - 350px) * 5 / 6)); min-width: 200px; aspect-ratio: 5 / 6; }
 .brow { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; }
 .tile { border: 2px solid var(--tile-empty); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-family: var(--display); font-weight: 800; font-size: clamp(18px, 6vw, 26px); text-transform: uppercase; user-select: none; }
@@ -629,7 +650,12 @@ table.tbl, .tbl { border-collapse: collapse; width: 100%; font-size: 15px; }
 
 /* Word Grid */
 .wg { align-items: center; }
-.wg-word { min-height: 44px; font-family: var(--display); font-size: 28px; font-weight: 800; letter-spacing: .08em; text-align: center; }
+.wg > .ghead { align-self: stretch; }
+.wg-word { min-height: 44px; font-family: var(--display); font-size: 28px; font-weight: 800; letter-spacing: .08em; text-align: center; display: grid; place-items: center; }
+/* A refusal ("Not on the grid") is a sentence, not a word: smaller and unspaced, so it stays on one line. */
+.wg-word .msg { font-family: var(--font); font-size: 17px; letter-spacing: 0; animation: wg-nope .32s; }
+@keyframes wg-nope { 20%, 60% { transform: translateX(-5px) } 40%, 80% { transform: translateX(5px) } }
+@media (prefers-reduced-motion: reduce) { .wg-word .msg { animation: none; } }
 .wgrid { display: grid; gap: 8px; width: min(360px, 90vw, calc(100dvh - 330px)); min-width: 240px; aspect-ratio: 1; touch-action: none; user-select: none; }
 .wgrid.s4 { grid-template-columns: repeat(4, 1fr); }
 .wgrid.s5 { grid-template-columns: repeat(5, 1fr); gap: 6px; }
@@ -1288,6 +1314,8 @@ b.g { color: var(--ok); } b.y { color: var(--goldtext); }
 .lc-chip { padding: 3px 12px; border-radius: 99px; background: var(--k, #333); color: #fff; font-weight: 800; font-size: 13px; box-shadow: 0 0 0 2px #fff5; transition: background .4s; }
 .lc-chip.owe { background: #111; color: #ffd43b; animation: lc-pulse 1s infinite; }
 .lc-table .clock { color: #fff; }
+.lc-table .clock .trk { fill: rgb(0 0 0 / .28); stroke: rgb(255 255 255 / .18); }
+.lc-table .clock:not(.low) .arc { stroke: #fff; }
 
 /* My hand */
 .lc-me { background: var(--panel); border: 2px solid var(--rule); border-radius: 20px; padding: 10px 10px 8px; box-shadow: var(--shadow); transition: border-color .3s, box-shadow .3s; }

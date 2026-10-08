@@ -7,7 +7,9 @@ import { mkdirSync } from 'node:fs'
 const args = process.argv.slice(2)
 const BASE = (args.find(a => a.startsWith('--url=')) ?? '--url=http://localhost:8799').slice(6)
 const only = args.find(a => !a.startsWith('--'))
-const SHOTS = 'test/shots'
+// --theme=dark|light pins the colours (otherwise the browser's setting decides) and keeps those screenshots apart.
+const THEME = (args.find(a => a.startsWith('--theme=')) ?? '').slice(8)
+const SHOTS = THEME ? `test/shots/${THEME}` : 'test/shots'
 mkdirSync(SHOTS, { recursive: true })
 
 // Short settings so every game finishes in a minute or two.
@@ -28,7 +30,7 @@ const pages = []
 for (let i = 0; i < NAMES.length; i++) {
   const mobile = i === 3
   const ctx = await browser.newContext(mobile ? { viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true } : { viewport: { width: 1280, height: 800 } })
-  await ctx.addInitScript(n => { try { localStorage.setItem('wr.name', n) } catch {} }, NAMES[i])
+  await ctx.addInitScript(([n, t]) => { try { localStorage.setItem('wr.name', n); if (t) localStorage.setItem('gn.theme', t) } catch {} }, [NAMES[i], THEME])
   const page = await ctx.newPage()
   page.on('pageerror', e => errors.push(`${NAMES[i]}: ${e.message}`))
   page.on('console', m => { if (m.type() === 'error' && !/WebSocket|favicon|net::|AudioContext encountered an error from the audio device/.test(m.text())) errors.push(`${NAMES[i]} console: ${m.text()}`) })

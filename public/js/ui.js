@@ -45,11 +45,17 @@ export const fmt = ms => {
   return s >= 60 ? `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}` : `${s}`
 }
 
+/** Seconds left inside a ring that drains with them. The ring's full length is the time left when this deadline
+ *  was first seen, so someone who joins mid-round sees a full ring that empties on time. */
 export function Clock({ until }) {
   useTick(250)
+  const span = useRef({ until: 0, total: 1 })
   if (!until) return null
-  const left = until - now()
-  return html`<span class=${'clock' + (left < 5500 ? ' low' : '')} aria-label="Time left">${fmt(left)}</span>`
+  const left = Math.max(0, until - now())
+  if (span.current.until !== until) span.current = { until, total: Math.max(left, 1000) }
+  const text = fmt(left), gone = 100 - Math.min(1, left / span.current.total) * 100
+  return html`<span class=${'clock' + (left < 5500 ? ' low' : '') + (text.length > 2 ? ' long' : '')} role="timer" aria-label=${`${text} left`}>
+    <svg viewBox="0 0 44 44" aria-hidden="true"><circle class="trk" cx="22" cy="22" r="19" /><circle class="arc" cx="22" cy="22" r="19" pathLength="100" style=${`stroke-dashoffset:${gone}`} /></svg><b>${text}</b></span>`
 }
 
 /** "Round 2 of 8" with a clock on the right. */
