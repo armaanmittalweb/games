@@ -144,7 +144,7 @@ function SiteNav() {
 /** A game as a big card in its kind's colour (the three beside the welcome). */
 function KindCard({ id, cls }) {
   const m = META[id], [bg, ink] = KINDS[m.cat]
-  return html`<div class=${'kcard ' + cls} style=${`--k:${bg};--ink:${ink}`}><small>${m.cat}</small><${GameIcon} m=${m} /><b>${m.name}</b></div>`
+  return html`<div class=${'kcard ' + cls} data-id=${id} style=${`--k:${bg};--ink:${ink}`}><small>${m.cat}</small><${GameIcon} m=${m} /><b>${m.name}</b></div>`
 }
 
 // The order the welcome's cards go through every game. It opens on Word Race, Draw & Guess and Mind Meld (left to
@@ -163,22 +163,73 @@ const DECK = (() => {
 })()
 
 const TURN_MS = 1800
+/** After someone flips the cards themselves, they stay put this long before turning on their own again. */
+const HOLD_MS = 4000
+/** Wheel travel (px) for one card, the shortest gap between two (so a flick of a trackpad does not fly past ten), and the swipe distance for one card. */
+const WHEEL_PX = 40, WHEEL_GAP_MS = 170, SWIPE_PX = 56
 
 /**
  * Three cards from DECK, a window moving one game at a time: ABC, then DAB, then EDA, and round to ABC again. A card
  * keeps its element as it moves from slot to slot, so CSS moves it. One more waits unseen on the left to rise in,
- * and the one that just left stays a turn while it slides off.
+ * and the one that just left stays a turn while it slides off, so a turn backwards slides it straight back.
+ *
+ * They are also a way in: pointing at them stops the turning, the wheel or a sideways swipe flips through them, and a
+ * click or tap on one makes a room with that game. The list below does the same for keyboards and screen readers,
+ * so the cards stay hidden from them.
  */
-function HeroCards() {
+function HeroCards({ onPick }) {
   const [k, setK] = useState(0)
+  const art = useRef(null)
+  // over: a mouse is on the cards; armed: it has moved there (not just had the page scroll under it); drag: a press.
+  const live = useRef({ over: false, armed: false, drag: null, next: Date.now() + TURN_MS, acc: 0, gap: 0 })
+  const flip = d => { live.current.next = Date.now() + HOLD_MS; setK(x => x + d) }
   useEffect(() => {
     if (matchMedia('(prefers-reduced-motion: reduce)').matches) return
-    const t = setInterval(() => { if (!document.hidden) setK(x => x + 1) }, TURN_MS)
+    const t = setInterval(() => {
+      const L = live.current, now = Date.now()
+      if (document.hidden || L.over || L.drag) L.next = Math.max(L.next, now + TURN_MS)
+      else if (now >= L.next) { L.next = now + TURN_MS; setK(x => x + 1) }
+    }, 100)
     return () => clearInterval(t)
   }, [])
+  // The wheel turns the cards only once the mouse has moved onto them, so scrolling the page past them still scrolls.
+  useEffect(() => {
+    const el = art.current
+    const wheel = e => {
+      const L = live.current
+      if (!L.armed) return
+      e.preventDefault()
+      const now = Date.now()
+      if (now < L.gap) return
+      const d = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? -e.deltaX : e.deltaY
+      L.acc += e.deltaMode ? d * 40 : d
+      if (Math.abs(L.acc) >= WHEEL_PX) { flip(Math.sign(L.acc)); L.acc = 0; L.gap = now + WHEEL_GAP_MS }
+    }
+    el.addEventListener('wheel', wheel, { passive: false })
+    return () => el.removeEventListener('wheel', wheel)
+  }, [])
+  const L = live.current
+  const down = e => {
+    if (e.button) return
+    L.drag = { x: e.clientX, moved: false, card: e.target.closest('.kcard:is(.s-left, .s-mid, .s-right)')?.dataset.id }
+    if (e.pointerType === 'mouse') art.current.setPointerCapture(e.pointerId)
+  }
+  const move = e => {
+    if (e.pointerType === 'mouse' && (e.movementX || e.movementY)) L.armed = true
+    const d = L.drag
+    if (!d) return
+    const dx = e.clientX - d.x
+    // The cards follow the finger: drag right and they move right (the next game rises in on the left).
+    if (Math.abs(dx) >= SWIPE_PX) { flip(dx > 0 ? 1 : -1); d.x = e.clientX; d.moved = true }
+  }
+  const up = () => { const d = L.drag; L.drag = null; if (d && !d.moved && d.card) onPick(d.card) }
   const at = i => DECK[((i % DECK.length) + DECK.length) % DECK.length]
-  return html`<div class="hero-art" aria-hidden="true">${[[k + 3, 'in'], [k + 2, 'left'], [k + 1, 'mid'], [k, 'right'], [k - 1, 'out']]
-    .map(([i, slot]) => html`<${KindCard} key=${at(i)} id=${at(i)} cls=${'s-' + slot} />`)}</div>`
+  return html`<div class="hero-art" aria-hidden="true" ref=${art}
+    onPointerEnter=${e => { if (e.pointerType === 'mouse') L.over = true }} onPointerLeave=${() => { L.over = L.armed = false; L.acc = 0 }}
+    onPointerDown=${down} onPointerMove=${move} onPointerUp=${up} onPointerCancel=${() => { L.drag = null }}>
+    ${[[k + 3, 'in'], [k + 2, 'left'], [k + 1, 'mid'], [k, 'right'], [k - 1, 'out']]
+      .map(([i, slot]) => html`<${KindCard} key=${at(i)} id=${at(i)} cls=${'s-' + slot} />`)}
+    <span class="hero-hint">Scroll to flip through · click one to play</span></div>`
 }
 
 function Home() {
@@ -230,7 +281,7 @@ function Home() {
           <ul class="start-facts"><li>Free</li><li>No sign-up</li><li>No app needed</li></ul>
         </div>
       </div>
-      <${HeroCards} />
+      <${HeroCards} onPick=${id => !busy && make(id)} />
 
     </section>
     <section class="games-sec">

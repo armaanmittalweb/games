@@ -202,6 +202,20 @@ button.tint { min-height: 52px; padding: 0 22px; background: #e6e9ff; color: #24
 .hero-art .kcard.s-in { opacity: 0; transform: translate(-144px, 52px) rotate(-17deg) scale(.86); }
 .hero-art .kcard.s-out { opacity: 0; transform: translate(156px, 40px) rotate(19deg) scale(.9); }
 @media (prefers-reduced-motion: reduce) { .hero-art .kcard { transition: none; } }
+/* The cards are a way in: a sideways swipe flips them (the page still scrolls up and down), a click or tap opens one.
+   The card under the mouse lifts with `translate`, which adds to its slot's transform instead of replacing it. */
+.hero-art { touch-action: pan-y; user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent; }
+.hero-art .kcard:is(.s-left, .s-mid, .s-right) { cursor: pointer; }
+.hero-art .kcard:is(.s-in, .s-out) { pointer-events: none; }
+.hero-hint { position: absolute; left: 0; right: 0; bottom: -22px; text-align: center; font-size: 13px; font-weight: 600; color: var(--dim);
+  opacity: 0; transition: opacity .25s ease; pointer-events: none; display: none; }
+@media (hover: hover) and (pointer: fine) {
+  .hero-art .kcard { transition: transform .7s cubic-bezier(.3, 1.35, .5, 1), opacity .4s ease, translate .25s ease, box-shadow .25s ease; }
+  .hero-art .kcard:is(.s-left, .s-mid, .s-right):hover { translate: 0 -10px; box-shadow: 0 22px 44px rgb(0 0 0 / .22); }
+  .hero-hint { display: block; }
+  .hero-art:hover .hero-hint { opacity: 1; }
+}
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: reduce) { .hero-art .kcard { transition: none; } }
 
 
 @media (max-width: 420px) { .hero-art { height: 228px; transform: scale(.88); transform-origin: 50% 40%; margin: -6px 0 6px; } }
