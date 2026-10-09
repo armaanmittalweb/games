@@ -196,7 +196,7 @@ button.tint { min-height: 52px; padding: 0 22px; background: #e6e9ff; color: #24
 .kcard > b { font-family: var(--display); font-size: 14px; font-weight: 700; line-height: 1.15; letter-spacing: -.01em; }
 .kcard .gicon { width: 102px; height: 102px; margin: -10px auto; }
 .kcard .gicon svg { filter: none; }
-.hero-art .kcard { left: calc(50% - 74px); top: 12px; will-change: transform, opacity; transition: transform 1.2s cubic-bezier(.65, 0, .3, 1), opacity .8s ease; }
+.hero-art .kcard { left: calc(50% - 74px); top: 12px; will-change: transform, opacity; transition: transform .7s cubic-bezier(.3, 1.35, .5, 1), opacity .4s ease; }
 .hero-art .kcard.s-left { transform: translate(-120px, 30px) rotate(-11deg) scale(.946); }
 .hero-art .kcard.s-right { transform: translate(120px, 30px) rotate(11deg) scale(.946); }
 .hero-art .kcard.s-in { opacity: 0; transform: translate(-144px, 52px) rotate(-17deg) scale(.86); }

@@ -162,7 +162,7 @@ const DECK = (() => {
   }
 })()
 
-const TURN_MS = 3200
+const TURN_MS = 1800
 
 /**
  * Three cards from DECK, a window moving one game at a time: ABC, then DAB, then EDA, and round to ABC again. A card
