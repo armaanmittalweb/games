@@ -41,6 +41,10 @@ interface Inst {
   pts?: Record<string, number>
   winners?: string[]
   sat?: string[]
+  /** Paused by the host: when, and when it carries on by itself. The game's clock stands still meanwhile. */
+  paused?: { at: number; until: number }
+  /** How long the game has spent paused, taken off the game's clock (see Room.clock). */
+  off?: number
 }
 
 interface State {
@@ -80,6 +84,8 @@ const LAZY_MS = 4000
 const COLORS = 12
 /** How long the rules stay up before a game, unless everyone closes them first. */
 const INTRO_MS = 30_000
+/** The longest a pause can run before the game carries on by itself. */
+const PAUSE_MAX_MS = 5 * 60_000
 /** A player back within this long after their connection dropped counts as reconnected. */
 const REJOIN_MS = 120_000
 // Close codes a player chooses (leaving, closing the tab, opened elsewhere, removed); anything else is a dropped line.
@@ -165,7 +171,7 @@ export class Room extends DurableObject<Env> {
     // Players removed from the room keep their name in a game they were part of.
     for (const id of inst.players) names[id] ??= 'Someone'
     return {
-      now, config: inst.config, players: inst.players, names, colors, online: this.online(), host: s.host,
+      now: this.clock(now), config: inst.config, players: inst.players, names, colors, online: this.online(), host: s.host,
       ...this.r,
       deal: <T>(key: string, items: readonly T[], n: number) => {
         const d = (s.decks ??= {})
@@ -210,9 +216,10 @@ export class Room extends DurableObject<Env> {
   due(now: number) {
     const s = this.s!
     let fired = false
+    if (s.inst?.paused && now >= s.inst.paused.until) { this.resume(s.inst, now); fired = true }
     for (let i = 0; i < 20; i++) {
       const inst = s.inst
-      if (!inst || s.phase !== 'game' || !inst.wake || now < inst.wake) break
+      if (!inst || s.phase !== 'game' || inst.paused || !inst.wake || this.clock(now) < inst.wake) break
       inst.wake = 0
       fired = true
       if (inst.intro) { this.begin(inst, now); continue }
@@ -220,6 +227,22 @@ export class Room extends DurableObject<Env> {
       this.run(g => game.tick?.(g, inst.s), now)
     }
     return fired
+  }
+
+  /**
+   * The game's clock: real time less the time spent paused, standing still while paused. Games only ever see this
+   * clock, so their deadlines move on by however long the pause lasted.
+   */
+  clock(now: number) {
+    const inst = this.s?.inst
+    if (!inst) return now
+    return (inst.paused ? inst.paused.at : now) - (inst.off ?? 0)
+  }
+
+  resume(inst: Inst, now: number) {
+    if (!inst.paused) return
+    inst.off = (inst.off ?? 0) + Math.max(0, now - inst.paused.at)
+    delete inst.paused
   }
 
   /** Picks the game and its players, then shows everyone the rules; begin() sets the game up after that. */
@@ -285,7 +308,8 @@ export class Room extends DurableObject<Env> {
     const s = this.s!
     inst.standings = standings
     inst.summary = summary
-    inst.endedAt = now
+    inst.endedAt = this.clock(now)
+    delete inst.paused
     inst.wake = 0
     s.phase = 'results'
     // Room points go to those who took part: a move, or (in a team game, where a teammate may do the tapping) being
@@ -366,7 +390,7 @@ export class Room extends DurableObject<Env> {
       if (alt) { n.plan[n.idx] = alt; id = alt; seats = this.seatsFor(id) }
     }
     if (typeof seats === 'string') { n.idx--; return seats }
-    this.start(id, settings(id, META[id].night), seats, now, true)
+    this.start(id, settings(id, n.configs?.[id] ?? META[id].night), seats, now, true)
   }
 
   // ---------- messages ----------
@@ -453,6 +477,7 @@ export class Room extends DurableObject<Env> {
         if (!inst || s.phase !== 'game') { err('No game is running'); return bail() }
         if (!inst.players.includes(me)) { err('You are watching this game'); return bail() }
         if (inst.intro) { err('The game starts in a moment'); return bail() }
+        if (inst.paused) { err('The game is paused'); return bail() }
         if (inst.q) inst.q.acts++
         const game = GAMES[inst.id]
         // A move that is not refused counts as taking part; it is noted before the game can end on it.
@@ -535,6 +560,23 @@ export class Room extends DurableObject<Env> {
         s.phase = 'lobby'
         break
       }
+      case 'pause': {
+        // The host stops the clock for a while (up to five minutes at a time), or changes how long is left of a pause.
+        if (!hostOnly()) return bail()
+        const inst = s.inst
+        if (!inst || s.phase !== 'game' || inst.intro) return bail()
+        const ms = Math.min(PAUSE_MAX_MS, Math.max(60_000, Math.round(Number(m.mins) || 5) * 60_000))
+        if (inst.paused) inst.paused.until = now + ms
+        else inst.paused = { at: now, until: now + ms }
+        break
+      }
+      case 'resume': {
+        if (!hostOnly()) return bail()
+        const inst = s.inst
+        if (!inst?.paused || s.phase !== 'game') return bail()
+        this.resume(inst, now)
+        break
+      }
       case 'lobby': {
         if (!hostOnly()) return bail()
         if (s.phase === 'results') s.phase = 'lobby'
@@ -559,6 +601,16 @@ export class Room extends DurableObject<Env> {
         const alt = swap(n, i, n.length === 'tournament' && n.idx >= 0 ? n.alive.length : this.online().size, this.r.rand)
         if (!alt) { err('No other game fits'); return bail() }
         n.plan[i] = alt
+        break
+      }
+      case 'nightConfig': {
+        // Settings for one of the night's games still to come (the night's own presets until the host changes them).
+        if (!hostOnly()) return bail()
+        const n = s.night
+        const id = String(m.id)
+        if (!n || n.done || !n.plan.some((x, i) => x === id && i > n.idx)) return bail()
+        n.configs ??= {}
+        n.configs[id] = settings(id, m.config, n.configs[id] ?? META[id].night)
         break
       }
       case 'nightDrop': {
@@ -767,7 +819,9 @@ export class Room extends DurableObject<Env> {
     const s = this.s
     if (!s) return
     let at = s.touched + KEEP_MS + 60_000
-    if (s.phase === 'game' && s.inst?.wake) at = Math.min(at, s.inst.wake)
+    const inst = s.phase === 'game' ? s.inst : null
+    if (inst?.paused) at = Math.min(at, inst.paused.until)
+    else if (inst?.wake) at = Math.min(at, inst.wake + (inst.off ?? 0))
     if (this.dirty) at = Math.min(at, this.lastSave + LAZY_MS)
     await this.ctx.storage.setAlarm(at)
   }
@@ -801,15 +855,19 @@ export class Room extends DurableObject<Env> {
         id: inst.id, n: inst.n, config: inst.config, players: inst.players, startedAt: inst.startedAt, endedAt: inst.endedAt, standings: inst.standings,
         summary: inst.summary, night: inst.night, again: inst.again ?? [], intro: inst.intro ? { until: inst.intro.until, ready: inst.intro.ready } : null,
         pts: inst.pts ?? null, winners: inst.winners ?? null, sat: inst.sat ?? [],
+        paused: inst.paused ? { until: inst.paused.until - (inst.off ?? 0) } : null,
       },
       night: s.night, watch: s.watch !== false,
     }
     const game = inst ? GAMES[inst.id] : null
     const ctx = inst ? this.ctxFor(inst, now) : null
+    // Pages count down on the game's clock. It runs on under a pause (the pause screen covers the game), and steps back
+    // by the length of the pause when play carries on.
+    const wireNow = now - (inst?.off ?? 0)
     for (const ws of this.ctx.getWebSockets()) {
       const id = attached(ws)
       if (!id || !s.members[id]) continue
-      const base = JSON.stringify({ t: 's', now, you: id, room })
+      const base = JSON.stringify({ t: 's', now: wireNow, you: id, room })
       let wire = base
       // Players see their game; anyone else sees it only while the host lets people watch.
       if (inst && game && ctx && !inst.intro && (s.watch !== false || inst.players.includes(id))) {

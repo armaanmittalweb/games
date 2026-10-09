@@ -288,8 +288,8 @@ button.tint { min-height: 52px; padding: 0 22px; background: #e6e9ff; color: #24
 @media (max-width: 420px) { .bar { gap: 4px; padding: 8px 6px; } .bar-code .code { letter-spacing: .03em; } }
 @media (max-width: 370px) { .bar-code { padding: 0 10px; } .bar-code .ico { display: none; } }
 /* The menu behind the dots. */
-.menu-shade { position: fixed; inset: var(--bar-h) 0 0 0; background: rgb(10 11 14 / .28); z-index: 30; }
-.room-menu { position: fixed; top: calc(var(--bar-h) + 5px); right: 8px; width: min(300px, calc(100% - 16px)); z-index: 31; border-radius: 24px; background: var(--panel); padding: 8px; display: flex; flex-direction: column; gap: 2px;
+.menu-shade { position: fixed; inset: var(--bar-h) 0 0 0; background: rgb(10 11 14 / .28); z-index: 32; }
+.room-menu { position: fixed; top: calc(var(--bar-h) + 5px); right: 8px; width: min(300px, calc(100% - 16px)); z-index: 33; border-radius: 24px; background: var(--panel); padding: 8px; display: flex; flex-direction: column; gap: 2px;
   box-shadow: 0 20px 50px rgb(0 0 0 / .3), 0 0 0 1px var(--rule); animation: menu-in .14s ease-out; transform-origin: top right; }
 @keyframes menu-in { from { opacity: 0; transform: scale(.96) translateY(-4px); } }
 .room-menu hr { border: 0; height: 1px; margin: 2px 10px; background: var(--rule); }
@@ -304,7 +304,21 @@ button.tint { min-height: 52px; padding: 0 22px; background: #e6e9ff; color: #24
 .danger-text { color: var(--bad); font-weight: 700; }
 @media (prefers-reduced-motion: reduce) { .room-menu { animation: none; } }
 .room-body { flex: 1; display: flex; min-height: 0; }
-.room-main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.room-main { flex: 1; min-width: 0; display: flex; flex-direction: column; position: relative; }
+/* Paused: the game stays where it was under a veil, and the card stays in view however far down the game goes. */
+/* Above the games' own overlays (up to 30); the room menu and dialogs stay above it. */
+.pause-cover { position: absolute; inset: 0; z-index: 30; display: flex; justify-content: center; align-items: flex-start; padding: 40px 16px;
+  background: color-mix(in srgb, var(--bg) 72%, transparent); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); animation: pause-in .2s ease-out both; }
+.pause-card { position: sticky; top: calc(var(--bar-h) + 32px); width: min(380px, 100%); align-items: center; text-align: center; gap: 12px; padding: 24px 20px 20px; border-radius: 28px; box-shadow: var(--pop), 0 0 0 1px var(--rule); }
+.pause-ico { width: 56px; height: 56px; border-radius: 50%; display: grid; place-items: center; background: var(--panel2); }
+.pause-ico .ico { width: 24px; height: 24px; }
+.pause-left { font-size: 15px; }
+.pause-left b { font-family: var(--display); font-size: 22px; font-variant-numeric: tabular-nums; margin-left: 4px; }
+.pause-for { width: 100%; text-align: left; }
+.pause-card > .primary { width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px; }
+.pause-card > .primary .ico { width: 16px; height: 16px; }
+@keyframes pause-in { from { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .pause-cover { animation: none; } }
 /* Chat: a panel from the right. */
 .chat { width: 340px; border-left: 1px solid var(--rule); display: flex; flex-direction: column; background: var(--chatbg); position: sticky; top: var(--bar-h); height: calc(100dvh - var(--bar-h)); }
 .chat-head { min-height: 56px; padding: 6px 6px 6px 18px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--rule); font-size: 16px; }
@@ -403,7 +417,7 @@ b.ink { color: var(--text); }
 .plist { list-style: none; padding: 0; margin: 6px 0 0; }
 .plist li { min-height: 52px; display: flex; align-items: center; gap: 10px; border-top: 1px solid var(--rule); position: relative; padding-right: 8px; }
 .plist li:first-child { border-top: 0; }
-.plist li.off { opacity: .6; }
+.plist li.off > :not(.pdots):not(.pmenu) { opacity: .6; }
 .av.off { background: transparent; border: 2px dashed var(--dim); color: var(--text); }
 .pname { display: flex; align-items: center; gap: 6px; font-size: 15px; white-space: nowrap; overflow: hidden; }
 .pname > .ell { min-width: 0; }
@@ -481,7 +495,17 @@ button.len[aria-disabled="true"] { opacity: 1; } button.len[aria-disabled="true"
 .chipbtn[aria-disabled="true"].sel { opacity: 1; }
 
 .plan { padding: 0; margin: 0; list-style: none; counter-reset: p; }
-.plan li { min-height: 60px; display: flex; align-items: center; gap: 12px; border-top: 1px solid var(--rule); counter-increment: p; }
+.plan li { display: grid; grid-template-columns: 16px minmax(0, 1fr); column-gap: 12px; align-items: center; border-top: 1px solid var(--rule); counter-increment: p; }
+.plan-row { min-height: 60px; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; column-gap: 12px; }
+@media (max-width: 480px) {
+  /* On a phone the links go under the game's name, so long names keep one line. */
+  .plan-row { grid-template-columns: auto minmax(0, 1fr); padding: 8px 0; }
+  .plan-row > .gicon { grid-row: span 2; }
+  .plan-acts { margin-left: -8px; }
+  .plan-acts .link { min-height: 36px; }
+}
+.plan-opts { grid-column: 2; padding: 2px 0 16px; }
+.plan-acts .link[aria-expanded="true"] { text-decoration: underline; text-underline-offset: 3px; }
 .plan li:first-child { border-top: 0; }
 .plan li::before { content: counter(p); color: var(--dim); width: 16px; text-align: right; font-size: 13px; font-weight: 700; }
 .plan b { font-size: 15px; }
@@ -536,6 +560,8 @@ button.len[aria-disabled="true"] { opacity: 1; } button.len[aria-disabled="true"
 /* On a phone the main action gets the whole row and the quieter ones share the next, side by side. */
 @media (max-width: 560px) { .res-actions .grow { flex-basis: 100%; } .res-actions .ghost-btn { flex: 1 1 0; min-width: 0; padding: 0 12px; } }
 .ghost-btn { background: var(--panel); box-shadow: var(--shadow); }
+.res-opts { padding: 0 16px; }
+.res-opts[open] { padding-bottom: 16px; }
 button.in { background: var(--right-bg); color: var(--ok); box-shadow: inset 0 0 0 2px var(--ok); }
 .in-list { display: inline-flex; align-items: center; gap: 2px; padding: 0 6px; }
 .in-list .av { margin-left: -6px; box-shadow: 0 0 0 2px var(--bg); } .in-list .av:first-child { margin-left: 0; }

@@ -352,6 +352,7 @@ function Room() {
         ? html`<button class="bar-game" id="rules-btn" onClick=${() => setRules(room.inst.id)} title="How to play"><${GameIcon} m=${meta} size="tiny" /><span class="vh">How to play </span><span class="ell">${meta.name}</span>${ICONS.help}</button>`
         : html`<span class="bar-here ell">${plural(here, 'player')} here</span>`}
       ${s.status !== 'open' ? html`<span class="pill warn">reconnecting</span>` : ''}
+      ${inGame && isHost && !room.inst.intro && !room.inst.paused ? html`<button class="icon bar-btn" onClick=${() => send({ t: 'pause', mins: 5 })} aria-label="Pause the game for everyone" title="Pause">${ICONS.pause}</button>` : ''}
       <button class="bar-code" onClick=${() => { S.invite = true; changed() }} aria-label=${`Invite friends to room ${room.code}`} title="Invite friends: share, copy the link or show a QR code"><span class="code">${room.code}</span>${ICONS.share}</button>
       <button class="icon bar-btn chat-btn" onClick=${toggleChat} aria-label=${s.unread ? `Chat, ${s.unread} new` : 'Chat'} title="Chat">${ICONS.chat}${s.unread ? html`<i>${s.unread}</i>` : ''}</button>
       <button class="icon bar-btn" onClick=${() => setMenu(!menu)} aria-label=${inGame ? 'More: light or dark, how to play, end the game' : 'More: light or dark'} aria-haspopup="dialog" aria-expanded=${menu} title="More">${ICONS.more}</button>
@@ -362,6 +363,7 @@ function Room() {
         ${room.night && html`<${NightBanner} night=${room.night} isHost=${isHost} />`}
         ${room.phase === 'lobby' && html`<${Lobby} isHost=${isHost} onRules=${setRules} />`}
         ${room.phase === 'game' && room.inst && html`<${GameScreen} key=${room.inst.n} />`}
+        ${inGame && room.inst.paused && html`<${PauseCover} paused=${room.inst.paused} isHost=${isHost} />`}
         ${room.phase === 'results' && room.inst && html`<${Results} isHost=${isHost} />`}
       </main>
       ${s.chatOpen && html`<${Chat} />`}
@@ -383,6 +385,7 @@ export const ICONS = {
   get close() { return svg(html`<path d="M6 6l12 12M18 6L6 18" />`) },
   get sun() { return svg(html`<circle cx="12" cy="12" r="4.2" /><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M5.3 18.7l1.6-1.6M17.1 6.9l1.6-1.6" />`) },
   get moon() { return svg(html`<path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z" />`) },
+  get pause() { return html`<svg viewBox="0 0 24 24" aria-hidden="true" class="ico fillico"><rect x="6" y="5" width="4.2" height="14" rx="1.4" /><rect x="13.8" y="5" width="4.2" height="14" rx="1.4" /></svg>` },
   get stop() { return svg(html`<rect x="5" y="5" width="14" height="14" rx="3" />`) },
   get copy() { return svg(html`<rect x="8" y="8" width="12" height="12" rx="2" /><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2" />`) },
   get qr() { return svg(html`<path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h2v2h-2zM18 14h2v2h-2zM14 18h2v2h-2zM18 18h2v2h-2z" />`) },
@@ -631,20 +634,14 @@ function DnaBars({ dna }) {
 /** A choice with a few short options is a row of buttons; a longer one, or a number, keeps its box. */
 const asButtons = o => o.kind === 'choice' && o.choices.length <= 4 && o.choices.reduce((n, c) => n + String(c[1]).length, 0) <= 30
 
-function GameDetail({ meta, isHost, n, onRules }) {
-  const room = S.room
-  const cfg = room.configs[meta.id] ?? {}
+/** A game's settings. Everyone sees them; only the host can change them, and onSet gets the whole new set. */
+export function GameOptions({ meta, cfg, isHost, onSet }) {
   const val = o => cfg[o.key] ?? o.def
-  const set = (k, v) => send({ t: 'config', id: meta.id, config: { ...cfg, [k]: v } })
-  const fits = n >= meta.min && n <= meta.max
-  return html`<div class="card detail">
-    <div class="detail-head"><${GameIcon} m=${meta} size="big" /><div class="grow"><h2 class="nomargin">${meta.name}</h2><div class="dim small">${players(meta)} players · about ${estMinutes(meta, Math.max(n, meta.min))} min · ${meta.cat}</div></div>
-      <button class="link" onClick=${() => onRules(meta.id)}>How to play</button></div>
-    <p class="detail-blurb">${meta.blurb}</p>
-    <${DnaBars} dna=${meta.dna} />
-    <div class=${'opts' + (isHost ? '' : ' locked')} onClick=${isHost ? null : hostOnly('change the settings')}>${meta.options.map(o => asButtons(o)
-      ? html`<div key=${o.key} class="opt"><span id=${'opt-' + o.key}>${o.label}</span>
-          <div class="seg" role="radiogroup" aria-labelledby=${'opt-' + o.key}>${o.choices.map(([v, l]) => {
+  const set = (k, v) => onSet({ ...cfg, [k]: v })
+  const uid = o => `opt-${meta.id}-${o.key}`
+  return html`<div class=${'opts' + (isHost ? '' : ' locked')} onClick=${isHost ? null : hostOnly('change the settings')}>${meta.options.map(o => asButtons(o)
+      ? html`<div key=${o.key} class="opt"><span id=${uid(o)}>${o.label}</span>
+          <div class="seg" role="radiogroup" aria-labelledby=${uid(o)}>${o.choices.map(([v, l]) => {
             const on = String(val(o)) === String(v)
             return html`<button key=${String(v)} type="button" role="radio" aria-checked=${on} class=${on ? 'on' : ''} disabled=${!isHost} onClick=${() => set(o.key, v)}>${l}</button>`
           })}</div></div>`
@@ -652,7 +649,21 @@ function GameDetail({ meta, isHost, n, onRules }) {
       ${o.kind === 'choice'
         ? html`<select disabled=${!isHost} value=${String(val(o))} onChange=${e => set(o.key, e.target.value)}>${o.choices.map(([v, l]) => html`<option value=${String(v)}>${l}</option>`)}</select>`
         : html`<span class="num"><input type="number" inputmode="numeric" disabled=${!isHost} min=${o.min} max=${o.max} key=${o.key + ':' + val(o)} defaultValue=${val(o)} onChange=${e => set(o.key, Number(e.target.value))} />${o.unit ? html`<span class="dim small">${o.unit === 's' ? 'sec' : o.unit}</span>` : ''}</span>`}
-    </label>`)}</div>
+    </label>`)}</div>`
+}
+
+/** The settings a night's game will be played with: the night's presets until the host changes them. */
+export const nightCfg = (night, id) => night.configs?.[id] ?? META[id].night
+
+function GameDetail({ meta, isHost, n, onRules }) {
+  const room = S.room
+  const fits = n >= meta.min && n <= meta.max
+  return html`<div class="card detail">
+    <div class="detail-head"><${GameIcon} m=${meta} size="big" /><div class="grow"><h2 class="nomargin">${meta.name}</h2><div class="dim small">${players(meta)} players · about ${estMinutes(meta, Math.max(n, meta.min))} min · ${meta.cat}</div></div>
+      <button class="link" onClick=${() => onRules(meta.id)}>How to play</button></div>
+    <p class="detail-blurb">${meta.blurb}</p>
+    <${DnaBars} dna=${meta.dna} />
+    <${GameOptions} meta=${meta} cfg=${room.configs[meta.id] ?? {}} isHost=${isHost} onSet=${config => send({ t: 'config', id: meta.id, config })} />
     ${isHost
       ? html`<button class="primary big wide start-btn" disabled=${!fits} onClick=${() => send({ t: 'start', id: meta.id })}>${fits ? html`${ICONS.play}Start ${meta.name}` : n < meta.min ? `Needs ${meta.min}+ players (${n} here)` : `Up to ${meta.max} players`}</button>`
       : html`<div class="host-wait"><span class="wait-dots" aria-hidden="true"><i></i><i></i><i></i></span>Waiting for ${nameOf(room.host)} to start</div>`}
@@ -668,6 +679,7 @@ function NightSetup({ isHost }) {
   const [length, setLength] = useState(night?.length ?? 'standard')
   const [moods, setMoods] = useState(night?.moods ?? [])
   const toggle = k => setMoods(moods.includes(k) ? moods.filter(x => x !== k) : [...moods, k].slice(-4))
+  const [open, setOpen] = useState(null)
   const planned = night && night.idx === -1
   const total = night ? night.plan.reduce((a, id) => a + estMinutes(META[id], n), 0) : 0
   return html`<div class="stack">
@@ -682,8 +694,9 @@ ${label}</button>`)}</div></div>
     </div>
     ${planned && html`<div class="card detail">
       <div class="row between"><h2 class="nomargin">Tonight's games</h2><span class="dim small">${night.length === 'endless' ? 'keeps going' : `about ${total} min`}</span></div>
-      <ol class="plan">${night.plan.map((id, i) => html`<li key=${i}><${GameIcon} m=${META[id]} size="mid" /><span class="grow"><b>${META[id].name}</b><span class="dim small"> · ~${estMinutes(META[id], n)} min${night.length === 'tournament' && i === night.plan.length - 1 ? ' · final' : ''}</span></span>
-        ${isHost ? html`<span class="plan-acts"><button class="link" onClick=${() => send({ t: 'nightSwap', i })}>swap</button>${night.length !== 'tournament' && night.plan.length > 1 ? html`<button class="link" onClick=${() => send({ t: 'nightDrop', i })}>remove</button>` : ''}</span>` : ''}</li>`)}</ol>
+      <ol class="plan">${night.plan.map((id, i) => html`<li key=${i}><div class="plan-row"><${GameIcon} m=${META[id]} size="mid" /><span class="grow"><b>${META[id].name}</b><span class="dim small"> · ~${estMinutes(META[id], n)} min${night.length === 'tournament' && i === night.plan.length - 1 ? ' · final' : ''}</span></span>
+        <span class="plan-acts"><button class="link" aria-expanded=${open === i} onClick=${() => setOpen(open === i ? null : i)}>settings</button>${isHost ? html`<button class="link" onClick=${() => { setOpen(null); send({ t: 'nightSwap', i }) }}>swap</button>${night.length !== 'tournament' && night.plan.length > 1 ? html`<button class="link" onClick=${() => { setOpen(null); send({ t: 'nightDrop', i }) }}>remove</button>` : ''}` : ''}</span></div>
+        ${open === i ? html`<div class="plan-opts"><${GameOptions} meta=${META[id]} cfg=${nightCfg(night, id)} isHost=${isHost} onSet=${config => send({ t: 'nightConfig', id, config })} /></div>` : ''}</li>`)}</ol>
       ${isHost ? html`<div class="row nowrap"><button class="primary big grow" onClick=${() => send({ t: 'nightGo' })}>Start the night</button><button class="big" onClick=${() => send({ t: 'nightEnd' })}>Cancel</button></div>` : html`<p class="dim center nomargin">Waiting for the host to start the night</p>`}
     </div>`}
   </div>`
@@ -761,6 +774,28 @@ function GameScreen() {
   return html`<div class=${'game-area g-' + inst.id} ref=${area}>
     ${!seated ? html`<div class="watch">You are watching this game. You will be in the next one.</div>` : ''}
     <${Game} v=${s.game} inst=${inst} seated=${seated} />
+  </div>`
+}
+
+const PAUSE_MINS = [1, 2, 5]
+const clockText = ms => { const t = Math.ceil(ms / 1000); return `${Math.floor(t / 60)}:${String(t % 60).padStart(2, '0')}` }
+
+/** While the host has paused the game: everyone's clock has stopped, and it carries on by itself when the time is up. */
+function PauseCover({ paused, isHost }) {
+  useTick(250)
+  const btn = useRef()
+  useEffect(() => { btn.current?.focus() }, [])
+  const left = Math.max(0, paused.until - now())
+  return html`<div class="pause-cover" role="dialog" aria-labelledby="pause-h" aria-describedby="pause-p">
+    <div class="card stack pause-card">
+      <span class="pause-ico" aria-hidden="true">${ICONS.pause}</span>
+      <h2 class="nomargin" id="pause-h">Game paused</h2>
+      <p class="dim nomargin" id="pause-p">${isHost ? 'Everyone’s clock has stopped.' : `${nameOf(S.room.host)} paused the game. Everyone’s clock has stopped.`}</p>
+      <div class="pause-left" role="timer">Carries on in <b>${clockText(left)}</b></div>
+      ${isHost ? html`<div class="opt pause-for"><span id="pause-for">Pause for</span>
+        <div class="seg" role="group" aria-labelledby="pause-for">${PAUSE_MINS.map(m => html`<button key=${m} type="button" onClick=${() => send({ t: 'pause', mins: m })}>${m} min</button>`)}</div></div>
+        <button class="primary big" ref=${btn} onClick=${() => send({ t: 'resume' })}>${ICONS.play}Resume now</button>` : ''}
+    </div>
   </div>`
 }
 

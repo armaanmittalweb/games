@@ -13,6 +13,8 @@ export default function Stopwatch({ v, inst, seated }) {
   const key = `${v.round}:${v.openAt}`
   if (run.current.key !== key) run.current = { key, t0: 0, ms: null }
   const r = run.current
+  // A run that was going when the host paused would count the pause too: it starts again.
+  if (inst.paused && r.t0 && r.ms === null) r.t0 = 0
 
   const ready = now() >= v.openAt
   const stopped = r.ms !== null || v.stopped.includes(ME)

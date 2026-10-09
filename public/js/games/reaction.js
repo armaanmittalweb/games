@@ -10,13 +10,17 @@ export default function Reaction({ v, inst, seated }) {
   const key = `${v.round}:${v.goAt}`
   if (st.current.key !== key) st.current = { key, shownAt: 0, done: false, color: null }
   const me = st.current
+  // A pause holds the round: the signal is taken away again, and the timeline runs on from where it was once play
+  // carries on (a tap after that is timed from when the signal shows again).
+  const paused = !!inst.paused
+  if (paused && !me.done) { me.color = null; me.shownAt = 0 }
 
-  // Run the round's timeline on this device: decoys, then the signal.
+  // Run the round's timeline on this device: decoys still to come, then the signal.
   useEffect(() => {
-    if (v.phase !== 'wait') return
+    if (v.phase !== 'wait' || paused) return
     const timers = []
     const at = (t, fn) => timers.push(setTimeout(fn, Math.max(0, t - now())))
-    for (const d of v.decoys) { at(d.at, () => { me.color = d.color; force(x => x + 1) }); at(d.at + 450, () => { if (me.color === d.color) { me.color = null; force(x => x + 1) } }) }
+    for (const d of v.decoys.filter(d => d.at > now())) { at(d.at, () => { me.color = d.color; force(x => x + 1) }); at(d.at + 450, () => { if (me.color === d.color) { me.color = null; force(x => x + 1) } }) }
     at(v.goAt, () => {
       me.color = 'go'
       force(x => x + 1)
@@ -24,7 +28,7 @@ export default function Reaction({ v, inst, seated }) {
     })
     const tick = setInterval(() => force(x => x + 1), 500)
     return () => { timers.forEach(clearTimeout); clearInterval(tick) }
-  }, [key, v.phase])
+  }, [key, v.phase, paused])
 
   const tapped = v.tapped.includes(ME) || me.done
   // Space or Enter counts as a tap (a keyboard has no target to aim at, so a key press hits it).

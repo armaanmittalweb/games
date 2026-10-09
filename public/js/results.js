@@ -5,7 +5,7 @@ import { html, useState, useEffect, useRef } from './preact.js'
 import { S, ME, send, toast, copy } from './core.js'
 import { ask } from './dialog.js'
 import { Avatar, Name, nameOf, colorOf, plural } from './ui.js'
-import { META, mods, GameIcon, NightTable, Feedback, ICONS } from './app.js'
+import { META, mods, GameIcon, NightTable, Feedback, ICONS, GameOptions, nightCfg } from './app.js'
 
 const still = () => matchMedia('(prefers-reduced-motion: reduce)').matches
 const ordinal = n => n + (n % 100 >= 11 && n % 100 <= 13 ? 'th' : ['th', 'st', 'nd', 'rd'][n % 10] ?? 'th')
@@ -264,6 +264,9 @@ export function Results({ isHost }) {
   const seated = inst.players.includes(ME)
   const mins = inst.startedAt && inst.endedAt ? Math.max(1, Math.round((inst.endedAt - inst.startedAt) / 60000)) : null
   const key = room.code + ':' + inst.n
+  // The host can change the next game's settings here: the night's next game, or this one again.
+  const setFor = !isHost ? null : night ? (next && next !== 'more' ? next : null) : inst.id
+  const onSet = config => send(night ? { t: 'nightConfig', id: setFor, config } : { t: 'config', id: setFor, config })
   useEffect(() => {
     if (celebrated.has(key) || !st.length) return
     celebrated.add(key)
@@ -306,6 +309,8 @@ export function Results({ isHost }) {
         ${ready}
         ${st.length ? html`<button class="ghost-btn" onClick=${card} disabled=${busy} aria-label="Share result as a picture">Share result</button>` : ''}`}
     </div>
+    ${setFor ? html`<details class="card fold res-opts"><summary>Settings for ${night ? 'the next game, ' : ''}${META[setFor].name}</summary>
+      <${GameOptions} meta=${META[setFor]} cfg=${night ? nightCfg(night, setFor) : room.configs[setFor] ?? {}} isHost=${true} onSet=${onSet} /></details>` : ''}
     ${!isHost ? html`<p class="dim small center nomargin">${night && !night.done ? `Up next: ${next && next !== 'more' ? META[next].name : 'another game'}. The host starts it.` : 'The host picks what is next.'}</p>` : ''}
 
     <div class="card">

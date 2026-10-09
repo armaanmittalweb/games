@@ -23,6 +23,8 @@ export interface Night {
   rounds: { id: string; points: Record<string, number>; out: string[] }[]
   done: boolean
   champions: string[]
+  /** The host's settings for the night's games, by game. A game without any plays with its night presets. */
+  configs?: Record<string, Record<string, string | number>>
 }
 
 /** How many are left after each tournament cut, down to the two who play the final. */
