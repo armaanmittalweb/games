@@ -2,7 +2,7 @@ import { DurableObject } from 'cloudflare:workers'
 import type { Stats } from './stats'
 import type { GameEnd } from './analytics'
 import { GAMES } from './games'
-import { META, settings, type Mood } from './catalog'
+import { CATALOG, META, settings, type Mood } from './catalog'
 import { MOODS, LENGTHS, cuts, plan, swap, type Length, type Night } from './night'
 import { award } from './points'
 import { dealAt, rng, clean, type Ctx, type Standing } from './engine'
@@ -68,6 +68,8 @@ interface State {
   away?: Record<string, number>
   /** Whether players not in the game may watch it. Off only when the host turns it off. */
   watch?: boolean
+  /** Set once the host picks a game or one is played. Until then the lobby's game follows who is here (see fitPick). */
+  chosen?: boolean
 }
 
 interface Chat { id: string; text: string; at: number }
@@ -223,6 +225,7 @@ export class Room extends DurableObject<Env> {
   /** Picks the game and its players, then shows everyone the rules; begin() sets the game up after that. */
   start(id: string, config: Record<string, string | number>, seats: string[], now: number, night: boolean) {
     const s = this.s!
+    s.chosen = true
     for (const k of this.blobs.keys()) this.dirtyBlobs.add(k)
     this.blobs.clear()
     const inst: Inst = {
@@ -503,6 +506,7 @@ export class Room extends DurableObject<Env> {
         const id = String(m.id)
         if (!GAMES[id] || s.phase === 'game') return bail()
         s.pick = id
+        s.chosen = true
         s.phase = 'lobby'
         break
       }
@@ -768,12 +772,26 @@ export class Room extends DurableObject<Env> {
     await this.ctx.storage.setAlarm(at)
   }
 
+  /**
+   * Until the host picks a game, the lobby shows the first game in the list that the people here can play: a room
+   * made by one person opens on a game for one, and moves to Draw & Guess once three are in.
+   */
+  fitPick(n: number) {
+    const s = this.s!
+    if (s.chosen || s.history.length || s.phase !== 'lobby' || !n) return
+
+    const fit = CATALOG.find(m => GAMES[m.id] && n >= m.min && n <= m.max)
+    if (fit) s.pick = fit.id
+  }
+
   broadcast() {
     const s = this.s
     if (!s) return
     const now = Date.now()
     const online = this.online()
+    this.fitPick(online.size)
     const inst = s.inst
+
     const room = {
       code: s.code, host: s.host, phase: s.phase, pick: s.pick, configs: s.configs, history: s.history.slice(0, 10),
       members: Object.values(s.members).sort((a, b) => a.joinedAt - b.joinedAt).map(m => ({

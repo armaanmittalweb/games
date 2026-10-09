@@ -232,6 +232,14 @@ button.tint { min-height: 52px; padding: 0 22px; background: #e6e9ff; color: #24
 .gc-top > span { min-width: 0; display: flex; flex-direction: column; gap: 3px; }
 .gc-name { font-family: var(--display); font-size: 14px; font-weight: 700; line-height: 1.2; letter-spacing: -.01em; }
 .gc-meta { font-size: 12px; font-weight: 600; color: var(--dim); }
+/* Two to a row on a phone, a card is about 145 px inside: one long word (Connections, Mastermind) would run past its
+   edge at 14 px. A narrow card gets a smaller icon and a name sized to the card. */
+.gcard { container-type: inline-size; }
+@container (max-width: 160px) {
+  .gc-top { gap: 8px; }
+  .gc-top .gicon { width: 34px; height: 34px; }
+  .gc-name { font-size: clamp(12px, 8.6cqi, 14px); }
+}
 .gc-blurb { font-size: 13px; line-height: 1.4; color: var(--lead); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 @media (prefers-reduced-motion: reduce) { .gcard { transition: none; } .gcard:hover:not(:disabled) { transform: none; } }
 /* Game icons: a tile in the colour of the game's kind. */
