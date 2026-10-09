@@ -107,20 +107,22 @@ export function Waiting({ ids, done, label = 'answered' }) {
   return html`<div class="waiting"><span class="dim small">${n}/${ids.length} ${label}</span>${ids.map(id => html`<span key=${id} class=${'chip' + (done.includes(id) ? ' on' : '')} title=${nameOf(id)}><${Avatar} id=${id} size=${20} />${done.includes(id) ? '✓' : ''}</span>`)}</div>`
 }
 
-/** A text box that keeps its own value and sends on Enter. */
+/** A text box that sends on Enter. The page reads what is typed but never writes into the box while someone types:
+ *  a phone keyboard that builds words as it goes (Gboard, Samsung) loses its place when the page sets the value, and
+ *  the letters come out backwards. It is only cleared, after sending. */
 export function AnswerBox({ onSend, placeholder = 'Type your answer', disabled, max = 60, keep = false, label = 'Send', mode = 'text', autoFocus = true }) {
   const [v, setV] = useState('')
   const ref = useRef()
   useEffect(() => { if (autoFocus && !disabled && ref.current && matchMedia('(pointer: fine)').matches) ref.current.focus() }, [disabled])
   const submit = e => {
     e.preventDefault()
-    const t = v.trim()
+    const t = (ref.current?.value ?? '').trim()
     if (!t || disabled) return
     onSend(t)
-    if (!keep) setV('')
+    if (!keep) { ref.current.value = ''; setV('') }
   }
   return html`<form class="answer" onSubmit=${submit}>
-    <input ref=${ref} value=${v} onInput=${e => setV(e.target.value)} maxlength=${max} placeholder=${placeholder} disabled=${disabled}
+    <input ref=${ref} onInput=${e => setV(e.target.value)} maxlength=${max} placeholder=${placeholder} disabled=${disabled}
       inputmode=${mode === 'number' ? 'decimal' : 'text'} autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="send" aria-label=${placeholder} />
     <button class="primary" disabled=${disabled || !v.trim()}>${label}</button></form>`
 }

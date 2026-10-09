@@ -129,7 +129,7 @@ function App() {
 
 function NameField({ value, onInput, onEnter }) {
   return html`<label class="name-row" for="name"><span>Your name</span>
-    <input id="name" maxlength="16" autocomplete="nickname" placeholder="e.g. Armaan" value=${value} onInput=${e => onInput(e.target.value)} onKeyDown=${e => e.key === 'Enter' && onEnter?.()} /></label>`
+    <input id="name" maxlength="16" autocomplete="nickname" placeholder="e.g. Armaan" defaultValue=${value} onInput=${e => onInput(e.target.value)} onKeyDown=${e => e.key === 'Enter' && onEnter?.()} /></label>`
 }
 
 /** The site's top bar, as on every other page. */
@@ -166,6 +166,13 @@ function Home() {
     if (getName()) make(solo ? 'wordle' : play, solo)
     else toast('Enter your name, then tap the game again', 2600)
   }, [])
+  // The code box shows capitals through CSS and is never rewritten while a word is being typed (that is what made
+  // letters come out backwards on Android). A pasted link or invite message becomes just the code.
+  const onCode = e => {
+    const t = e.target.value
+    if (!e.isComposing && (/[/\s]/.test(t.trim()) || t.length > 5)) { const c = codeFrom(t); if (c && c !== t) e.target.value = c }
+    setCode(e.target.value)
+  }
   const join = () => {
     const c = codeFrom(code)
     if (!need()) return
@@ -183,7 +190,7 @@ function Home() {
           <${NameField} value=${name} onInput=${setN} onEnter=${() => make(null)} />
           <button class="primary big" disabled=${busy} onClick=${() => make(null)}>Create a room</button>
           <div class="or" role="separator"><span>Got a code from a friend?</span></div>
-          <div class="join-row"><input class="code-in" value=${code} onInput=${e => { const c = codeFrom(e.target.value); setCode(c); e.target.value = c }} onKeyDown=${e => e.key === 'Enter' && join()} placeholder="Room code or link" autocapitalize="characters" autocomplete="off" spellcheck="false" enterkeyhint="go" aria-label="Room code, or paste the room link" /><button class="tint" onClick=${join}>Join</button></div>
+          <div class="join-row"><input class="code-in" maxlength="200" onInput=${onCode} onKeyDown=${e => e.key === 'Enter' && join()} placeholder="Room code or link" autocapitalize="characters" autocomplete="off" spellcheck="false" enterkeyhint="go" aria-label="Room code, or paste the room link" /><button class="tint" onClick=${join}>Join</button></div>
           <ul class="start-facts"><li>Free</li><li>No sign-up</li><li>No app needed</li></ul>
         </div>
       </div>
@@ -556,7 +563,7 @@ function GameDetail({ meta, isHost, n, onRules }) {
       : html`<label key=${o.key} class="opt"><span>${o.label}</span>
       ${o.kind === 'choice'
         ? html`<select disabled=${!isHost} value=${String(val(o))} onChange=${e => set(o.key, e.target.value)}>${o.choices.map(([v, l]) => html`<option value=${String(v)}>${l}</option>`)}</select>`
-        : html`<span class="num"><input type="number" inputmode="numeric" disabled=${!isHost} min=${o.min} max=${o.max} value=${val(o)} onChange=${e => set(o.key, Number(e.target.value))} />${o.unit ? html`<span class="dim small">${o.unit === 's' ? 'sec' : o.unit}</span>` : ''}</span>`}
+        : html`<span class="num"><input type="number" inputmode="numeric" disabled=${!isHost} min=${o.min} max=${o.max} key=${o.key + ':' + val(o)} defaultValue=${val(o)} onChange=${e => set(o.key, Number(e.target.value))} />${o.unit ? html`<span class="dim small">${o.unit === 's' ? 'sec' : o.unit}</span>` : ''}</span>`}
     </label>`)}</div>
     ${isHost
       ? html`<button class="primary big wide start-btn" disabled=${!fits} onClick=${() => send({ t: 'start', id: meta.id })}>${fits ? html`${ICONS.play}Start ${meta.name}` : n < meta.min ? `Needs ${meta.min}+ players (${n} here)` : `Up to ${meta.max} players`}</button>`
@@ -765,7 +772,7 @@ export function Feedback({ inst, code }) {
     <div class="row wrapgap"><span class="chips">
       <button type="button" class=${'chipbtn sunk' + (kind === 'fix' ? ' sel' : '')} onClick=${() => setKind('fix')}>Something to fix</button>
       <button type="button" class=${'chipbtn sunk' + (kind === 'idea' ? ' sel' : '')} onClick=${() => setKind('idea')}>A game you want</button></span></div>
-    <div class="row"><input class="grow" maxlength="300" value=${text} onInput=${e => setText(e.target.value)} onKeyDown=${e => e.key === 'Enter' && submit()} placeholder=${kind === 'fix' ? 'What went wrong or felt off? (optional)' : 'Which game should we add? (optional)'} aria-label="Feedback" />
+    <div class="row"><input class="grow" maxlength="300" onInput=${e => setText(e.target.value)} onKeyDown=${e => e.key === 'Enter' && submit()} placeholder=${kind === 'fix' ? 'What went wrong or felt off? (optional)' : 'Which game should we add? (optional)'} aria-label="Feedback" />
       <button class="primary" onClick=${submit}>Send</button></div>` : ''}
   </div>`
 }
@@ -777,11 +784,12 @@ function Chat() {
   const box = useRef()
   const [v, setV] = useState('')
   useEffect(() => { if (box.current) box.current.scrollTop = box.current.scrollHeight }, [s.chat.length])
-  const submit = e => { e.preventDefault(); const t = v.trim(); if (!t) return; send({ t: 'chat', text: t }); setV('') }
+  const field = useRef()
+  const submit = e => { e.preventDefault(); const t = (field.current?.value ?? '').trim(); if (!t) return; send({ t: 'chat', text: t }); field.current.value = ''; setV('') }
   return html`<aside class="chat" aria-label="Chat">
     <div class="chat-head"><b>Chat</b><button class="icon" onClick=${toggleChat} aria-label="Close chat">${ICONS.close}</button></div>
     <div class="chat-list" ref=${box}>${s.chat.length ? s.chat.map((c, i) => html`<div key=${i} class="msg"><${Avatar} id=${c.id} size=${28} /><span><${Name} id=${c.id} you=${false} /><span class="msg-text">${c.text}</span></span></div>`) : html`<p class="dim small">Say hi. Chat is handy for Imposter and Code Words discussions.</p>`}</div>
-    <form class="answer" onSubmit=${submit}><input id="chat-in" value=${v} onInput=${e => setV(e.target.value)} maxlength="200" placeholder="Message" autocomplete="off" aria-label="Chat message" /><button class="primary">Send</button></form>
+    <form class="answer" onSubmit=${submit}><input id="chat-in" ref=${field} onInput=${e => setV(e.target.value)} maxlength="200" placeholder="Message" autocomplete="off" aria-label="Chat message" /><button class="primary">Send</button></form>
   </aside>`
 }
 

@@ -55,8 +55,8 @@ export default function WordGrid({ v, inst, seated }) {
     ${!v.grid ? html`<div class="huge center">${Math.max(1, Math.ceil((v.startsAt - t) / 1000))}</div>` : html`
       <div class="wg-word">${word ? word.toUpperCase() : flash ? html`<span class=${flash.ok ? 'ok' : 'bad msg'} role="status">${flash.msg}</span>` : html`<span class="dim">…</span>`}</div>
       <${Grid} grid=${v.grid} size=${v.size} path=${path} live=${live} onPath=${setPath} onDone=${() => { submit(word); setPath([]) }} />
-      ${live ? html`<form class="answer" onSubmit=${e => { e.preventDefault(); submit(typed.trim().toLowerCase()); setTyped('') }}>
-        <input value=${typed} onInput=${e => setTyped(e.target.value)} placeholder="or type a word" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Type a word" /><button class="primary">Add</button></form>` : ''}
+      ${live ? html`<form class="answer" onSubmit=${e => { e.preventDefault(); const box = e.currentTarget.querySelector('input'); submit(box.value.trim().toLowerCase()); box.value = ''; setTyped('') }}>
+        <input onInput=${e => setTyped(e.target.value)} placeholder="or type a word" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Type a word" /><button class="primary">Add</button></form>` : ''}
     `}
   </div>
   <aside class="pside">

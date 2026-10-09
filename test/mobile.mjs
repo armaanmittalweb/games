@@ -2,6 +2,10 @@
 // 844 × 390 landscape) go through the home page, the lobby, the invite sheet, every game and the results. On each
 // screen and phone it looks for sideways scrolling, tap targets under 44 px, the keyboard hiding the answer box, the
 // address bar coming and going, turning the phone mid-game, and a phone that sleeps (goes offline) and wakes.
+// Every text box is also typed into the way Android keyboards type (each word is a composition that grows a letter
+// at a time; a page that rewrites the box mid-word makes the letters come out backwards), with the keyboard up in
+// portrait and landscape. Drag areas (drawing, Word Grid, the map) must not scroll the page under a finger, and a
+// pull down in a room must not reload it.
 //   npm run dev, then: node test/mobile.mjs [game ids…] [--url=https://games.amittal.dev] [--shots=<dir>]
 // Prints a report; exits 1 on a hard failure (sideways scroll, a target under 32 px, a hidden answer box, no
 // reconnect). Targets of 32–43 px are listed as warnings.
@@ -22,6 +26,8 @@ const PHONES = [
   { name: 'Dev', label: 'landscape 844×390', viewport: { width: 844, height: 390 } },
 ]
 const KEYBOARD = 300 // px a phone keyboard takes in portrait
+const KEYBOARD_LANDSCAPE = 200 // and lying on its side
+const kbHeight = vp => vp.height > vp.width ? KEYBOARD : KEYBOARD_LANDSCAPE
 
 const browser = await chromium.launch()
 const fails = [], warns = []
@@ -41,6 +47,7 @@ async function contextFor(p) {
     ws.connectToServer()
   })
   const page = await ctx.newPage()
+  page.cdp = p ? await ctx.newCDPSession(page) : null
   page.on('pageerror', e => fail(p?.name ?? 'Asha', `page error: ${e.message}`))
   page.on('dialog', d => d.accept())
   return { ctx, page, net }
@@ -74,30 +81,57 @@ async function audit(page, where) {
   }
 }
 
-/** The keyboard comes up under a focused answer box: the box has to stay in view and uncovered. */
-async function keyboard(page, p, where) {
-  const sel = '.game-area input:not([disabled]):not([type=number]):not([type=range]), .game-area textarea, .game-area input[type=number]:not([disabled])'
+/** Types `text` the way Gboard does: each word grows as a composition, then is committed. */
+async function gboard(page, text) {
+  for (const word of text.split(' ')) {
+    for (let i = 1; i <= word.length; i++) {
+      await page.cdp.send('Input.imeSetComposition', { text: word.slice(0, i), selectionStart: i, selectionEnd: i })
+      await page.waitForTimeout(60)
+    }
+    await page.cdp.send('Input.insertText', { text: word })
+    if (word !== text.split(' ').at(-1)) await page.cdp.send('Input.insertText', { text: ' ' })
+  }
+}
+
+/** Focus `sel`, bring the keyboard up, check the box is in view and uncovered, type into it, check the letters. */
+async function typeWithKeyboard(page, p, sel, where, text) {
   const box = page.locator(sel).first()
-  if (!(await box.count()) || !(await box.isVisible())) return
-  await box.focus()
-  await page.setViewportSize({ width: p.viewport.width, height: p.viewport.height - KEYBOARD })
+  if (!(await box.count()) || !(await box.isVisible())) return false
+  await box.tap()
+  await page.setViewportSize({ width: p.viewport.width, height: p.viewport.height - kbHeight(p.viewport) })
   await page.waitForTimeout(250)
-  // Phones scroll the focused box into view themselves; the page only has to leave room for it.
   const r = await page.evaluate(s => {
     const e = document.querySelector(s)
     e.scrollIntoView({ block: 'nearest' })
     const b = e.getBoundingClientRect()
     const top = document.elementFromPoint(b.left + b.width / 2, b.top + b.height / 2)
-    const head = document.querySelector('.ghead, .gtitle')
-    const hb = head?.getBoundingClientRect()
-    return { inView: b.top >= -1 && b.bottom <= innerHeight + 1, covered: !(top === e || e.contains(top)), coveredBy: top ? `${top.tagName.toLowerCase()}.${String(top.className).split(' ')[0]}` : '', headVisible: !hb || (hb.bottom > 0 && hb.top < innerHeight) }
+    return { inView: b.top >= -1 && b.bottom <= innerHeight + 1, covered: !(top === e || e.contains(top)), coveredBy: top ? `${top.tagName.toLowerCase()}.${String(top.className).split(' ')[0]}` : '' }
   }, sel)
-  if (!r.inView) fail(where, 'keyboard: the answer box is pushed out of view')
-  else if (r.covered) fail(where, `keyboard: the answer box is covered by ${r.coveredBy}`)
+  if (!r.inView) fail(where, 'keyboard: the box is pushed out of view')
+  else if (r.covered) fail(where, `keyboard: the box is covered by ${r.coveredBy}`)
+  const over = await page.evaluate(() => document.documentElement.scrollWidth - innerWidth)
+  if (over > 1) fail(where, `keyboard: the page scrolls sideways by ${over}px`)
+  await box.fill('')
+  await gboard(page, text)
+  await page.waitForTimeout(300)
+  const got = await box.inputValue()
+  if (got.toLowerCase() !== text.toLowerCase()) fail(where, `typing "${text}" with a phone keyboard gave "${got}"`)
   if (SHOTS) await page.screenshot({ path: `${SHOTS}/${where.replace(/[^a-z0-9]+/gi, '-')}-keyboard.png` })
+  await box.fill('')
   await page.evaluate(() => document.activeElement?.blur())
   await page.setViewportSize(p.viewport)
   await page.waitForTimeout(150)
+  return true
+}
+
+/** Drag areas keep the page still under a finger, and a pull down in a room does not reload it. */
+async function noAccidentalScroll(page, where) {
+  const r = await page.evaluate(() => ({
+    drag: [...document.querySelectorAll('.canvas canvas, .wgrid, .geo-map canvas')].filter(e => e.getBoundingClientRect().width && getComputedStyle(e).touchAction !== 'none').map(e => e.className || e.tagName),
+    pull: getComputedStyle(document.documentElement).overscrollBehaviorY,
+  }))
+  for (const d of r.drag) fail(where, `drag area ${d} lets the page scroll (touch-action is not none)`)
+  if (r.pull !== 'none') fail(where, `a pull down can reload the room (overscroll-behavior-y: ${r.pull})`)
 }
 
 const shot = async (page, name) => { if (SHOTS) await page.screenshot({ path: `${SHOTS}/${name.replace(/[^a-z0-9]+/gi, '-')}.png` }) }
@@ -118,6 +152,8 @@ for (const ph of phones) {
   await ph.page.fill('.code-in', 'Join my game night room AB2CD https://games.amittal.dev/r/AB2CD')
   if ((await ph.page.inputValue('.code-in')) !== 'AB2CD') fail(`home · ${ph.label}`, `pasted link gave "${await ph.page.inputValue('.code-in')}", not AB2CD`)
   await ph.page.fill('.code-in', '')
+  await typeWithKeyboard(ph.page, ph, '#name', `home name · ${ph.label}`, 'Armaan')
+  await typeWithKeyboard(ph.page, ph, '.code-in', `home code · ${ph.label}`, 'ab2cd')
 }
 
 await host.page.goto(BASE + '/')
@@ -160,8 +196,9 @@ for (const id of GAMES) {
     const where = `${id} · ${ph.label}`
     await ph.page.waitForSelector('.game-area', { timeout: 5000 }).catch(() => {})
     await audit(ph.page, where)
+    await noAccidentalScroll(ph.page, where)
     await shot(ph.page, `${id}-${ph.name}`)
-    if (ph.viewport.height > ph.viewport.width) await keyboard(ph.page, ph, where)
+    await typeWithKeyboard(ph.page, ph, '.game-area input:not([disabled]):not([type=number]):not([type=range]), .game-area textarea', where, id === 'closest' || id === 'auction' ? '1999' : 'sholay is great')
   }
   // The address bar hides and shows (the window gets taller and shorter), then the phone is turned and turned back.
   const b = phones[0]

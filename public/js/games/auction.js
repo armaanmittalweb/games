@@ -33,8 +33,8 @@ export default function Auction({ v, inst, seated }) {
       </div>
       ${!sold && seated ? html`<div class="au-raise">
         ${v.raises.map(r => html`<button key=${r} class="primary" disabled=${topMe || v.bid + r > mine} onClick=${() => act({ a: 'bid', by: r })}>+${r}</button>`)}
-        <form class="au-custom" onSubmit=${e => { e.preventDefault(); const n = Number(custom); if (n > v.bid) { bid(n); setCustom('') } }}>
-          <input inputmode="numeric" value=${custom} onInput=${e => setCustom(e.target.value.replace(/\D/g, ''))} placeholder=${`${v.bid + 1}+`} aria-label="Your bid" />
+        <form class="au-custom" onSubmit=${e => { e.preventDefault(); const n = Number(custom); if (n > v.bid) { bid(n); e.currentTarget.querySelector('input').value = ''; setCustom('') } }}>
+          <input inputmode="numeric" maxlength="6" onInput=${e => setCustom(e.target.value.replace(/\D/g, ''))} placeholder=${`${v.bid + 1}+`} aria-label="Your bid" />
           <button disabled=${topMe || !(Number(custom) > v.bid && Number(custom) <= mine)}>Bid</button></form>
       </div>
       ${topMe ? html`<p class="center plus">You are the top bid</p>` : ''}` : ''}

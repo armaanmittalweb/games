@@ -55,7 +55,7 @@ function ClueForm() {
   const [word, setWord] = useState('')
   const [n, setN] = useState(1)
   return html`<form class="clue-form" onSubmit=${e => { e.preventDefault(); if (word.trim()) act({ a: 'clue', word: word.trim(), n }) }}>
-    <input value=${word} onInput=${e => setWord(e.target.value)} placeholder="One-word clue" maxlength="24" autocomplete="off" aria-label="Clue" />
+    <input onInput=${e => setWord(e.target.value)} placeholder="One-word clue" maxlength="24" autocomplete="off" aria-label="Clue" />
     <select value=${n} onChange=${e => setN(Number(e.target.value))} aria-label="How many words">${[1, 2, 3, 4, 5, 6, 7, 8, 9, 0].map(x => html`<option value=${x}>${num(x)}</option>`)}</select>
     <button class="primary">Give clue</button></form>`
 }
