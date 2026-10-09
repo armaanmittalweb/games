@@ -1,10 +1,10 @@
 // GeoGuess: drag and zoom the world map, tap to drop a pin, lock it in. Then the answer is flown to and marked, with
 // a line from every pin to it. The map itself is in geomap.js.
-import { html, Head, Scores, Name, Waiting, colorOf, nameOf, useState, useEffect, useRef } from '../ui.js'
+import { html, Head, Scores, Name, Waiting, colorOf, nameOf, initialOf, useState, useEffect, useRef } from '../ui.js'
 import { act, ME } from '../core.js'
 import { GeoMap } from './geomap.js'
 
-const initial = id => nameOf(id).trim().slice(0, 1).toUpperCase() || '?'
+const initial = initialOf
 const far = km => (km === 0 ? 'inside!' : `${km.toLocaleString('en-IN')} km`)
 
 function WorldMap({ pin, onPin, reveal }) {

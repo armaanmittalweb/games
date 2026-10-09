@@ -60,7 +60,7 @@ export default function WordGrid({ v, inst, seated }) {
     `}
   </div>
   <aside class="pside">
-    <div class="row between"><b>Your words</b><b>${total} pts</b></div>
+    <div class="row between"><b>Your words</b><b>${total} ${total === 1 ? 'pt' : 'pts'}</b></div>
     <div class="words">${v.mine.slice().reverse().map(w => html`<span key=${w} class="wchip">${w}<i>${points(w)}</i></span>`)}${!v.mine.length ? html`<span class="dim small">None yet</span>` : ''}</div>
     <div class="dim small" style="margin-top:12px">Words found so far</div>
     <ul class="plain">${inst.players.map(id => html`<li key=${id} class="row between"><${Name} id=${id} /><span>${v.counts[id] ?? 0}</span></li>`)}</ul>

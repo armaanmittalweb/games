@@ -457,16 +457,28 @@ export class GeoMap {
     return this.drawPin(sx, sy, pin.color, pin.label, age)
   }
 
-  /** A label in a dark pill, kept inside the map. */
-  tag(text, sx, sy, { bold = false, color = '#fff', size = 13 } = {}) {
-    const { ctx, W } = this
+  /**
+   * A label in a dark pill, kept inside the map. Given the labels already drawn (`taken`), it moves down a row, two, or
+   * up one to the first free place, so two players' distances never sit on top of each other.
+   */
+  tag(text, sx, sy, { bold = false, color = '#fff', size = 13, taken = null } = {}) {
+    const { ctx, W, H } = this
     ctx.font = `${bold ? 700 : 600} ${size}px system-ui, sans-serif`
     const w = ctx.measureText(text).width + 16, h = size + 10
-    const x = Math.max(4, Math.min(W - w - 4, sx - w / 2)), y = Math.max(4, sy - h)
+    const x = Math.max(4, Math.min(W - w - 4, sx - w / 2))
+    const at = dy => Math.max(4, Math.min(H - h - 4, sy - h + dy))
+    let y = at(0)
+    if (taken) {
+      const free = y => !taken.some(r => x < r.x + r.w + 3 && x + w + 3 > r.x && y < r.y + r.h + 3 && y + h + 3 > r.y)
+      const spot = [0, h + 4, 2 * (h + 4), -(h + 4), 3 * (h + 4)].map(at).find(free)
+      if (spot !== undefined) y = spot
+      taken.push({ x, y, w, h })
+    }
     ctx.fillStyle = 'rgba(14,14,18,.86)'
     pill(ctx, x, y, w, h, h / 2); ctx.fill()
     ctx.fillStyle = color; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'
     ctx.fillText(text, x + 8, y + h / 2 + 0.5)
+    return { x, y, w, h }
   }
 
   paintReveal(now) {
@@ -509,7 +521,8 @@ export class GeoMap {
     placed.sort((a, b) => a[2] - b[2])
     let busy = false
     for (const [p, sx, sy] of placed) busy = this.drawPin(sx, sy, p.color, p.label, t - 150) || busy
-    if (placed.length <= 6) for (const [p, sx, sy] of placed) this.tag(p.note, sx, sy + 28, { size: 11, color: p.color })
+    const taken = [this.tag(target.label, tx, ty - 14, { bold: true, size: 14, color: '#f5c542' })]
+    if (placed.length <= 6) for (const [p, sx, sy] of placed) this.tag(p.note, sx, sy + 28, { size: 11, color: p.color, taken })
     this.tag(target.label, tx, ty - 14, { bold: true, size: 14, color: '#f5c542' })
     return true // the answer keeps rippling
   }

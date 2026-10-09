@@ -4,8 +4,8 @@
 import { html, useState, useEffect, useRef } from './preact.js'
 import { S, ME, send, toast, copy } from './core.js'
 import { ask } from './dialog.js'
-import { Avatar, Name, nameOf, colorOf, plural } from './ui.js'
-import { META, mods, GameIcon, NightTable, Feedback, ICONS, GameOptions, nightCfg } from './app.js'
+import { Avatar, Name, nameOf, initialOf, colorOf, plural } from './ui.js'
+import { META, mods, loadGame, GameIcon, NightTable, Feedback, ICONS, GameOptions, nightCfg } from './app.js'
 
 const still = () => matchMedia('(prefers-reduced-motion: reduce)').matches
 const ordinal = n => n + (n % 100 >= 11 && n % 100 <= 13 ? 'th' : ['th', 'st', 'nd', 'rd'][n % 10] ?? 'th')
@@ -193,7 +193,7 @@ async function drawCard({ meta, st, winners, lines }) {
     const r = place === 1 ? 70 : 54, cy = top - 110 - r
     c.fillStyle = colorOf(p.id); c.beginPath(); c.arc(x, cy, r, 0, Math.PI * 2); c.fill()
     c.lineWidth = 6; c.strokeStyle = 'rgba(255,255,255,.9)'; c.stroke()
-    c.fillStyle = '#16161a'; c.font = font(800, r); c.fillText(nameOf(p.id).slice(0, 1).toUpperCase(), x, cy + r * 0.36)
+    c.fillStyle = '#16161a'; c.font = font(800, r); c.fillText(initialOf(p.id), x, cy + r * 0.36)
     if (place === 1) { c.font = font(400, 64); c.fillText('👑', x, cy - r - 6) }
   }
   // Everyone else, then the moments.
@@ -253,7 +253,7 @@ export function Results({ isHost }) {
   const pts = inst.pts ?? {}
   const [mod, setMod] = useState(mods[inst.id] ?? null)
   const [busy, setBusy] = useState(false)
-  useEffect(() => { if (!mods[inst.id]) import(`./games/${inst.id}.js`).then(m => { mods[inst.id] = m; setMod(m) }) }, [inst.id])
+  useEffect(() => { if (!mods[inst.id]) loadGame(inst.id).then(setMod, () => {}) }, [inst.id])
   const winners = st.filter(x => x.place === 1).map(x => x.id)
   const head = headline(st, winners, meta, sat)
   const lines = st.length > 1 ? moments(room, inst, st, winners) : []

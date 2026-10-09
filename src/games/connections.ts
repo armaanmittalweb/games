@@ -37,7 +37,8 @@ export function boards(g: Ctx<C>, n: number): Board[] {
     if (cur.some(x => clash(x, grp)) || (strict && cur.filter(x => x.level === grp.level).length >= 2)) return false
     cur.push(grp)
     if (cur.length === 4) {
-      const groups = cur.sort((a, b) => a.level - b.level).map(x => ({ name: x.name, words: g.shuffle(x.words.slice()).slice(0, 4), level: x.level }))
+      // Shown as easiest to trickiest: yellow, green, blue, purple. Two groups of the same level still get their own colours.
+      const groups = cur.sort((a, b) => a.level - b.level).map((x, i) => ({ name: x.name, words: g.shuffle(x.words.slice()).slice(0, 4), level: i + 1 }))
       out.push({ groups, order: g.shuffle(groups.flatMap(x => x.words)) })
       cur = []
     }

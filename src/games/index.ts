@@ -23,7 +23,8 @@ import { wordgrid } from './wordgrid'
 import { wordle } from './wordle'
 
 /** Every game by its catalog id. */
-export const GAMES: Record<string, Game> = {
+// No prototype: an id sent by a player ("toString", "__proto__") is never mistaken for a game.
+export const GAMES: Record<string, Game> = Object.assign(Object.create(null), {
   auction, bluff, closest, codewords, connections, draw, geoguess, imposter, lastcard, make24, mastermind, mindmeld, mostlikely,
   movieguess, musicguess, reaction, stopwatch, telephone, territory, trivia, wordgrid, wordle,
-}
+})

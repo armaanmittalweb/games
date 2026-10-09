@@ -1,5 +1,5 @@
 // Code Words: pick teams, then spymasters give clues and teams reveal cards.
-import { html, useState, useEffect, useTick, fmt, Name, Avatar, nameOf, member } from '../ui.js'
+import { html, useState, useEffect, useTick, fmt, Name, Avatar, nameOf, initialOf, member } from '../ui.js'
 import { act, ME, now } from '../core.js'
 import { confetti } from '../results.js'
 
@@ -206,7 +206,7 @@ export default function CodeWords({ v, inst }) {
       const cls = 'cwc' + (open ? ' open ' + k : spy || over ? ' key-' + k : '') + (marks.includes(ME) ? ' marked' : marks.length ? ' eyed' : '') + (i === just ? ' just' : '')
       return html`<button key=${i} class=${cls} disabled=${!guessing || open} onClick=${() => act({ a: marks.includes(ME) ? 'pick' : 'mark', i })}>
         ${open ? html`<span class="cw-ico">${iconFor(k)}</span>` : ''}
-        <span class="cw-word" style=${`--n:${w.length}`}>${w}</span>${marks.length ? html`<span class="cw-marks">${marks.map(id => html`<i key=${id} title=${nameOf(id)}>${nameOf(id).slice(0, 1)}</i>`)}</span>` : ''}</button>`
+        <span class="cw-word" style=${`--n:${w.length}`}>${w}</span>${marks.length ? html`<span class="cw-marks">${marks.map(id => html`<i key=${id} title=${nameOf(id)}>${initialOf(id)}</i>`)}</span>` : ''}</button>`
     })}</div>
     <div class="cw-bottom">
       ${myTurn && spy && !v.clue ? html`<${ClueForm} />` : ''}

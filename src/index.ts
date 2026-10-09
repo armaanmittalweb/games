@@ -12,6 +12,7 @@ interface Env {
   INTERNAL_KEY?: string
   /** Caps /api/ev per address, so a script cannot flood the counts. */
   EV_LIMIT?: RateLimit
+  ROOM_LIMIT?: RateLimit
 }
 
 /** Compares two strings in time that does not depend on where they differ. */
@@ -37,6 +38,8 @@ export default {
   async fetch(req: Request, env: Env): Promise<Response> {
     const url = new URL(req.url)
     if (url.pathname === '/api/rooms' && req.method === 'POST') {
+      const ip = req.headers.get('cf-connecting-ip') ?? ''
+      if (env.ROOM_LIMIT && !(await env.ROOM_LIMIT.limit({ key: ip })).success) return json({ error: 'Too many rooms made from here. Try again in a minute.' }, 429)
       for (let i = 0; i < 6; i++) {
         const c = code()
         const res = await env.ROOMS.get(env.ROOMS.idFromName(c)).fetch(`https://room/init?code=${c}`)

@@ -732,6 +732,24 @@ export function NightTable({ night }) {
 
 export const mods = {}
 
+/**
+ * A game's screen, loaded when it is first needed. A page left open across an update of the site asks its older shared
+ * files for things only the new ones have, and the game fails to load: the page reloads once (never more than once a
+ * minute) to pick up the new version, and rejoins the room where it was.
+ */
+export function loadGame(id) {
+  if (mods[id]) return Promise.resolve(mods[id])
+  return import(`./games/${id}.js`).then(m => (mods[id] = m), e => {
+    let last = 0
+    try { last = Number(sessionStorage.getItem('gn.reload')) || 0 } catch { /* private mode */ }
+    if (Date.now() - last > 60_000) {
+      try { sessionStorage.setItem('gn.reload', String(Date.now())) } catch { /* private mode */ }
+      location.reload()
+    }
+    throw e
+  })
+}
+
 // The height left above a phone keyboard. Android shrinks the page for the keyboard, iOS lays it over the page; the
 // visual viewport is right on both.
 if (window.visualViewport) {
@@ -764,16 +782,43 @@ function GameScreen() {
   const [mod, setMod] = useState(mods[inst.id] ?? null)
   useEffect(() => {
     if (mods[inst.id]) return setMod(mods[inst.id])
-    import(`./games/${inst.id}.js`).then(m => { mods[inst.id] = m; setMod(m) }).catch(() => toast('Could not load the game. Refresh the page.'))
+    loadGame(inst.id).then(setMod).catch(() => toast('Could not load the game. Refresh the page.'))
   }, [inst.id])
   if (inst.intro) return html`<${IntroWait} inst=${inst} />`
   const seated = inst.players.includes(ME)
   if (!seated && !s.room.watch) return html`<${NoWatching} inst=${inst} />`
   if (!mod || !s.game) return html`<div class="wrap"><p class="dim">Loading…</p></div>`
   const Game = mod.default
+  const missed = s.missed?.n === inst.n && REPLAY.has(inst.id) && seated ? s.missed : null
   return html`<div class=${'game-area g-' + inst.id} ref=${area}>
     ${!seated ? html`<div class="watch">You are watching this game. You will be in the next one.</div>` : ''}
     <${Game} v=${s.game} inst=${inst} seated=${seated} />
+    ${missed && html`<${MissedReveal} key=${missed.v.round} Game=${Game} v=${missed.v} inst=${inst} />`}
+  </div>`
+}
+
+// Games whose reveal screen can be shown again on its own: no sound, and no keys taken from the whole page.
+const REPLAY = new Set(['trivia', 'closest', 'bluff', 'connections', 'geoguess', 'imposter', 'mindmeld', 'mostlikely', 'movieguess'])
+const MISSED_S = 12
+
+/** The reveal a player missed while their phone was reconnecting (the answer, and what everyone picked), shown once. */
+function MissedReveal({ Game, v, inst }) {
+  const card = useRef()
+  useFocusTrap(card)
+  const close = () => { S.missed = null; changed() }
+  useEffect(() => {
+    const t = setTimeout(close, MISSED_S * 1000)
+    const onKey = e => e.key === 'Escape' && close()
+    addEventListener('keydown', onKey)
+    return () => { clearTimeout(t); removeEventListener('keydown', onKey) }
+  }, [])
+  return html`<div class="modal" onClick=${e => e.target === e.currentTarget && close()} role="dialog" aria-modal="true" aria-labelledby="missed-h">
+    <div class="card stack modal-card missed-card" ref=${card}>
+      <div class="missed-head"><div><h2 class="nomargin" id="missed-h">You missed this</h2><p class="dim small nomargin">Your phone was away for a moment. Here is how the last round ended.</p></div>
+        <button class="primary" onClick=${close}>Back to the game</button></div>
+      <div class="missed-view" inert>${html`<${Game} v=${v} inst=${inst} seated=${true} />`}</div>
+      <div class="intro-time" aria-hidden="true"><i class="drain" style=${`animation-duration:${MISSED_S}s`}></i></div>
+    </div>
   </div>`
 }
 

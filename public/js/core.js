@@ -18,7 +18,7 @@ export const getName = () => store.get('wr.name', '')
 export const setName = n => store.set('wr.name', n)
 
 /** Everything the page knows about the room it is in. */
-export const S = { code: null, room: null, game: null, gameN: 0, you: ME, chat: [], unread: 0, chatOpen: false, status: 'idle', closed: null }
+export const S = { code: null, room: null, game: null, gameN: 0, you: ME, chat: [], unread: 0, chatOpen: false, status: 'idle', closed: null, missed: null }
 let offset = 0
 export const now = () => Date.now() + offset
 
@@ -30,13 +30,18 @@ const evSubs = new Set()
 /** Messages that are not part of the state (pen strokes, guesses). Returns an unsubscribe function. */
 export const onEvent = fn => { evSubs.add(fn); return () => evSubs.delete(fn) }
 
-let ws = null, retry = 0, pingT = null, wanted = null, heard = 0
+let ws = null, retry = 0, pingT = null, wanted = null, heard = 0, probe = null
+/** On a new line: the game view this page had before, to tell whether a reveal went by while it was away. */
+let before = null
+/** The last reveal (a round's answers) this page got, when, and since when the page has been in view. */
+let lastReveal = null, inView = Date.now()
 
 export function connect(code) {
   if (wanted === code && ws) return
   disconnect()
   wanted = code
-  Object.assign(S, { code, room: null, game: null, gameN: 0, chat: [], unread: 0, status: 'connecting', closed: null })
+  before = lastReveal = null
+  Object.assign(S, { code, room: null, game: null, gameN: 0, chat: [], unread: 0, status: 'connecting', closed: null, missed: null })
   changed()
   open()
 }
@@ -50,16 +55,24 @@ function open() {
   sock.onopen = () => {
     retry = 0
     heard = Date.now()
+    before = S.game ? { n: S.gameN, v: S.game } : null
     sock.send(JSON.stringify({ t: 'join', id: ME, secret, name: getName(), vid: VID, sid: session() }))
     clearInterval(pingT)
+    // A line can die and still say it is open (a network that changed, a carrier that dropped it): nothing arrives
+    // and nothing tells us. So a quiet line is asked to answer: after 5 s in a game, where a missed update means a
+    // missed reveal, and after 25 s otherwise.
     pingT = setInterval(() => {
-      // A line that went quiet (a phone that slept, a network that changed) can stay "open" without carrying
-      // anything. Two missed pongs and it is replaced.
-      if (Date.now() - heard > 60000) return drop(sock)
-      try { sock.send('ping') } catch { /* closed */ }
-    }, 25000)
+      if (document.visibilityState !== 'visible') return
+      const quiet = Date.now() - heard
+      if (quiet > (S.room?.phase === 'game' ? 5000 : 25000)) check(sock)
+      // A round's time ran out a moment ago and nothing has come since: the reveal should have.
+      const due = S.room?.phase === 'game' ? S.game?.until : 0
+      if (due && now() > due + 1200 && heard + offset < due) check(sock)
+    }, 1000)
   }
   sock.onmessage = e => {
+    // A line already given up on can still deliver what it had queued; that is older than what the new line sent.
+    if (ws !== sock) return
     heard = Date.now()
     if (e.data === 'pong') return
     const m = JSON.parse(e.data)
@@ -70,9 +83,22 @@ function open() {
       S.status = 'open'
       const inst = m.room.inst
       if (!inst) { S.game = null; S.gameN = 0 }
-      else if (m.game) { S.game = m.game.v; S.gameN = m.game.n }
+      else if (m.game) {
+        const was = before, v = m.game.v
+        before = null
+        S.game = v; S.gameN = m.game.n
+        if (v?.phase === 'reveal') lastReveal = { n: m.game.n, v, at: Date.now() }
+        else if (lastReveal?.n === m.game.n && typeof v?.round === 'number' && v.round > lastReveal.v.round) {
+          // The round moved on. A reveal that was on screen for a moment only (a page the phone had paused gets it and
+          // the next round together) or while the page was hidden is offered again.
+          if (Date.now() - Math.max(lastReveal.at, inView) < 1500 || document.visibilityState !== 'visible') S.missed = { n: lastReveal.n, v: lastReveal.v }
+          lastReveal = null
+        } else if (was && missedReveal(was, m.game)) send({ t: 'missed' })
+      }
       else if (S.gameN !== inst.n) { S.game = null; S.gameN = inst.n }
       changed()
+    } else if (m.t === 'missed') {
+      if (m.n === S.gameN) { S.missed = { n: m.n, v: m.v }; changed() }
     } else if (m.t === 'ev') {
       for (const fn of evSubs) fn(m.ev)
     } else if (m.t === 'chat') {
@@ -104,11 +130,31 @@ function open() {
   }
 }
 
+/** Back on a new line in the same game, a round further on, without having seen the reveal in between. */
+function missedReveal(was, next) {
+  const a = was.v, b = next.v
+  if (was.n !== next.n || !a || !b || a.phase === 'reveal' || b.phase === 'reveal') return false
+  return typeof a.round === 'number' && typeof b.round === 'number' && b.round > a.round
+}
+
+/**
+ * Asks the line to answer (the room answers a ping at once, without waking up). No answer within 3 s and the line is
+ * dead though it says it is open: a new one is opened, and the room sends everything afresh.
+ */
+function check(sock = ws) {
+  if (!sock || ws !== sock || sock.readyState !== 1 || probe) return
+  const asked = Date.now()
+  try { sock.send('ping') } catch { return drop(sock) }
+  probe = setTimeout(() => { probe = null; if (ws === sock && heard < asked) drop(sock) }, 3000)
+}
+
 /** Closes a line that has gone quiet and opens a new one now. */
 function drop(sock) {
   if (ws !== sock) return
   ws = null
   clearInterval(pingT)
+  clearTimeout(probe)
+  probe = null
   try { sock.close() } catch { /* closed */ }
   S.status = 'reconnecting'
   changed()
@@ -121,13 +167,9 @@ function drop(sock) {
 function wake() {
   if (!wanted || S.closed || document.visibilityState !== 'visible') return
   if (!ws || ws.readyState > 1) { retry = 0; ws = null; return open() }
-  if (ws.readyState === 1 && Date.now() - heard > 8000) {
-    const sock = ws, asked = Date.now()
-    try { sock.send('ping') } catch { return drop(sock) }
-    setTimeout(() => { if (ws === sock && heard < asked) drop(sock) }, 4000)
-  }
+  if (ws.readyState === 1 && Date.now() - heard > 3000) check()
 }
-document.addEventListener('visibilitychange', () => { wake(); awake() })
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') inView = Date.now(); wake(); awake() })
 addEventListener('online', wake)
 addEventListener('pageshow', e => { if (e.persisted) wake() })
 
@@ -149,12 +191,20 @@ export function disconnect() {
   ws = null
   wanted = null
   clearInterval(pingT)
+  clearTimeout(probe)
+  probe = null
   if (s) try { s.close() } catch { /* closed */ }
 }
 
 export function send(m) {
-  if (ws && ws.readyState === 1) { ws.send(JSON.stringify(m)); session() }
-  else toast('Reconnecting…')
+  if (ws && ws.readyState === 1) {
+    ws.send(JSON.stringify(m))
+    session()
+    // Nearly every message gets an answer from the room. None soon after means the line may be dead: the move
+    // may not have arrived, and the next update (a reveal) would not either.
+    const at = Date.now()
+    setTimeout(() => { if (heard < at) check() }, 2500)
+  } else toast('Reconnecting…')
 }
 /** A move in the current game. */
 export const act = m => send({ t: 'g', ...m })

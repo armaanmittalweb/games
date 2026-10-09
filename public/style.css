@@ -287,6 +287,13 @@ button.tint { min-height: 52px; padding: 0 22px; background: #e6e9ff; color: #24
 .chat-btn i { position: absolute; top: -2px; right: -2px; min-width: 20px; height: 20px; padding: 0 5px; border-radius: 10px; background: #ff5a3c; color: #15161a; font-size: 11px; font-weight: 800; font-style: normal; display: grid; place-items: center; box-shadow: 0 0 0 2px var(--bar); }
 @media (max-width: 420px) { .bar { gap: 4px; padding: 8px 6px; } .bar-code .code { letter-spacing: .03em; } }
 @media (max-width: 370px) { .bar-code { padding: 0 10px; } .bar-code .ico { display: none; } }
+/* A small phone in a game (with the host's pause button too): the game's name keeps the room, on one line. */
+@media (max-width: 400px) {
+  .bar-game .gicon { display: none; }
+  .bar-game { padding-left: 10px; }
+  .bar-game > span.ell { display: block; white-space: nowrap; text-overflow: ellipsis; }
+  .bar-code { padding: 0 10px; } .bar-code .ico { display: none; }
+}
 /* The menu behind the dots. */
 .menu-shade { position: fixed; inset: var(--bar-h) 0 0 0; background: rgb(10 11 14 / .28); z-index: 32; }
 .room-menu { position: fixed; top: calc(var(--bar-h) + 5px); right: 8px; width: min(300px, calc(100% - 16px)); z-index: 33; border-radius: 24px; background: var(--panel); padding: 8px; display: flex; flex-direction: column; gap: 2px;
@@ -358,6 +365,16 @@ ol.rules li > span { flex: none; width: 24px; height: 24px; border-radius: 12px;
 @keyframes intro-in { from { transform: translateY(14px) scale(.96); opacity: 0; } }
 .intro-time { height: 6px; border-radius: 3px; background: var(--panel2); overflow: hidden; }
 .intro-time i { display: block; height: 100%; border-radius: 3px; background: var(--sel); transition: width .25s linear; }
+/* A reveal missed while reconnecting, shown again: the game's own screen, read-only, under a short heading. */
+.missed-card { max-width: 760px; gap: 14px; }
+.missed-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.missed-head > div { flex: 1 1 220px; display: flex; flex-direction: column; gap: 4px; }
+.missed-view { pointer-events: none; border-radius: 20px; background: var(--bg); padding: 12px; }
+.missed-view .play2 { min-height: 0; }
+.missed-view .clock { display: none; }
+.intro-time i.drain { width: 100%; transition: none; animation: drain linear forwards; }
+@keyframes drain { to { width: 0; } }
+@media (prefers-reduced-motion: reduce) { .intro-time i.drain { animation: none; } }
 .intro-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; }
 .intro-foot > span { flex: 1 1 220px; line-height: 1.45; }
 .intro-foot .big { min-height: 52px; padding: 0 28px; }
@@ -568,6 +585,8 @@ button.in { background: var(--right-bg); color: var(--ok); box-shadow: inset 0 0
 .in-list .small { margin-left: 6px; color: var(--ok); font-weight: 700; }
 .res-table tr { animation: res-in .35s calc(1.3s + var(--i) * .06s) ease-out both; }
 .res-table tr.sat td { opacity: .7; }
+/* A long name wraps rather than pushing the score and room points off a phone's screen. */
+.res-table td:nth-child(2), .night-tbl td:nth-child(2) { overflow-wrap: anywhere; min-width: 96px; }
 .res-pts-note { margin-top: 10px; }
 .ptspill { display: inline-grid; place-items: center; min-width: 40px; height: 26px; padding: 0 8px; border-radius: 13px; font-size: 13px; background: var(--btn); color: var(--on-btn); }
 .ptspill.zero { background: var(--panel2); color: var(--lead); }
@@ -685,7 +704,9 @@ table.tbl, .tbl { border-collapse: collapse; width: 100%; font-size: 15px; }
 .choice.mine .letter { background: var(--sel); color: var(--on-sel); }
 .choice.right { background: var(--right-bg); box-shadow: inset 0 0 0 3px var(--ok); }
 .choice.wrong { background: var(--wrong-bg); box-shadow: inset 0 0 0 3px var(--bad); }
-.who-picked { display: flex; gap: 6px; font-size: 12px; flex-wrap: wrap; }
+/* Who picked an answer: a line of its own under the answer (under its text, past the letter), however many there are. */
+.who-picked { display: flex; gap: 4px 8px; font-size: 12px; flex-wrap: wrap; flex: 1 0 100%; min-width: 0; margin-top: -4px; }
+.choice:has(.letter:not(:empty)) .who-picked { margin-left: 44px; }
 .defs { display: grid; gap: 8px; }
 .def { text-align: left; background: var(--panel); border-radius: 18px; padding: 14px 16px; font-size: 16px; font-weight: 500; line-height: 1.45; display: flex; flex-direction: column; gap: 6px; box-shadow: var(--shadow); }
 .def:disabled { opacity: 1; }

@@ -35,6 +35,8 @@ interface Inst {
   again?: string[]
   /** Counted for the Switchboard: moves, errors, players whose connection dropped and players who came back. */
   q?: { acts: number; errs: number; dropped: string[]; back: string[]; readyAll: boolean }
+  /** Players who have sent feedback on this game. */
+  fbBy?: string[]
   /** Players who made at least one move. Only they are ranked for room points (see src/points.ts). */
   moved?: string[]
   /** Once it ends: the room points each player got, who won them, and who made no move. */
@@ -94,6 +96,11 @@ const CHOSEN_CLOSE = new Set([1000, 1001, 1005, 4000, 4001])
 const hex = (bytes: number) => Array.from(crypto.getRandomValues(new Uint8Array(bytes)), b => b.toString(16).padStart(2, '0')).join('')
 const idOk = (x: unknown): x is string => typeof x === 'string' && /^[a-z0-9]{6,40}$/i.test(x)
 
+/** Whether a player id someone sent is a member of the room (and not a name every object has, like "constructor"). */
+const isMember = (s: State, id: string) => Object.hasOwn(s.members, id)
+/** Chat: at most this many lines in this long from one player. */
+const CHAT_BURST = 5, CHAT_WINDOW_MS = 4000
+
 const attached = (ws: WebSocket) => (ws.deserializeAttachment() as { id?: string } | null)?.id
 
 /** A room saved while a game that has since been taken off the site was picked or playing goes back to its lobby. */
@@ -113,6 +120,13 @@ export class Room extends DurableObject<Env> {
   r = rng()
   /** Per socket: the last game view sent, so an unchanged view is not sent again. */
   sent = new WeakMap<WebSocket, string>()
+  /**
+   * Per player: the last reveal (a round's answers) their view showed. A phone whose line died sees none of it; when it
+   * comes back on a new line it asks for this, so it can still show what it missed. Kept in memory only.
+   */
+  reveals = new Map<string, { n: number; v: string }>()
+  /** Per player: when their last few chat lines were sent (see CHAT_BURST). */
+  chatAt = new Map<string, number[]>()
   reports: ((stats: DurableObjectStub<Stats>) => Promise<unknown>)[] = []
   /** The site's place in each content pool, read when a game starts, and the places this room has moved to since. */
   site: Record<string, number> = {}
@@ -406,6 +420,7 @@ export class Room extends DurableObject<Env> {
     if (!s || typeof raw !== 'string' || raw.length > 64_000) return
     let m: Record<string, unknown>
     try { m = JSON.parse(raw) } catch { return }
+    if (!m || typeof m !== 'object' || Array.isArray(m)) return
     if (s.phase === 'game' && s.inst?.intro && (m.t === 'ready' || m.t === 'kick' || Date.now() >= s.inst.wake)) await this.readDecks()
     const now = Date.now()
     s.touched = now
@@ -417,8 +432,8 @@ export class Room extends DurableObject<Env> {
     if (m.t === 'join') {
       const id = String(m.id ?? '').slice(0, 40), secret = String(m.secret ?? '').slice(0, 80)
       let name = clean(m.name, 16)
-      if (!id || !secret) return err('Missing player id')
-      let p = s.members[id]
+      if (!idOk(id) || !secret) return err('Missing player id')
+      let p = isMember(s, id) ? s.members[id] : undefined
       if (p && p.secret !== secret) return err('That player id is taken')
       if (!p) {
         if (!name) return err('Pick a name')
@@ -441,7 +456,7 @@ export class Room extends DurableObject<Env> {
       p.pid ??= hex(6)
       ws.serializeAttachment({ id })
       this.sent.delete(ws)
-      if (!s.host || !s.members[s.host]) s.host = id
+      if (!s.host || !isMember(s, s.host)) s.host = id
       if (s.away) delete s.away[id]
       // A player of this game who comes back is simply in it again: their seat was kept. Someone new takes a seat while
       // the rules are up (never in a tournament); once play is under way they watch, unless the game is still in its
@@ -466,7 +481,7 @@ export class Room extends DurableObject<Env> {
       return this.commit()
     }
 
-    if (!me || !s.members[me]) return err('Join first')
+    if (!me || !isMember(s, me)) return err('Join first')
     const isHost = s.host === me
     const hostOnly = () => { if (!isHost) err('Only the host can do that'); return isHost }
     const bail = () => fired ? this.commit() : undefined
@@ -489,9 +504,19 @@ export class Room extends DurableObject<Env> {
         if (typeof e === 'string') { err(e); if (!this.emits.length && !fired) return }
         break
       }
+      case 'missed': {
+        // Back on a new line after the round moved on: the reveal this player's old line never delivered.
+        const inst = s.inst, r = this.reveals.get(me)
+        if (inst && s.phase === 'game' && r && r.n === inst.n) try { ws.send(`{"t":"missed","n":${r.n},"v":${r.v}}`) } catch { /* closed */ }
+        return bail()
+      }
       case 'chat': {
         const text = clean(m.text, 200)
         if (!text) return bail()
+        const sent = (this.chatAt.get(me) ?? []).filter(t => now - t < CHAT_WINDOW_MS)
+        if (sent.length >= CHAT_BURST) { err('Slow down a little'); return bail() }
+        sent.push(now)
+        this.chatAt.set(me, sent)
         const c = { id: me, text, at: now }
         this.chat.push(c)
         if (this.chat.length > 80) this.chat.splice(0, this.chat.length - 80)
@@ -519,7 +544,9 @@ export class Room extends DurableObject<Env> {
       case 'fb': {
         // Feedback on the game just played: stars, would play again, and a line of text.
         const inst = s.inst
-        if (!inst || s.phase !== 'results') return bail()
+        // One rating per player per game: a page sending it over and over adds nothing.
+        if (!inst || s.phase !== 'results' || inst.fbBy?.includes(me)) return bail()
+        ;(inst.fbBy ??= []).push(me)
         const f = { vid: s.members[me].vid ?? '', rid: s.rid ?? '', game: inst.id, rating: Number(m.rating) || undefined, again: typeof m.again === 'boolean' ? m.again : undefined, kind: m.kind === 'idea' ? 'idea' : 'fix', text: clean(m.text, 300) }
         this.reports.push(st => st.feedback(f))
         this.isQuiet = true
@@ -647,13 +674,13 @@ export class Room extends DurableObject<Env> {
       }
       case 'host': {
         const to = String(m.id ?? '')
-        if (!isHost || !s.members[to]) return bail()
+        if (!isHost || !isMember(s, to)) return bail()
         s.host = to
         break
       }
       case 'kick': {
         const to = String(m.id ?? '')
-        if (!isHost || to === me || !s.members[to]) return bail()
+        if (!isHost || to === me || !isMember(s, to)) return bail()
         delete s.members[to]
         for (const w of this.ctx.getWebSockets()) if (attached(w) === to) try { w.close(4001, 'removed by host') } catch { /* closed */ }
         const inst = s.inst
@@ -872,7 +899,11 @@ export class Room extends DurableObject<Env> {
       // Players see their game; anyone else sees it only while the host lets people watch.
       if (inst && game && ctx && !inst.intro && (s.watch !== false || inst.players.includes(id))) {
         let v: string
-        try { v = JSON.stringify({ n: inst.n, v: game.view(ctx, inst.s, id) }) } catch (e) { console.error('view', inst.id, e); v = JSON.stringify({ n: inst.n, v: null }) }
+        try {
+          const view = game.view(ctx, inst.s, id) as { phase?: string } | null
+          v = JSON.stringify({ n: inst.n, v: view })
+          if (view?.phase === 'reveal') this.reveals.set(id, { n: inst.n, v: JSON.stringify(view) })
+        } catch (e) { console.error('view', inst.id, e); v = JSON.stringify({ n: inst.n, v: null }) }
         // Only send the game view when it changed for this player.
         if (this.sent.get(ws) !== v) { this.sent.set(ws, v); wire = base.slice(0, -1) + ',"game":' + v + '}' }
       }

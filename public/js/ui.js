@@ -21,6 +21,9 @@ export const member = id => S.room?.members.find(m => m.id === id)
 export const nameOf = id => member(id)?.name ?? 'Someone'
 export const colorOf = id => PLAYER_COLORS[(member(id)?.color ?? 0) % PLAYER_COLORS.length]
 const inkOf = id => PLAYER_INK[(member(id)?.color ?? 0) % PLAYER_INK.length]
+/** The first letter of a name as a reader sees it: a whole emoji or a whole Devanagari letter, never half of one. */
+const seg = typeof Intl !== 'undefined' && Intl.Segmenter ? new Intl.Segmenter() : null
+export const initialOf = id => { const n = nameOf(id).trim(); return ((seg ? seg.segment(n)[Symbol.iterator]().next().value?.segment : [...n][0]) ?? '?').toUpperCase() }
 export const plural = (n, one, many = one + 's') => `${n} ${n === 1 ? one : many}`
 
 /** Small drawn marks the games use in place of emoji. */
@@ -37,8 +40,7 @@ export function Name({ id, you = true }) {
 
 /** A player's initial in their colour; `off` (away) leaves a dashed ring instead. */
 export function Avatar({ id, size = 28, off = false }) {
-  const n = nameOf(id)
-  return html`<span class=${'av' + (off ? ' off' : '')} style=${`${off ? '' : `background:${colorOf(id)};`}width:${size}px;height:${size}px;font-size:${Math.round(size * 0.42)}px`} aria-hidden="true">${n.slice(0, 1).toUpperCase()}</span>`
+  return html`<span class=${'av' + (off ? ' off' : '')} style=${`${off ? '' : `background:${colorOf(id)};`}width:${size}px;height:${size}px;font-size:${Math.round(size * 0.42)}px`} aria-hidden="true">${initialOf(id)}</span>`
 }
 
 const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'

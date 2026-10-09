@@ -419,7 +419,7 @@ export const CATALOG: Meta[] = [
   },
 ]
 
-export const META: Record<string, Meta> = Object.fromEntries(CATALOG.map(m => [m.id, m]))
+export const META: Record<string, Meta> = Object.assign(Object.create(null), Object.fromEntries(CATALOG.map(m => [m.id, m])))
 
 /** A game's settings with anything missing or out of range replaced. */
 export function settings(id: string, raw: unknown, base?: Record<string, unknown>): Record<string, string | number> {
