@@ -190,7 +190,8 @@ console.log(`catalog.js, ${CATALOG.length} game pages, games.html, sitemap.xml (
 const kcard = (id, cls) => { const m = CATALOG.find(x => x.id === id), k = KINDS[m.cat]; return `<div class="kcard ${cls}" style="--k:${k.bg};--ink:${k.ink}"><small>${m.cat}</small><span class="gicon">${iconSvg(id)}</span><b>${esc(m.name)}</b></div>` }
 const HERO = `<section class="hero"><div class="hero-text"><h1>Play together, each on your own phone</h1>
       <div class="hero-card start"><div class="start-head"><h2>Start playing</h2><p>Type your name and make a room. You get a code to send your friends.</p></div><label class="name-row" for="name"><span>Your name</span><input id="name" maxlength="16" autocomplete="nickname" placeholder="e.g. Armaan"></label><button class="primary big" type="button">Create a room</button><div class="or" role="separator"><span>Got a code from a friend?</span></div><div class="join-row"><input class="code-in" placeholder="Room code or link" aria-label="Room code, or paste the room link" autocomplete="off"><button class="tint" type="button">Join</button></div><ul class="start-facts"><li>Free</li><li>No sign-up</li><li>No app needed</li></ul></div></div>
-      <div class="hero-art" aria-hidden="true">${kcard('wordle', 'c1')}${kcard('mindmeld', 'c2')}${kcard('draw', 'c3')}</div></section>`
+      <div class="hero-art" aria-hidden="true">${kcard('wordle', 's-left')}${kcard('draw', 's-mid')}${kcard('mindmeld', 's-right')}</div></section>`
+
 
 // The hand-written pages get the same top bar, footer, colours and fonts as the generated ones.
 for (const file of ['index', 'how-to-play', 'game-modes', 'wordle-tips', 'wordle-unlimited', 'privacy', '404']) {

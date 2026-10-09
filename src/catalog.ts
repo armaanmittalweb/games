@@ -347,8 +347,8 @@ export const CATALOG: Meta[] = [
   },
   {
     id: 'mastermind', name: 'Mastermind', cat: 'Puzzle',
-    blurb: 'Crack the secret colour code in as few guesses as you can. Everyone races on the same code.',
-    min: 2, max: 6, minutes: [6, 0],
+    blurb: 'Crack the secret colour code in as few guesses as you can. Play alone, or race your friends on the same code.',
+    min: 1, max: 6, minutes: [6, 0],
     dna: { skill: 5, luck: 1, social: 1, brain: 5, chaos: 1, replay: 4 }, moods: ['think', 'strategic', 'competitive'],
     options: [
       { key: 'rounds', label: 'Codes', kind: 'num', def: 2, min: 1, max: 8 }, secs('seconds', 'Seconds per code', 240, 60, 600),
@@ -362,7 +362,8 @@ export const CATALOG: Meta[] = [
       'Use that to narrow it down. You have ten guesses. Your guesses are yours alone; others only see how many you have used.',
       'The fewest guesses cracks it best (speed breaks a tie): 10 points, then 7, 5, 4, 3, 2, 1.',
     ],
-    seo: { title: 'Mastermind Online Multiplayer: Crack the Code', description: 'Play Mastermind with friends online: everyone races to crack the same colour code in the fewest guesses. Free, no sign-up.', about: 'the code-breaking game Mastermind' },
+    seo: { title: 'Mastermind Online: Crack the Code Alone or With Friends', description: 'Play Mastermind online, alone or with friends racing to crack the same colour code in the fewest guesses. Free, no sign-up.', about: 'the code-breaking game Mastermind' },
+
   },
   {
     id: 'territory', name: 'Territory', cat: 'Strategy',

@@ -14,6 +14,8 @@ const CATS = ['Word', 'Drawing', 'Party', 'Deception', 'Trivia', 'Puzzle', 'Stra
 const DNA = [['skill', 'Skill'], ['luck', 'Luck'], ['social', 'Social'], ['brain', 'Brain'], ['chaos', 'Chaos'], ['replay', 'Replay']]
 const estMinutes = (m, n) => Math.round(m.minutes[0] + m.minutes[1] * n)
 const players = (m) => m.min === m.max ? `${m.min}` : `${m.min}–${m.max}`
+/** Guests see the host's controls as they are; touching one says only the host can change it. */
+const hostOnly = what => () => toast(`Only the host can ${what}`)
 
 // ---------- store hook and routing ----------
 
@@ -145,6 +147,40 @@ function KindCard({ id, cls }) {
   return html`<div class=${'kcard ' + cls} style=${`--k:${bg};--ink:${ink}`}><small>${m.cat}</small><${GameIcon} m=${m} /><b>${m.name}</b></div>`
 }
 
+// The order the welcome's cards go through every game. It opens on Word Race, Draw & Guess and Mind Meld (left to
+// right, as the page is built). After that each card comes from the kind with the most games left that is not the
+// kind just shown, so cards side by side differ in colour, all the way round.
+const DECK = (() => {
+  const deck = ['mindmeld', 'draw', 'wordle']
+  const left = CATS.map(c => CATALOG.filter(m => m.cat === c && !deck.includes(m.id)).map(m => m.id))
+  let last = META.wordle.cat
+  for (;;) {
+    const l = left.filter(l => l.length && META[l[0]].cat !== last).sort((a, b) => b.length - a.length)[0] ?? left.find(l => l.length)
+    if (!l) return deck
+    last = META[l[0]].cat
+    deck.push(l.shift())
+  }
+})()
+
+const TURN_MS = 3200
+
+/**
+ * Three cards from DECK, a window moving one game at a time: ABC, then DAB, then EDA, and round to ABC again. A card
+ * keeps its element as it moves from slot to slot, so CSS moves it. One more waits unseen on the left to rise in,
+ * and the one that just left stays a turn while it slides off.
+ */
+function HeroCards() {
+  const [k, setK] = useState(0)
+  useEffect(() => {
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) return
+    const t = setInterval(() => { if (!document.hidden) setK(x => x + 1) }, TURN_MS)
+    return () => clearInterval(t)
+  }, [])
+  const at = i => DECK[((i % DECK.length) + DECK.length) % DECK.length]
+  return html`<div class="hero-art" aria-hidden="true">${[[k + 3, 'in'], [k + 2, 'left'], [k + 1, 'mid'], [k, 'right'], [k - 1, 'out']]
+    .map(([i, slot]) => html`<${KindCard} key=${at(i)} id=${at(i)} cls=${'s-' + slot} />`)}</div>`
+}
+
 function Home() {
   const [name, setN] = useState(getName())
   const [code, setCode] = useState('')
@@ -194,7 +230,8 @@ function Home() {
           <ul class="start-facts"><li>Free</li><li>No sign-up</li><li>No app needed</li></ul>
         </div>
       </div>
-      <div class="hero-art" aria-hidden="true"><${KindCard} id="wordle" cls="c1" /><${KindCard} id="mindmeld" cls="c2" /><${KindCard} id="draw" cls="c3" /></div>
+      <${HeroCards} />
+
     </section>
     <section class="games-sec">
       <div class="sec-head"><h2>Games</h2><a href="/games">Rules for every game</a></div>
@@ -529,7 +566,7 @@ function Library({ isHost, onRules }) {
       <button class=${'chipbtn' + (fit ? ' sel' : '')} aria-pressed=${fit} onClick=${() => setFit(!fit)}>Fits ${n} ${n === 1 ? 'player' : 'players'}</button>
       ${Object.entries(MOODS).map(([k, label]) => html`<button key=${k} class=${'chipbtn' + (mood === k ? ' sel' : '')} aria-pressed=${mood === k} onClick=${() => setMood(mood === k ? null : k)}>${label}</button>`)}
     </div>
-    <ul class="picks">${list.map(m => html`<li key=${m.id}><button class=${'pick' + (m.id === pick.id ? ' sel' : '')} aria-pressed=${m.id === pick.id} disabled=${!isHost && m.id !== pick.id} onClick=${() => isHost && send({ t: 'pick', id: m.id })}>
+    <ul class="picks">${list.map(m => html`<li key=${m.id}><button class=${'pick' + (m.id === pick.id ? ' sel' : '')} aria-pressed=${m.id === pick.id} aria-disabled=${isHost || m.id === pick.id ? null : 'true'} onClick=${isHost ? () => send({ t: 'pick', id: m.id }) : m.id === pick.id ? null : hostOnly('pick the game')}>
       <${GameIcon} m=${m} size="pick" /><span><b>${m.name}</b><span class="dim">${players(m)} · ~${estMinutes(m, Math.max(n, m.min))} min</span></span></button></li>`)}
       ${!list.length ? html`<li class="dim">No game fits these filters.</li>` : ''}</ul>
     ${!isHost ? html`<p class="dim small center">The host picks the game. You can read the rules meanwhile.</p>` : ''}
@@ -554,7 +591,7 @@ function GameDetail({ meta, isHost, n, onRules }) {
       <button class="link" onClick=${() => onRules(meta.id)}>How to play</button></div>
     <p class="detail-blurb">${meta.blurb}</p>
     <${DnaBars} dna=${meta.dna} />
-    <div class="opts">${meta.options.map(o => asButtons(o)
+    <div class=${'opts' + (isHost ? '' : ' locked')} onClick=${isHost ? null : hostOnly('change the settings')}>${meta.options.map(o => asButtons(o)
       ? html`<div key=${o.key} class="opt"><span id=${'opt-' + o.key}>${o.label}</span>
           <div class="seg" role="radiogroup" aria-labelledby=${'opt-' + o.key}>${o.choices.map(([v, l]) => {
             const on = String(val(o)) === String(v)
@@ -586,9 +623,10 @@ function NightSetup({ isHost }) {
     <div class="card detail">
       <div><h2 class="nomargin">Plan a game night</h2>
       <p class="dim small nomargin">Pick how long and what kind of fun. The games are chosen for ${plural(n, 'player')}, with one table across all of them.</p></div>
-      <div class="lengths">${LENGTHS.map(([k, label, sub]) => html`<button key=${k} class=${'len' + (length === k ? ' sel' : '')} aria-pressed=${length === k} disabled=${!isHost} onClick=${() => setLength(k)}><b>${label}</b><span>${sub}</span></button>`)}</div>
+      <div class="lengths">${LENGTHS.map(([k, label, sub]) => html`<button key=${k} class=${'len' + (length === k ? ' sel' : '')} aria-pressed=${length === k} aria-disabled=${isHost ? null : 'true'} onClick=${isHost ? () => setLength(k) : hostOnly('plan the night')}><b>${label}</b><span>${sub}</span></button>`)}</div>
       ${length === 'tournament' ? html`<p class="small dim nomargin">Tournament: after each game the bottom of the table is knocked out. The last two play the final.</p>` : ''}
-      <div class="opt"><span>How are you feeling? (up to 4)</span><div class="chips">${Object.entries(MOODS).map(([k, label]) => html`<button key=${k} class=${'chipbtn sunk' + (moods.includes(k) ? ' sel' : '')} aria-pressed=${moods.includes(k)} disabled=${!isHost} onClick=${() => toggle(k)}>${label}</button>`)}</div></div>
+      <div class="opt"><span>How are you feeling? (up to 4)</span><div class="chips">${Object.entries(MOODS).map(([k, label]) => html`<button key=${k} class=${'chipbtn sunk' + (moods.includes(k) ? ' sel' : '')} aria-pressed=${moods.includes(k)} aria-disabled=${isHost ? null : 'true'} onClick=${isHost ? () => toggle(k) : hostOnly('plan the night')}>
+${label}</button>`)}</div></div>
       ${isHost ? html`<button class=${planned ? '' : 'primary big'} onClick=${() => send({ t: 'night', length, moods })}>${planned ? 'Plan again' : 'Plan the night'}</button>` : html`<p class="dim small nomargin">The host plans the night.</p>`}
     </div>
     ${planned && html`<div class="card detail">
