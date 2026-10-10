@@ -151,6 +151,22 @@ export const imposter: Game<S, C> = {
       }
     }
   },
+  /** Someone's phone went: their clue turn passes, and the talk, the vote and the imposter's guess stop waiting for them. */
+  away(g, s, id) {
+    if (!s.order.includes(id)) return
+    if (s.phase === 'clue' && s.order[s.turn % s.order.length] === id) {
+      s.clues.push({ id, text: '(away)' })
+      s.turn++
+      return nextClue(g, s)
+    }
+    const here = active(g).filter(p => s.order.includes(p))
+    if (s.phase === 'talk' && here.every(p => s.ready[p])) {
+      s.phase = 'vote'
+      s.until = g.now + VOTE_MS
+      g.wake(s.until)
+    } else if (s.phase === 'vote' && here.every(p => s.votes[p])) tally(g, s)
+    else if (s.phase === 'guess' && id === s.imposter) settle(g, s)
+  },
   tick(g, s) {
     switch (s.phase) {
       case 'clue':

@@ -135,6 +135,17 @@ export const draw: Game<S, C> = {
       return shout({ k: 'msg', id, text })
     }
   },
+  /**
+   * Someone's phone went. The drawer: picking a word, their turn moves to the end (they draw then if they are back);
+   * drawing, the turn ends with the word shown. A guesser: if everyone else here has guessed, the turn ends.
+   */
+  away(g, s, id) {
+    const drawer = s.order[s.turn]
+    if (s.phase === 'choose' && drawer === id) return next(g, s)
+    if (s.phase !== 'draw') return
+    if (drawer === id) return finishTurn(g, s)
+    if (!active(g).some(p => p !== drawer && s.guessed[p] === undefined)) finishTurn(g, s)
+  },
   tick(g, s) {
     if (s.phase === 'choose') return begin(g, s, g.pick(s.choices))
     if (s.phase === 'draw') {

@@ -56,6 +56,8 @@ function play(id: string, n: number, config: Record<string, string | number>, la
         online.delete(gone)
         if (r.rand() < 0.5) { game.leave?.(ctx(), s, gone); gone = '' }
       }
+      // A phone that went: some steps later the room tells the game to stop waiting for it (see AWAY_MS).
+      if (!left || !gone || ended) { /* nothing */ } else if (steps === 110) game.away?.(ctx(), s, gone)
       if (!back && gone && steps === 140) { back = true; online.add(gone) }
       now += 300 + r.int(900)
       if (inst.wake && (now >= inst.wake || r.rand() < 0.05)) now = Math.max(now, inst.wake)

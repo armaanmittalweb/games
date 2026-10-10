@@ -67,6 +67,8 @@ export const stopwatch: Game<S, C> = {
     s.stops[id] = ms
     if (allIn(g, s.stops)) close(g, s)
   },
+  /** Someone's phone went: if everyone still here has played, the round need not wait for them. */
+  away(g, s) { if (s.phase === 'run' && allIn(g, s.stops)) close(g, s) },
   tick(g, s) {
     if (s.phase === 'run') return close(g, s)
     if (s.round + 1 >= s.targets.length) {

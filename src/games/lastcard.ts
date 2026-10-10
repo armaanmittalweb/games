@@ -4,6 +4,8 @@ import { rank, type Ctx, type Game } from '../engine'
 
 interface C { hand: number; stack: 'on' | 'off'; turnSeconds: number }
 interface S {
+  /** Players whose phones went: their turns are short (they draw) until they are back. */
+  gone?: string[]
   order: string[]
   hands: Record<string, string[]>
   pile: string[] // draw pile, top at the end
@@ -53,6 +55,8 @@ function deck(copies: number) {
 
 const top = (s: S) => s.discard[s.discard.length - 1]
 const cur = (s: S) => s.order[s.turn]
+/** A turn for a player whose phone has gone: long enough to see it pass, then they draw. */
+const AWAY_TURN_MS = 2500
 const nameOf = (g: Ctx<C>, id: string) => g.names[id] ?? 'Someone'
 
 function draw(g: Ctx<C>, s: S, id: string, n: number) {
@@ -92,7 +96,9 @@ function say(s: S, line: string) {
 
 function startTurn(g: Ctx<C>, s: S) {
   s.drawn = null
-  s.until = g.now + g.config.turnSeconds * 1000
+  const id = cur(s)
+  if (s.gone?.includes(id) && g.online.has(id)) s.gone = s.gone.filter(x => x !== id)
+  s.until = g.now + (s.gone?.includes(id) ? AWAY_TURN_MS : g.config.turnSeconds * 1000)
   g.wake(s.until)
 }
 
@@ -234,6 +240,14 @@ export const lastcard: Game<S, C> = {
     fx(s, e)
     say(s, line)
     startTurn(g, s)
+  },
+  /** Someone's phone went: their turn (now and later, until they are back) passes with a draw. */
+  away(g, s, id) {
+    if (s.winner || !s.order.includes(id)) return
+    if (!(s.gone ??= []).includes(id)) s.gone.push(id)
+    if (cur(s) !== id) return
+    if (s.drawn) { say(s, `${nameOf(g, id)} drew a card`); step(s); return startTurn(g, s) }
+    takeDraw(g, s, id, true)
   },
   tick(g, s) {
     if (g.now < s.until) return

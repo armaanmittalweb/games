@@ -4,7 +4,7 @@ import { S, ME, connect, disconnect, send, subscribe, changed, toast, share, cop
 import { Avatar, Name, nameOf, plural, useTick, useFocusTrap, Plus } from './ui.js'
 import { STICKERS, STICKER, Sticker } from './stickers.js'
 import { pageView, track, VID } from './track.js'
-import { ask, dismiss, dialogOpen } from './dialog.js'
+import { ask, askText, dismiss, dialogOpen } from './dialog.js'
 import { Results } from './results.js'
 import { CATALOG, KINDS } from '../catalog.js'
 
@@ -97,6 +97,22 @@ function askLeave() {
   return ask({ title: 'Leave the room?', body, ok: 'Leave', cancel: 'Stay', danger: true })
 }
 
+/**
+ * Sheets that are open over the room (the rules, the invite, chat, the menu), newest last. Back on a phone is how people
+ * close things, so in a room it closes the top sheet (or a dialog) instead of asking whether to leave.
+ */
+const sheets = []
+function useBackClose(open, close) {
+  const fn = useRef(close)
+  fn.current = close
+  useEffect(() => {
+    if (!open) return
+    const f = () => fn.current()
+    sheets.push(f)
+    return () => { const i = sheets.lastIndexOf(f); if (i >= 0) sheets.splice(i, 1) }
+  }, [open])
+}
+
 /** Back was pressed in a room. `onRoom`: it landed on the room's own entry (the usual case) rather than past it. */
 async function backPressed(code, onRoom, setWhere) {
   const leave = await askLeave()
@@ -117,6 +133,12 @@ function App() {
         const code = guarded
         if (location.pathname === `/r/${code}` && history.state?.guard === code) return setWhere(route())
         const onRoom = location.pathname === `/r/${code}`
+        // A sheet or a dialog is up: Back closes it, and the room's own Back guard goes back in place.
+        if (onRoom && (dialogOpen() || sheets.length)) {
+          history.pushState({ guard: code }, '', `/r/${code}`)
+          if (dialogOpen()) dismiss(); else sheets[sheets.length - 1]()
+          return
+        }
         // Back again while we are asking: that is a clear answer.
         if (!onRoom && dialogOpen()) { leaving = true; dismiss(); return setWhere(route()) }
         dismiss()
@@ -386,6 +408,11 @@ function Room() {
   const meta = room.inst ? META[room.inst.id] : null
   const here = room.members.filter(m => m.online).length
   useHostChanges()
+  useBackClose(s.chatOpen, toggleChat)
+  useBackClose(menu, () => setMenu(false))
+  useBackClose(tvHelp, () => setTvHelp(false))
+  useBackClose(!!rules, () => setRules(null))
+  useBackClose(!!s.invite, () => { S.invite = false; changed() })
   return html`<div class=${'room' + (s.chatOpen ? ' chat-on' : '')}>
     <header class="bar">
       <button class="icon bar-btn" onClick=${leave} aria-label="Leave the room" title="Leave">${ICONS.back}</button>
@@ -528,6 +555,7 @@ export const ICONS = {
   get help() { return svg(html`<circle cx="12" cy="12" r="9" /><path d="M9.6 9.3a2.5 2.5 0 1 1 3.6 2.3c-.8.4-1.2 1-1.2 1.9M12 16.8v.2" />`) },
   get flag() { return svg(html`<path d="M5 21V4M5 4h11l-2 4 2 4H5" />`) },
   get share() { return svg(html`<path d="M12 3v12M7 8l5-5 5 5M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6" />`) },
+  get pencil() { return svg(html`<path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16v4zM13.5 6.5l4 4" />`) },
   get chat() { return svg(html`<path d="M21 12a8 8 0 0 1-11.6 7.1L4 20.5l1.4-4.9A8 8 0 1 1 21 12z" />`) },
   get more() { return html`<svg viewBox="0 0 24 24" aria-hidden="true" class="ico fillico"><circle cx="5.5" cy="12" r="1.9" /><circle cx="12" cy="12" r="1.9" /><circle cx="18.5" cy="12" r="1.9" /></svg>` },
   get close() { return svg(html`<path d="M6 6l12 12M18 6L6 18" />`) },
@@ -638,6 +666,7 @@ function RulesIntro({ inst, code }) {
   }
   // The game started while the rules were still up (time ran out): they go the same way.
   useEffect(() => { if (!inst.intro) close(false) }, [!!inst.intro])
+  useBackClose(state === 'open', () => close())
   useEffect(() => {
     if (state !== 'open') return
     const onKey = e => { if (e.key === 'Escape' || e.key === 'Enter') close() }
@@ -688,7 +717,7 @@ function IntroWait({ inst }) {
   const left = Math.max(0, Math.ceil((inst.intro.until - now()) / 1000))
   return html`<div class="wrap narrow intro-wait">
     <div class="center intro-top"><${GameIcon} m=${m} size="huge" /><h2 class="nomargin">${m.name}</h2>
-      <p class="dim nomargin">Starting in <b class="ink">${left} s</b>, or as soon as everyone has read the rules.</p></div>
+      <p class="dim nomargin">${here.every(id => ready.includes(id)) ? html`Everyone here knows this one. Starting in <b class="ink">${left} s</b>.` : html`Starting in <b class="ink">${left} s</b>, or as soon as everyone has read the rules.`}</p></div>
     <ul class="ready-list">${here.map(id => html`<li key=${id} class=${ready.includes(id) ? 'ok' : ''}><${Avatar} id=${id} size=${30} /><span class="grow ell"><${Name} id=${id} /></span><span class="small">${ready.includes(id) ? 'ready' : 'reading…'}</span></li>`)}</ul>
     <p class="dim small center">Need the rules again? Tap the game's name at the top.</p>
   </div>`
@@ -725,6 +754,14 @@ function Lobby({ isHost, onRules }) {
   </div>`
 }
 
+/** A new name, in this room and for next time (a borrowed phone joins with its owner's saved name). */
+async function rename(current) {
+  const name = await askText({ title: 'Change your name', body: 'Everyone in the room sees the new one.', value: current, max: 16, label: 'Your name' })
+  if (!name || name === current) return
+  setName(name)
+  send({ t: 'name', name })
+}
+
 function Players({ isHost }) {
   const room = S.room
   const [menu, setMenu] = useState(null)
@@ -735,6 +772,7 @@ function Players({ isHost }) {
     <ul class="plist">${list.map(m => html`<li key=${m.id} class=${m.online ? '' : 'off'}>
       <${Avatar} id=${m.id} size=${34} off=${!m.online} /><span class="grow pname"><span class="ell"><${Name} id=${m.id} /></span>${m.id === room.host ? html`<span class="host" title="Host" role="img" aria-label="Host">${ICONS.crown}</span>` : ''}${m.online ? '' : html`<span class="dim small strong">away</span>`}</span>
       ${played && m.wins ? html`<span class="wins" title="Wins">${ICONS.trophy}${m.wins}</span>` : ''}${played ? html`<b class="ppts">${m.pts}</b>` : ''}
+      ${m.id === ME ? html`<button class="icon pdots rename" onClick=${() => rename(m.name)} aria-label="Change your name" title="Change your name">${ICONS.pencil}</button>` : ''}
       ${isHost && m.id !== ME ? html`<button class="icon pdots" onClick=${() => setMenu(menu === m.id ? null : m.id)} aria-label=${`Options for ${m.name}`} aria-expanded=${menu === m.id}>${ICONS.more}</button>` : ''}
       ${menu === m.id ? html`<div class="pmenu"><button onClick=${() => { send({ t: 'host', id: m.id }); setMenu(null) }}>Make host</button><button class="danger-text" onClick=${async () => { setMenu(null); if (await ask({ title: `Remove ${m.name}?`, body: 'They are taken out of the room and any game they are in.', ok: 'Remove', danger: true })) send({ t: 'kick', id: m.id }) }}>Remove</button></div>` : ''}
     </li>`)}</ul>
@@ -989,6 +1027,7 @@ function MissedReveal({ Game, v, inst }) {
   const card = useRef()
   useFocusTrap(card)
   const close = () => { S.missed = null; changed() }
+  useBackClose(true, close)
   useEffect(() => {
     const t = setTimeout(close, MISSED_S * 1000)
     const onKey = e => e.key === 'Escape' && close()

@@ -73,6 +73,8 @@ export const reaction: Game<S, C> = {
     } else return
     if (allIn(g, s.taps)) close(g, s)
   },
+  /** Someone's phone went: if everyone still here has played, the round need not wait for them. */
+  away(g, s) { if (s.phase === 'wait' && allIn(g, s.taps)) close(g, s) },
   tick(g, s) {
     if (s.phase === 'wait') return close(g, s)
     if (s.round + 1 >= s.kinds.length) {

@@ -23,6 +23,8 @@ interface P {
   finishedAt: number | null
 }
 interface S {
+  /** Players whose phones went mid-game: the end does not wait for them while they are away. */
+  gone?: string[]
   words: string[]
   phase: 'playing' | 'reveal'
   startedAt: number
@@ -123,7 +125,7 @@ function settle(g: Parameters<Game['view']>[0], s: S) {
   if (blitz(c)) {
     const waiting = ps.filter(([id, q]) => !q.results[s.round] && (g.online.has(id) || q.guesses.length))
     if (!waiting.length) endRound(g, s)
-  } else if (ps.every(([, q]) => q.finishedAt !== null)) {
+  } else if (ps.every(([id, q]) => q.finishedAt !== null || (s.gone?.includes(id) && !g.online.has(id)))) {
     finish(g, s)
   }
 }
@@ -169,6 +171,11 @@ export const wordle: Game<S, C> = {
 
   leave(g, s) { settle(g, s) },
 
+  /** Someone's phone went: the round (or the game) need not wait for their words. */
+  away(g, s, id) {
+    if (!(s.gone ??= []).includes(id)) s.gone.push(id)
+    settle(g, s)
+  },
   tick(g, s) {
     const c = g.config
     const now = g.now

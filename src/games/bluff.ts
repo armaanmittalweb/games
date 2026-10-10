@@ -80,6 +80,11 @@ export const bluff: Game<S, C> = {
       if (voters.every(p => s.votes[p] !== undefined)) reveal(g, s)
     }
   },
+  /** Someone's phone went: if everyone still here has written (or voted), move on without them. */
+  away(g, s) {
+    if (s.phase === 'write' && allIn(g, s.fakes)) vote(g, s)
+    else if (s.phase === 'vote' && active(g).filter(p => canVote(s, p)).every(p => s.votes[p] !== undefined)) reveal(g, s)
+  },
   tick(g, s) {
     if (s.phase === 'write') return vote(g, s)
     if (s.phase === 'vote') return reveal(g, s)

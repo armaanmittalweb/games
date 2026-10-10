@@ -79,6 +79,8 @@ export const trivia: Game<S, C> = {
     s.answers[id] = { i, at: g.now }
     if (allIn(g, s.answers)) reveal(g, s)
   },
+  /** Someone's phone went: if everyone still here has played, the round need not wait for them. */
+  away(g, s) { if (s.phase === 'answer' && allIn(g, s.answers)) reveal(g, s) },
   tick(g, s) {
     if (s.phase === 'answer') return reveal(g, s)
     if (s.round + 1 >= s.qs.length) return g.end(byPoints(s.pts, g.players, id => `${s.right[id] ?? 0}/${s.qs.length} right`))

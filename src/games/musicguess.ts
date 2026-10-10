@@ -76,6 +76,8 @@ export const musicguess: Game<S, C> = {
     s.chose[id] = i
     if (allIn(g, s.picks)) reveal(g, s)
   },
+  /** Someone's phone went: if everyone still here has played, the round need not wait for them. */
+  away(g, s) { if (s.phase === 'listen' && allIn(g, s.picks)) reveal(g, s) },
   tick(g, s) {
     if (s.phase === 'listen') {
       if (!s.long && g.now < s.until) { s.long = true; g.wake(s.until); return }

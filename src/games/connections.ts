@@ -110,6 +110,12 @@ export const connections: Game<S, C> = {
     const done = Object.fromEntries(Object.entries(s.me).filter(([, x]) => x.done !== null).map(([k]) => [k, 1]))
     if (allIn(g, done)) reveal(g, s)
   },
+  /** Someone's phone went: if everyone still here has finished, the puzzle need not wait for them. */
+  away(g, s) {
+    if (s.phase !== 'play') return
+    const done = Object.fromEntries(Object.entries(s.me).filter(([, x]) => x.done !== null).map(([k]) => [k, 1]))
+    if (allIn(g, done)) reveal(g, s)
+  },
   tick(g, s) {
     if (s.phase === 'play') return reveal(g, s)
     if (s.round + 1 >= s.boards.length) {

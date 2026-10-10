@@ -113,8 +113,21 @@ export default {
     // A room link (/r/CODE) is the game page itself. Rooms last a day, so search engines are told not to index them.
     if (/^\/r\/[A-Za-z0-9]{5}$/.test(url.pathname) || /^\/tv(\/[A-Za-z0-9]{5})?$/.test(url.pathname)) {
       const page = await env.ASSETS.fetch(new Request(new URL('/', url), req))
-      const res = new Response(page.body, page)
+      let res = new Response(page.body, page)
       res.headers.set('x-robots-tag', 'noindex')
+      // An invite pasted into WhatsApp shows what it is: this room, not the site's front page.
+      if (url.pathname.startsWith('/r/')) {
+        const code = url.pathname.slice(3).toUpperCase()
+        const title = `Join room ${code} on Game Night`
+        const desc = 'Tap to join. Party games you play together, each on your own phone. Free, no app, no sign-up.'
+        const set = (v: string) => ({ element(e: Element) { e.setAttribute('content', v) } })
+        res = new HTMLRewriter()
+          .on('meta[property="og:title"]', set(title)).on('meta[name="twitter:title"]', set(title))
+          .on('meta[property="og:description"]', set(desc)).on('meta[name="twitter:description"]', set(desc))
+          .on('meta[property="og:url"]', set(`${url.origin}/r/${code}`))
+          .on('title', { element(e) { e.setInnerContent(`${title}`) } })
+          .transform(res)
+      }
       return res
     }
     return env.ASSETS.fetch(req)

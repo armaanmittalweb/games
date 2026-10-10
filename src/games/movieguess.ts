@@ -96,6 +96,8 @@ export const movieguess: Game<S, C> = {
       if (s.feed.length > 40) s.feed.shift()
     }
   },
+  /** Someone's phone went: if everyone still here has played, the round need not wait for them. */
+  away(g, s) { if (s.phase === 'guess' && allIn(g, s.got)) reveal(g, s) },
   tick(g, s) {
     if (s.phase === 'guess') {
       if (g.now >= s.until) return reveal(g, s)

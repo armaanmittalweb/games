@@ -207,6 +207,13 @@ export const codewords: Game<S, C> = {
       return endTurn(g, s, 'pass')
     }
   },
+  /** Someone's phone went: a spymaster's key passes to a teammate who is here, so their team is not stuck. */
+  away(g, s, id) {
+    const t = s.team[id]
+    if (!t || s.spy[t] !== id || s.phase === 'teams') return
+    const sub = guessers(s, t).find(p => g.online.has(p))
+    if (sub) s.spy[t] = sub
+  },
   tick(g, s) {
     if (s.phase === 'play' && s.until && g.now >= s.until) endTurn(g, s, 'time')
     else if (s.phase === 'over' && s.until && g.now >= s.until) results(g, s)

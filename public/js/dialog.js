@@ -36,6 +36,10 @@ export const ask = ({ title, body = '', ok = 'OK', cancel = 'Cancel', danger = f
 /** Shows text to copy by hand, for when the browser will not put it on the clipboard. */
 export const showText = ({ title, body = '', text }) => show({ title, body, text, ok: 'Done', cancel: '' })
 
+/** Asks for a line of text (a new name). Resolves with what was typed, trimmed, or null if cancelled. */
+export const askText = ({ title, body = '', value = '', ok = 'Save', max = 40, label = title }) =>
+  show({ title, body, edit: { value, max, label }, ok, cancel: 'Cancel' }).then(r => (typeof r === 'string' && r.trim() ? r.trim() : null))
+
 /** Whether a dialog is up (the room's back-button guard asks before stacking another). */
 export const dialogOpen = () => !!open
 
@@ -55,15 +59,16 @@ function Dialog() {
   const safe = useRef(), main = useRef(), field = useRef()
   const close = yes => {
     if (open !== d) return
+    const typed = d.edit ? field.current?.value ?? '' : ''
     open = null
     changed()
-    d.resolve(yes)
+    d.resolve(d.edit && yes ? typed : yes)
   }
   useEffect(() => {
     if (!d) return
     const back = document.activeElement
-    ;(d.text !== undefined ? field : d.danger && safe.current ? safe : main).current?.focus()
-    if (d.text !== undefined) field.current?.select()
+    ;(d.text !== undefined || d.edit ? field : d.danger && safe.current ? safe : main).current?.focus()
+    if (d.text !== undefined || d.edit) field.current?.select()
     const onKey = e => { if (e.key === 'Escape') { e.preventDefault(); close(false) } }
     addEventListener('keydown', onKey)
     return () => { removeEventListener('keydown', onKey); back?.focus?.({ preventScroll: true }) }
@@ -76,6 +81,7 @@ function Dialog() {
       <h2 id="dlg-title" class="nomargin">${d.title}</h2>
       ${d.body ? html`<p id="dlg-body" class="nomargin dlg-body">${d.body}</p>` : ''}
       ${d.text !== undefined ? html`<input ref=${field} readonly value=${d.text} onFocus=${e => e.target.select()} aria-label="Text to copy" />` : ''}
+      ${d.edit ? html`<input ref=${field} defaultValue=${d.edit.value} maxlength=${d.edit.max} aria-label=${d.edit.label} autocomplete="off" enterkeyhint="done" onKeyDown=${e => { if (e.key === 'Enter') { e.preventDefault(); close(true) } }} />` : ''}
       <div class="dialog-btns">
         ${d.cancel ? html`<button ref=${safe} class=${d.danger ? 'primary' : ''} onClick=${() => close(false)}>${d.cancel}</button>` : ''}
         <button ref=${main} class=${d.danger ? 'danger' : 'primary'} onClick=${() => close(true)}>${d.ok}</button>

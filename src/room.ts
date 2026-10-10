@@ -35,6 +35,8 @@ interface Inst {
   again?: string[]
   /** Counted for the Switchboard: moves, errors, players whose connection dropped and players who came back. */
   q?: { acts: number; errs: number; dropped: string[]; back: string[]; readyAll: boolean }
+  /** Seated players whose line went, and when; -1 once the game has stopped waiting for them (see AWAY_MS). */
+  gone?: Record<string, number>
   /** Players who have sent feedback on this game. */
   fbBy?: string[]
   /** Players who made at least one move. Only they are ranked for room points (see src/points.ts). */
@@ -70,6 +72,8 @@ interface State {
   /** The room's leaderboard across every game played in it. */
   totals: Record<string, { pts: number; wins: number; games: number }>
   history: { id: string; at: number; winners: string[] }[]
+  /** Who has played each game in this room: they already know its rules (see start). */
+  played?: Record<string, string[]>
   night: Night | null
   /** How far into each content pool this room has dealt (see Ctx.deal). */
   decks?: Record<string, number>
@@ -93,8 +97,15 @@ const LAZY_MS = 4000
 const COLORS = 12
 /** How long the rules stay up before a game, unless everyone closes them first. */
 const INTRO_MS = 30_000
+/** The rules for a game everyone seated has already played in this room: just a short "get ready". */
+const REPLAY_MS = 3_000
 /** The longest a pause can run before the game carries on by itself. */
 const PAUSE_MAX_MS = 5 * 60_000
+/**
+ * How long a game waits for a seated player whose phone has gone (a dead battery, a call, a closed tab) before it plays
+ * on without them: long enough to switch to WhatsApp and back, short enough that nobody stares at a blank canvas.
+ */
+const AWAY_MS = 15_000
 /** A player back within this long after their connection dropped counts as reconnected. */
 const REJOIN_MS = 120_000
 // Close codes a player chooses (leaving, closing the tab, opened elsewhere, removed); anything else is a dropped line.
@@ -156,6 +167,9 @@ export class Room extends DurableObject<Env> {
   moved: Record<string, number> = {}
   // Set while handling one message:
   emits: { msg: unknown; to?: string | string[] }[] = []
+  /** Each player's last message number, per page: a page sends again what a dead line may have lost, and the room
+   *  takes each message once. Kept in memory only; after an eviction a resent move is simply taken (rare). */
+  lastQ = new Map<string, { page: string; n: number }>()
   isQuiet = false
   isLazy = false
   ended: { standings: Standing[]; summary?: unknown } | null = null
@@ -260,6 +274,19 @@ export class Room extends DurableObject<Env> {
     let fired = false
     if (s.hostAway && now >= s.hostAway + HOST_GRACE_MS && this.hostCheck(now)) fired = true
     if (s.inst?.paused && now >= s.inst.paused.until) { this.resume(s.inst, now); fired = true }
+    const cur = s.inst
+    if (cur?.gone && s.phase === 'game' && !cur.intro && !cur.paused && cur.s) {
+      const online = this.online()
+      for (const [id, at] of Object.entries(cur.gone)) {
+        if (at < 0 || now < at + AWAY_MS) continue
+        if (online.has(id) || !cur.players.includes(id)) { delete cur.gone[id]; continue }
+        cur.gone[id] = -1
+        fired = true
+        const game = GAMES[cur.id]
+        this.run(g => game.away?.(g, cur.s, id), now)
+        if (s.inst !== cur || s.phase !== 'game') break
+      }
+    }
     for (let i = 0; i < 20; i++) {
       const inst = s.inst
       if (!inst || s.phase !== 'game' || inst.paused || !inst.wake || this.clock(now) < inst.wake) break
@@ -294,9 +321,13 @@ export class Room extends DurableObject<Env> {
     s.chosen = true
     for (const k of this.blobs.keys()) this.dirtyBlobs.add(k)
     this.blobs.clear()
+    // Whoever has played this game here already knows the rules: they count as having read them. If that is everyone
+    // (Play again), the rules give way to a short countdown.
+    const knew = seats.filter(p => s.played?.[id]?.includes(p))
+    const wait = seats.length && knew.length === seats.length ? REPLAY_MS : INTRO_MS
     const inst: Inst = {
-      id, n: ++s.seq, config, players: seats.slice(), s: null, wake: now + INTRO_MS, startedAt: 0, chosen: now, endedAt: 0, standings: null, night,
-      intro: { until: now + INTRO_MS, ready: [] }, q: { acts: 0, errs: 0, dropped: [], back: [], readyAll: false }, moved: [],
+      id, n: ++s.seq, config, players: seats.slice(), s: null, wake: now + wait, startedAt: 0, chosen: now, endedAt: 0, standings: null, night,
+      intro: { until: now + wait, ready: knew }, q: { acts: 0, errs: 0, dropped: [], back: [], readyAll: false }, moved: [],
     }
     s.inst = inst
     s.phase = 'game'
@@ -369,6 +400,8 @@ export class Room extends DurableObject<Env> {
       if (winners.includes(st.id)) t.wins++
     }
     s.history.unshift({ id: inst.id, at: now, winners })
+    const played = (s.played ??= {})
+    played[inst.id] = [...new Set([...(played[inst.id] ?? []), ...inst.players])]
     s.history.length = Math.min(s.history.length, 20)
     const n = s.night
     if (inst.night && n && !n.done) {
@@ -476,6 +509,15 @@ export class Room extends DurableObject<Env> {
       if (p && p.secret !== secret) return err('That player id is taken')
       if (!p) {
         if (!name) return err('Pick a name')
+        // The same person in a second browser (the invite opened in WhatsApp, then in Chrome) is a new player to the
+        // room. A namesake who is away, has played nothing here and does not run the room gives the name up, so they do
+        // not come back as "Asha 2" beside a ghost of themselves.
+        const here = this.online()
+        for (const q of Object.values(s.members)) {
+          if (q.name.toLowerCase() !== name.toLowerCase() || here.has(q.id) || s.totals[q.id]?.games || q.id === s.host || q.id === s.owner) continue
+          if (s.inst && s.phase !== 'lobby' && s.inst.players.includes(q.id)) continue
+          delete s.members[q.id]
+        }
         if (Object.keys(s.members).length >= MAX_MEMBERS) return err(`Room is full (${MAX_MEMBERS} players)`)
         const taken = new Set(Object.values(s.members).map(q => q.name.toLowerCase()))
         for (let k = 2; taken.has(name.toLowerCase()); k++) name = `${name.slice(0, 13)} ${k}`
@@ -512,6 +554,7 @@ export class Room extends DurableObject<Env> {
         if (inst.intro && !tourney) inst.players.push(id)
         else if (game.join && !tourney) this.run(g => { if (game.join!(g, inst.s, id)) inst.players.push(id) }, now)
       }
+      if (inst?.gone) delete inst.gone[id]
       // Back after a dropped connection, in the same game.
       const dropAt = s.drops?.[id]
       if (dropAt !== undefined) {
@@ -529,6 +572,11 @@ export class Room extends DurableObject<Env> {
     const isHost = s.host === me
     const hostOnly = () => { if (!isHost) err('Only the host can do that'); return isHost }
     const bail = () => fired ? this.commit() : undefined
+    if (typeof m.q === 'string') {
+      const [page, num] = m.q.split('.'), n = Number(num), last = this.lastQ.get(me)
+      if (last && last.page === page && n <= last.n) return bail()
+      this.lastQ.set(me, { page, n })
+    }
 
     switch (m.t) {
       case 'g': {
@@ -724,6 +772,14 @@ export class Room extends DurableObject<Env> {
         s.phase = 'lobby'
         break
       }
+      case 'name': {
+        // A new name in the room (a borrowed phone joined with someone else's saved name).
+        const name = clean(m.name, 16)
+        if (!name || name === s.members[me].name) return bail()
+        if (Object.values(s.members).some(q => q.id !== me && q.name.toLowerCase() === name.toLowerCase())) { err('Someone here already has that name'); return bail() }
+        s.members[me].name = name
+        break
+      }
       case 'watch': {
         if (!hostOnly()) return bail()
         s.watch = m.on !== false
@@ -804,6 +860,8 @@ export class Room extends DurableObject<Env> {
       if (CHOSEN_CLOSE.has(code)) delete s.away[id]
       else s.away[id] = now
     }
+    // A seated player gone mid-game, for whatever reason: the game stops waiting for them after AWAY_MS.
+    if (id && inst && inst.players.includes(id) && !online.has(id)) (inst.gone ??= {})[id] = now
     // A seated player whose line dropped mid-game (not one who left on purpose).
     if (id && inst?.q && inst.players.includes(id) && !online.has(id) && !CHOSEN_CLOSE.has(code)) {
       s.drops ??= {}
@@ -819,6 +877,8 @@ export class Room extends DurableObject<Env> {
         delete s.hostAway
       } else s.hostAway = now
     }
+    // Left on purpose having played nothing here: off the list, so the room does not fill up with people who are gone.
+    if (id && code === LEFT && s.members[id] && !online.has(id) && !s.totals[id]?.games && !s.inst?.players.includes(id) && s.host !== id) delete s.members[id]
     // Whoever is still here may all have closed the rules already.
     if (inst?.intro) {
       await this.readDecks()
@@ -961,6 +1021,7 @@ export class Room extends DurableObject<Env> {
     else if (inst?.wake) at = Math.min(at, inst.wake + (inst.off ?? 0))
     if (this.dirty) at = Math.min(at, this.lastSave + LAZY_MS)
     if (s.hostAway) at = Math.min(at, s.hostAway + HOST_GRACE_MS)
+    if (inst?.gone && !inst.paused) for (const t of Object.values(inst.gone)) if (t >= 0) at = Math.min(at, t + AWAY_MS)
     if (at === this.alarmAt) return
     this.alarmAt = at
     await this.ctx.storage.setAlarm(at)

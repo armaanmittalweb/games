@@ -58,6 +58,8 @@ export const mostlikely: Game<S, C> = {
   leave(g, s, id) {
     for (const [v, to] of Object.entries(s.votes)) if (to === id) delete s.votes[v]
   },
+  /** Someone's phone went: if everyone still here has played, the round need not wait for them. */
+  away(g, s) { if (s.phase === 'vote' && allIn(g, s.votes)) reveal(g, s) },
   tick(g, s) {
     if (s.phase === 'vote') return reveal(g, s)
     if (s.round + 1 >= s.prompts.length) {

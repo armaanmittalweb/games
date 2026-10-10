@@ -33,6 +33,14 @@ const evSubs = new Set()
 export const onEvent = fn => { evSubs.add(fn); return () => evSubs.delete(fn) }
 
 let ws = null, retry = 0, pingT = null, wanted = null, heard = 0, probe = null
+/**
+ * Messages that may not have reached the room: sent on a line that then went quiet, or while there was no line. They
+ * go again once a new line is in (the room ignores any it already had: each carries this page's number and its own).
+ * One that the room answered more than RTT_MS later certainly arrived; one older than KEEP_MS is stale (the round has
+ * moved on) and is dropped.
+ */
+const PAGE = rand(4), RTT_MS = 1500, KEEP_MS = 12_000
+let seq = 0, outbox = [], resend = false
 /** On a new line: the game view this page had before, to tell whether a reveal went by while it was away. */
 let before = null
 /** The last reveal (a round's answers) this page got, when, and since when the page has been in view. */
@@ -45,6 +53,7 @@ export function connect(code, { tv = false } = {}) {
   S.screen = tv
   wanted = code
   before = lastReveal = null
+  outbox = []
   Object.assign(S, { code, room: null, game: null, gameN: 0, chat: [], unread: 0, status: 'connecting', closed: null, missed: null, recap: null })
   changed()
   open()
@@ -61,6 +70,7 @@ function open() {
     heard = Date.now()
     before = S.game && !S.screen ? { n: S.gameN, v: S.game } : null
     sock.send(JSON.stringify(S.screen ? { t: 'join', tv: true } : { t: 'join', id: ME, secret, name: getName(), vid: VID, sid: session() }))
+    resend = outbox.length > 0
     clearInterval(pingT)
     // A line can die and still say it is open (a network that changed, a carrier that dropped it): nothing arrives
     // and nothing tells us. So a quiet line is asked to answer: after 5 s in a game, where a missed update means a
@@ -78,6 +88,8 @@ function open() {
     // A line already given up on can still deliver what it had queued; that is older than what the new line sent.
     if (ws !== sock) return
     heard = Date.now()
+    // Only an answer on the same line shows a message arrived; a new line's first words say nothing about the old one.
+    if (outbox.length) outbox = outbox.filter(x => x.sock !== sock || heard - x.at < RTT_MS)
     if (e.data === 'pong') return
     const m = JSON.parse(e.data)
     if (m.t === 's') {
@@ -107,6 +119,13 @@ function open() {
         } else if (was && missedReveal(was, m.game)) send({ t: 'missed' })
       }
       else if (S.gameN !== inst.n) { S.game = null; S.gameN = inst.n }
+      // In again on a new line: whatever may not have arrived on the old one goes now, in order.
+      if (resend) {
+        resend = false
+        const fresh = outbox.filter(x => Date.now() - x.at < KEEP_MS)
+        for (const x of fresh) try { sock.send(x.raw) } catch { /* closed again */ }
+        outbox = fresh.map(x => ({ ...x, at: Date.now(), sock }))
+      }
       changed()
     } else if (m.t === 'host') {
       // The host changed hands: a line that dropped for too long, someone taking over, or the owner coming back.
@@ -216,14 +235,18 @@ export function disconnect(left = false) {
 }
 
 export function send(m) {
-  if (ws && ws.readyState === 1) {
-    ws.send(JSON.stringify(m))
+  const raw = JSON.stringify({ ...m, q: `${PAGE}.${++seq}` })
+  const at = Date.now()
+  const live = ws && ws.readyState === 1 ? ws : null
+  outbox.push({ raw, at, sock: live })
+  if (outbox.length > 40) outbox.shift()
+  if (live) {
+    ws.send(raw)
     session()
     // Nearly every message gets an answer from the room. None soon after means the line may be dead: the move
     // may not have arrived, and the next update (a reveal) would not either.
-    const at = Date.now()
     setTimeout(() => { if (heard < at) check() }, 2500)
-  } else toast('Reconnecting…')
+  } else toast('Reconnecting… it goes as soon as you are back')
 }
 /** A move in the current game. */
 export const act = m => send({ t: 'g', ...m })

@@ -57,6 +57,12 @@ export interface Game<S = any, C = any> {
   join?(g: Ctx<C>, s: S, pid: string): boolean
   /** A seated player was removed from the room. */
   leave?(g: Ctx<C>, s: S, pid: string): void
+  /**
+   * A seated player's phone has been off the room for a while (a dead battery, a call, the tab closed): stop waiting
+   * for them. Their seat stays and they play on when they are back, so nothing of theirs is taken away. A turn of theirs
+   * passes; a round that waits for everyone checks again, since everyone still here may already be done.
+   */
+  away?(g: Ctx<C>, s: S, pid: string): void
   /** What one player (or a spectator, who is not in players) sees. Never include what they must not know. */
   view(g: Ctx<C>, s: S, pid: string): unknown
   /** A legal move for tests; null when this player has nothing to do. */

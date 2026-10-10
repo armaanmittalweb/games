@@ -89,6 +89,8 @@ export const mastermind: Game<S, C> = {
     if (r.exact === pegs || list.length >= MAX_GUESSES) s.done[id] = g.now - s.opened
     if (allIn(g, s.done)) reveal(g, s)
   },
+  /** Someone's phone went: if everyone still here has played, the round need not wait for them. */
+  away(g, s) { if (s.phase === 'play' && allIn(g, s.done)) reveal(g, s) },
   tick(g, s) {
     if (s.phase === 'play') return reveal(g, s)
     if (s.round + 1 >= s.codes.length) {

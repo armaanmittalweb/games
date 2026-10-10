@@ -120,6 +120,8 @@ export const geoguess: Game<S, C> = {
     s.pins[id] = { lat: Math.round(lat * 100) / 100, lon: Math.round(lon * 100) / 100 }
     if (allIn(g, s.pins)) reveal(g, s)
   },
+  /** Someone's phone went: if everyone still here has played, the round need not wait for them. */
+  away(g, s) { if (s.phase === 'pin' && allIn(g, s.pins)) reveal(g, s) },
   tick(g, s) {
     if (s.phase === 'pin') return reveal(g, s)
     if (s.round + 1 >= s.places.length) {

@@ -127,6 +127,11 @@ export const territory: Game<S, C> = {
     const can = active(g).filter(p => moves(s, s.seats.indexOf(p)).length > 0)
     if (can.every(p => s.picks[p] !== undefined)) resolve(g, s)
   },
+  /** Someone's phone went: if everyone still here who can move has picked, the turn plays now. */
+  away(g, s) {
+    const can = active(g).filter(p => moves(s, s.seats.indexOf(p)).length > 0)
+    if (can.every(p => s.picks[p] !== undefined)) resolve(g, s)
+  },
   tick(g, s) { resolve(g, s) },
   leave(g, s, id) { delete s.picks[id] },
   view(g, s, id) {

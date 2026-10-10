@@ -96,6 +96,8 @@ export const make24: Game<S, C> = {
     s.solved[id] = g.now - s.opened
     if (allIn(g, s.solved)) reveal(g, s)
   },
+  /** Someone's phone went: if everyone still here has played, the round need not wait for them. */
+  away(g, s) { if (s.phase === 'play' && allIn(g, s.solved)) reveal(g, s) },
   tick(g, s) {
     if (s.phase === 'play') return reveal(g, s)
     if (s.round + 1 >= s.hands.length) {

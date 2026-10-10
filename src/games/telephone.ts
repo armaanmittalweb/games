@@ -117,6 +117,8 @@ export const telephone: Game<S, C> = {
     } else return
     if (active(g).every(p => s.done[p])) close(g, s)
   },
+  /** Someone's phone went: if everyone still here is done with this step, pass the books on. */
+  away(g, s) { if (s.phase === 'play' && active(g).length && active(g).every(p => s.done[p])) close(g, s) },
   tick(g, s) {
     if (s.phase === 'play') return close(g, s)
     advance(g, s)
