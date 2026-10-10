@@ -769,16 +769,42 @@ function Library({ isHost, onRules }) {
   const [mood, setMood] = useState(null)
   const list = CATALOG.filter(m => (!fit || (n >= m.min && n <= m.max)) && (!mood || m.moods.includes(mood)))
   const pick = META[room.pick] ?? CATALOG[0]
-  return html`<div class="stack">
-    <${GameDetail} meta=${pick} isHost=${isHost} n=${n} onRules=${onRules} />
-    <div class="chips scroller" role="group" aria-label="Filters">
+  const startRef = useRef()
+  const games = html`<div class="chips scroller" role="group" aria-label="Filters">
       <button class=${'chipbtn' + (fit ? ' sel' : '')} aria-pressed=${fit} onClick=${() => setFit(!fit)}>Fits ${n} ${n === 1 ? 'player' : 'players'}</button>
       ${Object.entries(MOODS).map(([k, label]) => html`<button key=${k} class=${'chipbtn' + (mood === k ? ' sel' : '')} aria-pressed=${mood === k} onClick=${() => setMood(mood === k ? null : k)}>${label}</button>`)}
     </div>
-    <ul class="picks">${list.map(m => html`<li key=${m.id}><button class=${'pick' + (m.id === pick.id ? ' sel' : '')} aria-pressed=${m.id === pick.id} aria-disabled=${isHost || m.id === pick.id ? null : 'true'} onClick=${isHost ? () => send({ t: 'pick', id: m.id }) : m.id === pick.id ? null : hostOnly('pick the game')}>
+    <ul class="picks">${list.map(m => html`<li key=${m.id}><button class=${'pick' + (m.id === pick.id ? ' sel' : '')} aria-pressed=${m.id === pick.id} onClick=${isHost ? () => send({ t: 'pick', id: m.id }) : () => onRules(m.id)}>
       <${GameIcon} m=${m} size="pick" /><span><b>${m.name}</b><span class="dim">${players(m)} · ~${estMinutes(m, Math.max(n, m.min))} min</span></span></button></li>`)}
-      ${!list.length ? html`<li class="dim">No game fits these filters.</li>` : ''}</ul>
-    ${!isHost ? html`<p class="dim small center">The host picks the game. You can read the rules meanwhile.</p>` : ''}
+      ${!list.length ? html`<li class="dim">No game fits these filters.</li>` : ''}</ul>`
+  // Only the host picks, so the others get the list folded away: open, a tap on a game shows its rules.
+  return html`<div class="stack">
+    <${GameDetail} meta=${pick} isHost=${isHost} n=${n} onRules=${onRules} startRef=${startRef} />
+    ${isHost ? games : html`<details class="card fold guest-games"><summary><span>Browse all ${CATALOG.length} games<span class="dim small">The host picks. Tap one to read its rules.</span></span></summary><div class="stack">${games}</div></details>`}
+    <${StartBar} meta=${pick} isHost=${isHost} n=${n} target=${startRef} />
+  </div>`
+}
+
+/** On a phone the game's card sits below the invite and the players, with the list of games under it: this bar keeps
+ *  the picked game and its Start button (for the others, who starts it) at the bottom of the screen. It steps aside
+ *  while the card's own button is in view, and a tap on the game's name scrolls back up to its settings. */
+function StartBar({ meta, isHost, n, target }) {
+  const [inView, setInView] = useState(true)
+  useEffect(() => {
+    const el = target.current
+    if (!el || !('IntersectionObserver' in window)) return
+    const io = new IntersectionObserver(([e]) => setInView(e.isIntersecting), { rootMargin: '0px 0px -24px 0px' })
+    io.observe(el)
+    return () => io.disconnect()
+  }, [meta.id, isHost])
+  const fits = n >= meta.min && n <= meta.max
+  const off = inView ? -1 : 0
+  const toCard = () => document.querySelector('.detail')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  return html`<div class=${'start-bar' + (inView ? ' off' : '')} aria-hidden=${inView ? 'true' : null}>
+    <button class="sb-game" tabindex=${off} onClick=${toCard} aria-label=${`${meta.name}: see its settings`}><${GameIcon} m=${meta} size="pick" />
+      <span class="ell"><b>${meta.name}</b><span class="dim small">${fits ? `${players(meta)} players · ~${estMinutes(meta, Math.max(n, meta.min))} min` : n < meta.min ? `Needs ${meta.min}+ players (${n} here)` : `Up to ${meta.max} players`}</span></span></button>
+    ${isHost ? html`<button class="primary start-btn" tabindex=${off} disabled=${!fits} onClick=${() => send({ t: 'start', id: meta.id })}>${ICONS.play}Start</button>`
+      : html`<span class="sb-wait"><span class="wait-dots" aria-hidden="true"><i></i><i></i><i></i></span><span><${Name} id=${S.room.host} you=${false} /> starts it</span></span>`}
   </div>`
 }
 
@@ -810,7 +836,7 @@ export function GameOptions({ meta, cfg, isHost, onSet }) {
 /** The settings a night's game will be played with: the night's presets until the host changes them. */
 export const nightCfg = (night, id) => night.configs?.[id] ?? META[id].night
 
-function GameDetail({ meta, isHost, n, onRules }) {
+function GameDetail({ meta, isHost, n, onRules, startRef }) {
   const room = S.room
   const fits = n >= meta.min && n <= meta.max
   return html`<div class="card detail">
@@ -820,8 +846,8 @@ function GameDetail({ meta, isHost, n, onRules }) {
     <${DnaBars} dna=${meta.dna} />
     <${GameOptions} meta=${meta} cfg=${room.configs[meta.id] ?? {}} isHost=${isHost} onSet=${config => send({ t: 'config', id: meta.id, config })} />
     ${isHost
-      ? html`<button class="primary big wide start-btn" disabled=${!fits} onClick=${() => send({ t: 'start', id: meta.id })}>${fits ? html`${ICONS.play}Start ${meta.name}` : n < meta.min ? `Needs ${meta.min}+ players (${n} here)` : `Up to ${meta.max} players`}</button>`
-      : html`<div class="host-wait"><span class="wait-dots" aria-hidden="true"><i></i><i></i><i></i></span>Waiting for ${nameOf(room.host)} to start</div>`}
+      ? html`<button ref=${startRef} class="primary big wide start-btn" disabled=${!fits} onClick=${() => send({ t: 'start', id: meta.id })}>${fits ? html`${ICONS.play}Start ${meta.name}` : n < meta.min ? `Needs ${meta.min}+ players (${n} here)` : `Up to ${meta.max} players`}</button>`
+      : html`<div ref=${startRef} class="host-wait"><span class="wait-dots" aria-hidden="true"><i></i><i></i><i></i></span>Waiting for ${nameOf(room.host)} to start</div>`}
   </div>`
 }
 
@@ -1279,7 +1305,7 @@ function Chat() {
   return html`<aside class="chat" aria-label="Chat">
     <div class="chat-head"><b>Chat</b><button class="icon" onClick=${toggleChat} aria-label="Close chat">${ICONS.close}</button></div>
     <div class="chat-list" ref=${box}>${s.chat.length ? s.chat.map((c, i) => html`<div key=${i} class="msg"><${Avatar} id=${c.id} size=${28} /><span><${Name} id=${c.id} you=${false} /><span class="msg-text">${c.text}</span></span></div>`) : html`<p class="dim small">Say hi. Chat is handy for Imposter and Code Words discussions.</p>`}</div>
-    <form class="answer" onSubmit=${submit}><input id="chat-in" ref=${field} onInput=${e => setV(e.target.value)} maxlength="200" placeholder="Message" autocomplete="off" aria-label="Chat message" /><button class="primary">Send</button></form>
+    <form class="answer" onSubmit=${submit}><input id="chat-in" ref=${field} onInput=${e => setV(e.target.value)} maxlength="200" placeholder="Message" autocomplete="off" enterkeyhint="send" aria-label="Chat message" /><button class="primary">Send</button></form>
   </aside>`
 }
 

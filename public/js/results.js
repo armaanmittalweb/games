@@ -19,13 +19,24 @@ function headline(st, winners, meta, sat) {
   if (!st.length) return { big: 'Nobody played this one', sub: 'No moves were made, so no room points were given.', win: false }
   if (sat.includes(ME)) return { big: 'You sat this one out', sub: 'Make at least one move to score room points.', win: false }
   const mine = st.find(x => x.id === ME)
-  if (!mine) return { big: winners.length ? `${and(winners.map(nameOf))} ${winners.length > 1 ? 'win' : 'wins'}!` : `${meta.name} is over`, sub: winners.length ? `${meta.name} is over.` : '', win: false }
+  if (!mine) {
+    // Someone watching (or the TV): who won, and by how much.
+    const top = st.filter(x => x.place === 1), next = st.filter(x => x.place > 1).sort((a, b) => a.place - b.place)[0]
+    const gap = top.length === 1 && next && num(top[0]) !== null && num(next) !== null ? num(top[0]) - num(next) : null
+    return { big: winners.length ? `${and(winners.map(nameOf))} ${winners.length > 1 ? 'win' : 'wins'}!` : `${meta.name} is over`,
+      sub: gap > 0 ? `${fmtNum(gap)} ahead of ${nameOf(next.id)}.` : winners.length ? `${meta.name} is over.` : '', win: false }
+  }
   // Alone, there is nobody to beat: just the score.
   if (st.length === 1) {
     const score = num(mine) !== null ? `You scored ${fmtNum(num(mine))}. ` : ''
     return { big: 'Game over', sub: score + (sat.length ? 'Nobody else made a move, so there were no room points.' : ''), win: false }
   }
   const level = st.filter(x => x.place === mine.place && x.id !== ME)
+  // Everyone level: nobody beat anybody, so no "You tied for 1st!" (above all when nothing was scored).
+  if (st.every(x => x.place === 1) && num(mine) !== null) {
+    return num(mine) === 0 ? { big: 'Nobody scored', sub: 'Everyone finished level on 0. Run it back?', win: false }
+      : { big: 'Everyone tied!', sub: `All level on ${fmtNum(num(mine))}.`, win: false, cheer: true }
+  }
   // A team game (Code Words) gives words, not numbers, and everyone on a team the same place.
   const team = num(mine) === null && level.length > 0
   if (mine.place === 1) {
@@ -61,7 +72,7 @@ function moments(room, inst, st, winners, me = ME) {
     if (streak >= 2) out.push(['🔥', `${who(w)} ${w === me ? 'have' : 'has'} won ${streak} in a row`])
     else if (m && m.wins === 1 && m.games > 1) out.push(['🎉', `First win of the night for ${w === me ? 'you' : nameOf(w)}`])
   }
-  if (winners.length > 1) out.push(['🤝', 'A dead heat at the top'])
+  if (winners.length > 1 && !st.every(x => num(x) === 0)) out.push(['🤝', 'A dead heat at the top'])
   const [a, b] = [st.find(x => x.place === 1), st.find(x => x.place === 2)]
   if (winners.length === 1 && num(a) !== null && num(b) !== null && num(a) > num(b)) {
     const gap = num(a) - num(b)
@@ -261,6 +272,8 @@ export function Results({ isHost, tv = false }) {
   useEffect(() => { if (!mods[inst.id]) loadGame(inst.id).then(setMod, () => {}) }, [inst.id])
   const winners = st.filter(x => x.place === 1).map(x => x.id)
   const head = headline(st, winners, meta, sat)
+  // Nobody scored: the podium stays plain, without crowns or a gold step.
+  const blank = st.length > 1 && st.every(x => num(x) === 0)
   const lines = st.length > 1 ? moments(room, inst, st, winners) : []
   const next = night && !night.done ? night.plan[night.idx + 1] ?? (night.length === 'endless' ? 'more' : null) : null
   const Summary = mod?.Summary
@@ -290,13 +303,13 @@ export function Results({ isHost, tv = false }) {
       <div class="res-game"><${GameIcon} m=${meta} size="tiny" /> ${meta.name}${mins ? ` · ${mins} min` : ''} · ${plural(inst.players.length, 'player')}</div>
       <h1 class="res-big">${head.big}</h1>
       ${head.sub ? html`<p class="res-sub">${head.sub}</p>` : ''}
-      ${st.length ? html`<div class="podium">${[2, 1, 3].map(p => {
+      ${st.length ? html`<div class=${'podium' + (blank ? ' blank' : '')}>${[2, 1, 3].map(p => {
         const at = st.filter(x => x.place === p)
         // Players level on a place share its step, side by side; empty steps keep the podium's shape unless nobody
         // is below 1st at all.
         if (!at.length && !st.some(x => x.place > 1)) return ''
         return at.length ? html`<div class=${'pod p' + p + (at.length > 1 ? ' tied' : '')} style=${`--n:${at.length}`}>
-          <div class="pod-names">${at.map(x => html`<div key=${x.id} class=${x.id === ME ? 'me' : ''}>${p === 1 ? html`<span class="crown" aria-hidden="true">${ICONS.crown}</span>` : ''}<${Avatar} id=${x.id} size=${p === 1 ? 50 : 40} /><div class="ell pod-name"><${Name} id=${x.id} /></div><div class="pod-score"><${Count} to=${x.score} delay=${1300} /></div></div>`)}</div>
+          <div class="pod-names">${at.map(x => html`<div key=${x.id} class=${x.id === ME ? 'me' : ''}>${p === 1 && !blank ? html`<span class="crown" aria-hidden="true">${ICONS.crown}</span>` : ''}<${Avatar} id=${x.id} size=${p === 1 ? 50 : 40} /><div class="ell pod-name"><${Name} id=${x.id} /></div><div class="pod-score"><${Count} to=${x.score} delay=${1300} /></div></div>`)}</div>
           <div class="pod-block">${p}</div></div>` : html`<div class=${'pod p' + p + ' empty'}></div>`
       })}</div>` : ''}
       ${lines.length ? html`<ul class="moments">${lines.map(([e, t], i) => html`<li key=${i} style=${`--i:${i}`}>${MARKS[e]?.() ?? ''}${t}</li>`)}</ul>` : ''}

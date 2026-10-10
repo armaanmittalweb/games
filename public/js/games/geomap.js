@@ -465,15 +465,17 @@ export class GeoMap {
     const { ctx, W, H } = this
     ctx.font = `${bold ? 700 : 600} ${size}px system-ui, sans-serif`
     const w = ctx.measureText(text).width + 16, h = size + 10
-    const x = Math.max(4, Math.min(W - w - 4, sx - w / 2))
+    let x = Math.max(4, Math.min(W - w - 4, sx - w / 2))
     const at = dy => Math.max(4, Math.min(H - h - 4, sy - h + dy))
     let y = at(0)
     if (taken) {
       const free = y => !taken.some(r => x < r.x + r.w + 3 && x + w + 3 > r.x && y < r.y + r.h + 3 && y + h + 3 > r.y)
       const spot = [0, h + 4, 2 * (h + 4), -(h + 4), 3 * (h + 4)].map(at).find(free)
       if (spot !== undefined) y = spot
-      taken.push({ x, y, w, h })
     }
+    // The zoom buttons (.geo-zoom: four 44 px buttons from 8 px in) cover the top-right corner: slide the label left of them.
+    if (y < 210 && x + w > W - 58) x = Math.max(4, W - 58 - w)
+    if (taken) taken.push({ x, y, w, h })
     ctx.fillStyle = 'rgba(14,14,18,.86)'
     pill(ctx, x, y, w, h, h / 2); ctx.fill()
     ctx.fillStyle = color; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'

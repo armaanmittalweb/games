@@ -200,7 +200,7 @@ export const CATALOG: Meta[] = [
       'A right answer scores 500 points plus up to 500 more for speed. Three in a row and you get a streak bonus.',
       'The questions are about India unless the host picks another topic in the settings. India questions are written for this game; the other topics come from the Open Trivia Database.',
     ],
-    seo: { title: 'Multiplayer Trivia Quiz with Friends, Free', description: 'A free live trivia quiz for friends: same questions, a timer, speed bonuses and streaks. Pick a category and difficulty. Private rooms.', about: 'a live multiplayer trivia quiz' },
+    seo: { title: 'Multiplayer Trivia Quiz with Friends, Free', description: 'A free live trivia quiz for friends with 5,000+ questions about India: Bollywood, cricket, food, history and more. Same questions, a timer, speed bonuses and streaks.', about: 'a live multiplayer trivia quiz' },
   },
   {
     id: 'wordgrid', name: 'Word Grid', cat: 'Word',

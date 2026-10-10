@@ -23,7 +23,7 @@
   --bg: #121318; --panel: #1c1e25; --panel2: #262932; --line: #343844; --soft: #2a2d36; --rule: #2c2f38; --text: #f2f3f5; --dim: #a3a7b3; --lead: #c9ccd4;
   --btn: #f2f3f5; --on-btn: #121318; --btn2: #2a2d36; --seg-on: #3a3e4a; --seg-shadow: none;
   --accent: #8c9eff; --sel: #8c9eff; --sel-bg: #23284a; --on-sel: #121318;
-  --green: #2e8540; --yellow: #e0b13a; --gray: #3a3d46; --key: #4a4e5a; --keytext: #f2f3f5; --tile-empty: #343844; --tile-filled: #7d8190;
+  --green: #2e8540; --yellow: #e0b13a; --gray: #3a3d46; --key: #5a5f6d; --keytext: #f2f3f5; --key-off: #1f2128; --key-offtext: #6b6f7c; --tile-empty: #343844; --tile-filled: #7d8190;
   --red: #d92d20; --ok: #6fd08c; --bad: #ff8a7a; --gold: #ffc83d; --goldtext: #ffc83d; --redteam: #e5534b; --blueteam: #4a8fe7;
   --input: #16171d; --field: #737889; --bar: #121318; --chatbg: #1c1e25; --feed: #16171d;
   --sel-blue: #23284a; --tint-blue: #1f2a3d; --me: #23284a; --tint-green: #18291f; --tint-gold: #2e2814;
@@ -37,7 +37,7 @@
   --bg: #eef0f3; --panel: #ffffff; --panel2: #f2f3f6; --line: #dcdfe5; --soft: #e6e8ec; --rule: #e6e8ec; --text: #15161a; --dim: #5c6070; --lead: #4e5260;
   --btn: #15161a; --on-btn: #ffffff; --btn2: #e3e6ec; --seg-on: #ffffff; --seg-shadow: 0 1px 3px rgb(21 22 26 / .12);
   --accent: #2443e0; --sel: #3355ff; --sel-bg: #eef1ff; --on-sel: #ffffff;
-  --green: #2e8540; --yellow: #e0b13a; --gray: #7c808c; --key: #dcdfe5; --keytext: #15161a; --tile-empty: #d3d6dd; --tile-filled: #8a8e9a;
+  --green: #2e8540; --yellow: #e0b13a; --gray: #7c808c; --key: #dcdfe5; --keytext: #15161a; --key-off: #8a8e99; --key-offtext: #e9ebef; --tile-empty: #d3d6dd; --tile-filled: #8a8e9a;
   --red: #c4320a; --ok: #1b7f3b; --bad: #c4320a; --gold: #e0a400; --goldtext: #946c00; --redteam: #e5534b; --blueteam: #3d82e0;
   --input: #ffffff; --field: #7c808c; --bar: #eef0f3; --chatbg: #ffffff; --feed: #f2f3f6;
   --sel-blue: #eef1ff; --tint-blue: #e7f1fd; --me: #eef1ff; --tint-green: #e6f4e4; --tint-gold: #fdf3d6;
@@ -73,7 +73,7 @@ button.icon svg { width: 20px; height: 20px; display: block; }
 button:disabled, button[aria-disabled="true"] { opacity: .45; cursor: default; }
 button[aria-disabled="true"]:hover { filter: none; }
 /* A main button that is not ready yet sinks into the page (quiet fill, dim words) instead of turning a muddy grey. */
-button.primary:disabled { opacity: 1; background: var(--soft); color: var(--dim); box-shadow: inset 0 0 0 1px var(--line); }
+button.primary:disabled, button.primary.empty[aria-disabled="true"] { opacity: 1; background: var(--soft); color: var(--dim); box-shadow: inset 0 0 0 1px var(--line); }
 /* Field outlines use --field, which stands out 3:1 from every surface (WCAG 1.4.11). */
 input, select, textarea { background: var(--input); border: 2px solid var(--field); border-radius: 24px; padding: 0 16px; min-height: 48px; width: 100%; min-width: 0; font-size: 16px; }
 textarea { padding: 12px 16px; border-radius: 18px; }
@@ -439,8 +439,32 @@ b.ink { color: var(--text); }
 /* Lobby: the room's code and players on one side, the games on the other (stacked on a phone). */
 .lobby { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 14px; padding: 14px 12px 32px; max-width: 1200px; width: 100%; margin: 0 auto; }
 .lobby-side { flex: 1 1 300px; max-width: 100%; min-width: 0; display: flex; flex-direction: column; gap: 12px; }
-.lobby-main { flex: 999 1 560px; min-width: 0; display: flex; flex-direction: column; gap: 12px; }
-@media (min-width: 900px) { .lobby-side { position: sticky; top: calc(var(--bar-h) + 14px); max-width: 360px; } }
+.lobby-main { flex: 999 1 420px; min-width: 0; display: flex; flex-direction: column; gap: 12px; }
+@media (min-width: 760px) { .lobby-side { position: sticky; top: calc(var(--bar-h) + 14px); max-width: 360px; } }
+/* A phone shows one column: the invite, who is here, then the game; the room's switches come after it. */
+@media (max-width: 759px) {
+  .lobby { padding-bottom: 104px; }
+  .lobby-side { display: contents; }
+  .lobby > *, .lobby-side > * { flex: 1 1 100%; }
+  .lobby .code-card { order: 1; } .lobby .players-card { order: 2; } .lobby-main { order: 3; } .lobby .switch-row, .lobby .watch-note { order: 4; } .lobby .folds { order: 5; }
+}
+.start-bar { display: none; }
+@media (max-width: 759px) {
+  .start-bar { display: flex; position: fixed; left: 0; right: 0; bottom: 0; z-index: 15; align-items: center; gap: 10px; padding: 10px 12px max(10px, env(safe-area-inset-bottom));
+    background: var(--bar); border-top: 1px solid var(--rule); box-shadow: 0 -10px 28px rgb(0 0 0 / .2); transition: transform .22s ease, opacity .22s ease; }
+  .start-bar.off { transform: translateY(105%); opacity: 0; pointer-events: none; }
+  .sb-game { flex: 1; min-width: 0; display: flex; align-items: center; gap: 10px; background: none; box-shadow: none; padding: 0; min-height: 52px; text-align: left; color: var(--text); }
+  .sb-game > .ell { display: flex; flex-direction: column; min-width: 0; font-size: 15px; }
+  .sb-game > .ell > * { overflow: hidden; text-overflow: ellipsis; }
+  .start-bar .start-btn { flex: none; min-height: 52px; padding: 0 24px; font-size: 16px; }
+  .sb-wait { flex: none; display: inline-flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 600; color: var(--lead); max-width: 48%; }
+  body:has(input:focus, textarea:focus) .start-bar { display: none; }
+}
+@media (prefers-reduced-motion: reduce) { .start-bar { transition: none; } }
+.guest-games { padding: 0 16px; }
+.guest-games > summary > span { display: flex; flex-direction: column; gap: 2px; }
+.guest-games > summary .small { font-weight: 400; }
+.guest-games .chips.scroller { margin: 0 -16px; padding: 2px 16px 6px; }
 .code-card { padding: 16px 18px; border-radius: 24px; display: flex; flex-direction: column; gap: 2px; }
 .code-card .big-code { font-size: 34px; line-height: 1.15; }
 .code-card .invite-btns { margin-top: 10px; }
@@ -576,6 +600,7 @@ button.len[aria-disabled="true"] { opacity: 1; } button.len[aria-disabled="true"
 .pod-block { border-radius: 16px 16px 6px 6px; font-family: var(--display); font-weight: 800; font-size: 26px; display: flex; align-items: center; justify-content: center; color: var(--text); background: var(--soft);
   transform-origin: bottom; animation: res-rise .55s cubic-bezier(.2,.8,.3,1.15) both; }
 .p1 .pod-block { height: 116px; background: #ffc83d; color: #15161a; font-size: 34px; }
+.podium.blank .p1 .pod-block { height: 60px; background: var(--soft); color: var(--dim); }
 .p2 .pod-block { height: 84px; }
 .p3 .pod-block { height: 60px; font-size: 22px; }
 .p3 .pod-block { animation-delay: .2s; } .p3 .pod-names { animation-delay: .45s; }
@@ -772,7 +797,7 @@ table.tbl, .tbl { border-collapse: collapse; width: 100%; font-size: 15px; }
 .kr { display: flex; gap: 5px; margin-bottom: 6px; justify-content: center; }
 .k { flex: 1; height: 54px; min-height: 0; padding: 0; background: var(--key); color: var(--keytext); border-radius: 8px; font-size: 15px; font-weight: 700; text-transform: uppercase; min-width: 0; }
 .k.wide { flex: 1.5; font-size: 12px; }
-.k.t2 { background: var(--green); color: #fff; } .k.t1 { background: var(--yellow); color: #15161a; } .k.t0 { background: var(--gray); color: #fff; }
+.k.t2 { background: var(--green); color: #fff; } .k.t1 { background: var(--yellow); color: #15161a; } .k.t0 { background: var(--key-off); color: var(--key-offtext); box-shadow: inset 0 0 0 1px var(--line); }
 @media (max-height: 640px) { .k { height: 42px; } .kr { margin-bottom: 4px; } }
 .stand { list-style: none; margin: 0; padding: 0; }
 .stand li { padding: 7px 4px; border-top: 1px solid var(--rule); display: grid; grid-template-columns: 22px 1fr auto; gap: 2px 8px; align-items: center; font-size: 14px; }
@@ -880,7 +905,7 @@ b.red, .cw-teams .red { color: var(--redtext); } b.blue, .cw-teams .blue { color
 .cwc:not(:disabled):active { transform: translateY(1px); }
 .cwc:disabled { opacity: 1; cursor: default; }
 /* Long words shrink to fit the card instead of breaking (--n is the word length). */
-.cw-word { position: relative; font-size: max(9px, min(clamp(11px, 2.4vw, 16px), calc((100vw - 72px) / 5 / (var(--n, 6) * .88)))); hyphens: auto; text-transform: uppercase; letter-spacing: .3px; word-break: break-word; text-align: center; }
+.cw-word { position: relative; font-size: max(9px, min(clamp(11px, 2.4vw, 16px), calc((100vw - 72px) / 5 / (var(--n, 6) * .88)))); hyphens: manual; text-transform: uppercase; letter-spacing: .3px; overflow-wrap: anywhere; text-align: center; line-height: 1.15; }
 /* What the spymasters (and everyone at the end) see on closed cards. */
 .cwc.key-red { --paper: linear-gradient(#fbe9e6, #f0cfca); } .cwc.key-red::after { background: var(--redteam); }
 .cwc.key-blue { --paper: linear-gradient(#e7f0fc, #cadcf4); } .cwc.key-blue::after { background: var(--blueteam); }

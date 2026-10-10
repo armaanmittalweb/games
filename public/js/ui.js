@@ -178,22 +178,30 @@ export function Waiting({ ids, done, label = 'answered' }) {
 
 /** A text box that sends on Enter. The page reads what is typed but never writes into the box while someone types:
  *  a phone keyboard that builds words as it goes (Gboard, Samsung) loses its place when the page sets the value, and
- *  the letters come out backwards. It is only cleared, after sending. */
+ *  the letters come out backwards. It is only cleared, after sending.
+ *  Enter is caught on the box itself rather than left to the form: a browser will not send a form whose button is
+ *  disabled, and on Android the button can still look empty when Enter lands (the word was still being built), so
+ *  the keyboard just closed and the guess had to be sent by hand. The button is never disabled for being empty. */
 export function AnswerBox({ onSend, placeholder = 'Type your answer', disabled, max = 60, keep = false, label = 'Send', mode = 'text', autoFocus = true }) {
   const [v, setV] = useState('')
   const ref = useRef()
+  const clearAfter = useRef(false)
   useEffect(() => { if (autoFocus && !disabled && ref.current && matchMedia('(pointer: fine)').matches) ref.current.focus() }, [disabled])
   const submit = e => {
-    e.preventDefault()
+    e?.preventDefault()
     const t = (ref.current?.value ?? '').trim()
     if (!t || disabled) return
     onSend(t)
-    if (!keep) { ref.current.value = ''; setV('') }
+    if (!keep) { ref.current.value = ''; setV(''); clearAfter.current = true; setTimeout(() => { clearAfter.current = false }, 400) }
   }
+  const key = e => { if ((e.key === 'Enter' || e.keyCode === 13) && !e.shiftKey) submit(e) }
+  // A keyboard that was still building the word can put it back after the box is cleared: clear it again.
+  const composed = () => { if (clearAfter.current && ref.current) { ref.current.value = ''; setV('') } }
+  const empty = !v.trim()
   return html`<form class="answer" onSubmit=${submit}>
-    <input ref=${ref} onInput=${e => setV(e.target.value)} maxlength=${max} placeholder=${placeholder} disabled=${disabled}
+    <input ref=${ref} onInput=${e => setV(e.target.value)} onKeyDown=${key} onCompositionEnd=${composed} maxlength=${max} placeholder=${placeholder} disabled=${disabled}
       inputmode=${mode === 'number' ? 'decimal' : 'text'} autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="send" aria-label=${placeholder} />
-    <button class="primary" disabled=${disabled || !v.trim()}>${label}</button></form>`
+    <button class=${'primary' + (empty ? ' empty' : '')} disabled=${disabled} aria-disabled=${empty ? 'true' : null}>${label}</button></form>`
 }
 
 // ---------- drawing ----------

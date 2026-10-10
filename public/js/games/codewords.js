@@ -51,11 +51,24 @@ function Teams({ v, inst }) {
   </div>`
 }
 
+/** Long words get a soft break at a natural point (MICRO-SCOPE), used only when the card is too narrow (a phone).
+ *  The type is sized by the longer half, so it stays readable. Anything else keeps to one line. */
+const SPLIT = { chocolate: 'choco|late', helicopter: 'heli|copter', satellite: 'satel|lite', crocodile: 'croco|dile', microscope: 'micro|scope',
+  bollywood: 'bolly|wood', gurudwara: 'guru|dwara', dabbawala: 'dabba|wala', doodhwala: 'doodh|wala', courtyard: 'court|yard', sundarbans: 'sundar|bans',
+  brahmaputra: 'brahma|putra', kanyakumari: 'kanya|kumari', panchayat: 'pancha|yat', tricolour: 'tri|colour', independence: 'indepen|dence',
+  satyagraha: 'satya|graha', badminton: 'bad|minton', wrestling: 'wrest|ling' }
+const Word = ({ w }) => {
+  const parts = (SPLIT[w.toLowerCase()] ?? w).split('|')
+  // M and W are wider than other capitals: count them as more than one letter when sizing the type.
+  const n = Math.max(...parts.map(p => [...p].reduce((a, ch) => a + (/[mw]/i.test(ch) ? 1.3 : 1), 0)))
+  return html`<span class="cw-word" style=${`--n:${n.toFixed(1)}`}>${parts.join('­')}</span>`
+}
+
 function ClueForm() {
   const [word, setWord] = useState('')
   const [n, setN] = useState(1)
   return html`<form class="clue-form" onSubmit=${e => { e.preventDefault(); if (word.trim()) act({ a: 'clue', word: word.trim(), n }) }}>
-    <input onInput=${e => setWord(e.target.value)} placeholder="One-word clue" maxlength="24" autocomplete="off" aria-label="Clue" />
+    <input onInput=${e => setWord(e.target.value)} placeholder="One-word clue" maxlength="24" autocomplete="off" enterkeyhint="send" aria-label="Clue" />
     <select value=${n} onChange=${e => setN(Number(e.target.value))} aria-label="How many words">${[1, 2, 3, 4, 5, 6, 7, 8, 9, 0].map(x => html`<option value=${x}>${num(x)}</option>`)}</select>
     <button class="primary">Give clue</button></form>`
 }
@@ -180,7 +193,7 @@ const Score = ({ team, left, on }) => html`<div class=${'cw-score ' + team + (on
 export function Summary({ summary }) {
   if (!summary) return null
   return html`<div class="card"><h2>${T[summary.winner]} wins: ${summary.why.toLowerCase()}</h2>
-    <div class="cw-board small-board">${summary.words.map((w, i) => html`<div key=${i} class=${'cwc open ' + summary.keys[i]}><span class="cw-word" style=${`--n:${w.length}`}>${w}</span></div>`)}</div></div>`
+    <div class="cw-board small-board">${summary.words.map((w, i) => html`<div key=${i} class=${'cwc open ' + summary.keys[i]}><${Word} w=${w} /></div>`)}</div></div>`
 }
 
 export default function CodeWords({ v, inst }) {
@@ -214,7 +227,7 @@ export default function CodeWords({ v, inst }) {
       const cls = 'cwc' + (open ? ' open ' + k : spy || over ? ' key-' + k : '') + (marks.includes(ME) ? ' marked' : marks.length ? ' eyed' : '') + (i === just ? ' just' : '')
       return html`<button key=${i} class=${cls} disabled=${!guessing || open} onClick=${() => act({ a: marks.includes(ME) ? 'pick' : 'mark', i })}>
         ${open ? html`<span class="cw-ico">${iconFor(k)}</span>` : ''}
-        <span class="cw-word" style=${`--n:${w.length}`}>${w}</span>${marks.length ? html`<span class="cw-marks">${marks.map(id => html`<i key=${id} title=${nameOf(id)}>${initialOf(id)}</i>`)}</span>` : ''}</button>`
+        <${Word} w=${w} />${marks.length ? html`<span class="cw-marks">${marks.map(id => html`<i key=${id} title=${nameOf(id)}>${initialOf(id)}</i>`)}</span>` : ''}</button>`
     })}</div>
     <div class="cw-bottom">
       ${myTurn && spy && !v.clue ? html`<${ClueForm} />` : ''}

@@ -61,10 +61,10 @@ export default function Stopwatch({ v, inst, seated }) {
         ${!ready ? 'Get ready…' : running ? 'STOP' : 'START'}</button>
         <p class="dim small center">${running ? 'Tap Stop when you think the time has come.' : 'Tap Start whenever you are ready. Space bar works too.'}</p>` : ''}
       <${Waiting} ids=${inst.players} done=${v.stopped} label="stopped" />`
-    : html`<${RoundResult} head=${rows.length ? `${rows[0].id === ME ? 'You were' : `${nameOf(rows[0].id)} was`} closest` : ''} sub=${rows.length ? (Math.abs(rows[0].d) <= v.perfect ? 'a perfect stop' : `off by ${(Math.abs(rows[0].d) / 1000).toFixed(2)} s`) : ''}
+    : html`<${RoundResult} head=${rows.length ? `${rows[0].id === ME ? 'You were' : `${nameOf(rows[0].id)} was`} closest` : ''} sub=${rows.length ? (Math.abs(rows[0].d) <= v.perfect ? 'a perfect stop' : `off by ${(Math.abs(rows[0].d) / 1000).toFixed(3)} s`) : ''}
         rows=${rows.map(x => {
           const perfect = Math.abs(x.d) <= v.perfect, worst = Math.max(...rows.map(r => Math.abs(r.d)), 1)
-          return { id: x.id, value: `${sec(x.ms)} s`, bar: perfect ? 1 : Math.max(0.04, 1 - Math.abs(x.d) / worst * 0.9), note: perfect ? 'PERFECT' : `${signed(x.d)} ${x.d < 0 ? 'early' : 'late'}`, pts: v.gained[x.id] ?? 0 }
+          return { id: x.id, value: `${sec(x.ms)} s`, bar: perfect ? 1 : Math.max(0.04, 1 - Math.abs(x.d) / worst * 0.9), note: perfect ? 'PERFECT' : `${(Math.abs(x.d) / 1000).toFixed(3)} s ${x.d < 0 ? 'early' : 'late'}`, pts: v.gained[x.id] ?? 0 }
         })} totals=${v.pts} empty="Nobody stopped the clock." />`}
   </div><aside class="pside"><${Scores} pts=${v.pts} gained=${result ? v.gained : null} /></aside></div>`
 }

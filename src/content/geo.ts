@@ -25,7 +25,7 @@ export const CAPITALS: Place[] = [
   C('Moscow', 'Russia', 55.76, 37.62), C('Kyiv', 'Ukraine', 50.45, 30.52), C('Bucharest', 'Romania', 44.43, 26.1), C('Sofia', 'Bulgaria', 42.7, 23.32),
   C('Belgrade', 'Serbia', 44.79, 20.45), C('Zagreb', 'Croatia', 45.81, 15.98), C('Ankara', 'Turkey', 39.93, 32.86), C('Tehran', 'Iran', 35.69, 51.39),
   C('Baghdad', 'Iraq', 33.31, 44.37), C('Riyadh', 'Saudi Arabia', 24.71, 46.68), C('Abu Dhabi', 'United Arab Emirates', 24.45, 54.38), C('Doha', 'Qatar', 25.29, 51.53),
-  C('Muscat', 'Oman', 23.59, 58.41), C('Kuwait City', 'Kuwait', 29.38, 47.99), C('Amman', 'Jordan', 31.95, 35.93), C('Jerusalem', 'Israel', 31.77, 35.21),
+  C('Muscat', 'Oman', 23.59, 58.41), C('Kuwait City', 'Kuwait', 29.38, 47.99), C('Amman', 'Jordan', 31.95, 35.93),
   C('Beirut', 'Lebanon', 33.89, 35.5), C('Damascus', 'Syria', 33.51, 36.29), C('Cairo', 'Egypt', 30.04, 31.24), C('Kabul', 'Afghanistan', 34.53, 69.17),
   C('Islamabad', 'Pakistan', 33.68, 73.05), C('Kathmandu', 'Nepal', 27.72, 85.32), C('Thimphu', 'Bhutan', 27.47, 89.64), C('Dhaka', 'Bangladesh', 23.81, 90.41),
   C('Colombo', 'Sri Lanka', 6.93, 79.86), C('Male', 'Maldives', 4.18, 73.51), C('Naypyidaw', 'Myanmar', 19.76, 96.08), C('Bangkok', 'Thailand', 13.76, 100.5),
@@ -46,6 +46,7 @@ export const CAPITALS: Place[] = [
 
 const T = (n: string, of: string, lat: number, lon: number): Place => ({ kind: 'city', n, of, lat, lon })
 export const CITIES: Place[] = [
+  T('Tel Aviv', 'Israel', 32.09, 34.78),
   // India
   T('Mumbai', 'India', 19.08, 72.88), T('Kolkata', 'India', 22.57, 88.36), T('Chennai', 'India', 13.08, 80.27), T('Bengaluru', 'India', 12.97, 77.59),
   T('Hyderabad', 'India', 17.39, 78.49), T('Ahmedabad', 'India', 23.02, 72.57), T('Pune', 'India', 18.52, 73.86), T('Jaipur', 'India', 26.91, 75.79),

@@ -33,9 +33,9 @@ export default function Auction({ v, inst, seated }) {
       </div>
       ${!sold && seated ? html`<div class="au-raise">
         ${v.raises.map(r => html`<button key=${r} class="primary" disabled=${topMe || v.bid + r > mine} onClick=${() => act({ a: 'bid', by: r })}>+${r}</button>`)}
-        <form class="au-custom" onSubmit=${e => { e.preventDefault(); const n = Number(custom); if (n > v.bid) { bid(n); e.currentTarget.querySelector('input').value = ''; setCustom('') } }}>
-          <input inputmode="numeric" maxlength="6" onInput=${e => setCustom(e.target.value.replace(/\D/g, ''))} placeholder=${`${v.bid + 1}+`} aria-label="Your bid" />
-          <button disabled=${topMe || !(Number(custom) > v.bid && Number(custom) <= mine)}>Bid</button></form>
+        <form class="au-custom" onSubmit=${e => { e.preventDefault(); const box = e.currentTarget.querySelector('input'); const n = Number(box.value.replace(/\D/g, '')); if (!topMe && n > v.bid && n <= mine) { bid(n); box.value = ''; setCustom('') } }}>
+          <input inputmode="numeric" enterkeyhint="send" maxlength="6" onInput=${e => setCustom(e.target.value.replace(/\D/g, ''))} placeholder=${`${v.bid + 1}+`} aria-label="Your bid" />
+          <button aria-disabled=${topMe || !(Number(custom) > v.bid && Number(custom) <= mine) ? 'true' : null}>Bid</button></form>
       </div>
       ${topMe ? html`<p class="center plus">You are the top bid</p>`
         : v.bid + Math.min(...v.raises) > mine ? html`<p class="center au-why">You have ${mine} coins, not enough to beat ${v.bid}. Keep them for a later lot: every 10 left at the end is a point.</p>` : ''}` : ''}

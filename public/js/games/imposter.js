@@ -2,6 +2,14 @@
 import { html, useState, Head, Scores, AnswerBox, Waiting, Name, Avatar, nameOf, plural } from '../ui.js'
 import { act, ME } from '../core.js'
 
+/** "3 votes for Bilal (Asha, Chen, Dev) · 1 for Dev (Bilal)": who got the votes, most first. */
+function votesFor(votes) {
+  const by = {}
+  for (const [voter, target] of Object.entries(votes)) (by[target] ??= []).push(nameOf(voter))
+  return Object.entries(by).sort((a, b) => b[1].length - a[1].length)
+    .map(([target, from], i) => `${i ? from.length : plural(from.length, 'vote')} for ${nameOf(target)} (${from.join(', ')})`).join(' · ')
+}
+
 function Secret({ v }) {
   const [hidden, setHidden] = useState(false)
   if (!v.inRound) return html`<div class="secret dim">You join from the next round.</div>`
@@ -39,8 +47,8 @@ export default function Imposter({ v, inst }) {
     ${v.phase === 'reveal' ? html`<div class="card center reveal-imp">
       <div class="small dim">The imposter was</div><div class="imp-name"><${Avatar} id=${v.imposter} size=${40} /> <${Name} id=${v.imposter} /></div>
       <p>Word: <b>${v.words.crowd}</b>${v.words.odd ? html` · imposter's word: <b>${v.words.odd}</b>` : ''}</p>
-      <p>${!v.out ? 'The vote was split: nobody was caught.' : v.caught ? (v.guessed ? html`Caught, but guessed “${v.guess}”. The imposter wins!` : html`Caught!${v.guess ? ` (guessed “${v.guess}”)` : ''} The group wins.`) : html`The room voted out <${Name} id=${v.out} />. The imposter wins!`}</p>
-      <div class="small dim">${Object.entries(v.votes).map(([a, b]) => `${nameOf(a)} → ${nameOf(b)}`).join(' · ')}</div>
+      <p>${!v.out ? 'The vote was split: nobody was caught.' : v.caught ? (v.guessed ? html`Caught, but they guessed the word. The imposter wins!` : html`Caught! ${v.guess ? html`Their guess, “${v.guess}”, was wrong. ` : ''}The group wins.`) : html`The room voted out <${Name} id=${v.out} />. The imposter wins!`}</p>
+      <div class="small dim">${votesFor(v.votes)}</div>
     </div>` : ''}
     <${Clues} v=${v} />
   </div><aside class="pside"><${Scores} pts=${v.pts} gained=${v.phase === 'reveal' ? v.gained : null} /></aside></div>`
