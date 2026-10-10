@@ -1,5 +1,5 @@
 // Music Guess: the clip plays by itself (or on a tap if the browser asks); pick the song from four.
-import { html, Head, Scores, Name, Waiting, useEffect, useRef, useState } from '../ui.js'
+import { html, Head, Scores, Name, Waiting, useEffect, useRef, useState, RevealHead, gotIt } from '../ui.js'
 import { act, ME } from '../core.js'
 
 /** Plays `secs` seconds of the preview from `at`. Resolves false if the browser blocked it (no tap yet). */
@@ -43,6 +43,8 @@ export default function MusicGuess({ v, inst, seated }) {
           <span class="grow"><b>${c.t}</b><div class="dim small">${c.f}</div></span>
           ${who.length ? html`<span class="who-picked">${who.map(id => html`<${Name} key=${id} id=${id} you=${false} />`)}</span>` : ''}</button>`
       })}</div>
+      ${reveal ? html`<${RevealHead} head=${gotIt(Object.values(v.picks ?? {}).filter(i => i === v.right).length, inst.players.length)}
+        sub=${!seated ? '' : v.gained?.[ME] ? html`<span class="ok">Right! +${v.gained[ME]} for you</span>` : v.mine === null ? 'You did not pick' : 'Not this time for you'} />` : ''}
       ${reveal && v.song ? html`<div class="answer-reveal"><div class="big-num">${v.song.t}</div><div class="dim">${v.song.f} (${v.song.y}) · ${v.song.artist}</div>
         <a class="small" href=${v.song.link} target="_blank" rel="noopener">Listen on Apple Music</a></div>` : ''}
       ${!reveal ? html`<${Waiting} ids=${inst.players} done=${v.answered} />` : ''}

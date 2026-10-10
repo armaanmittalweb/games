@@ -63,7 +63,7 @@ export default function Reaction({ v, inst, seated }) {
       ${v.kind === 'target' && me.color === 'go' ? html`<div class="target" style=${`left:${v.pos.x}%;top:${v.pos.y}%`}></div><span class="vh">TAP!</span>` : html`<span>${label}</span>`}
     </div>
     <${Waiting} ids=${inst.players} done=${v.tapped} label="tapped" />`
-    : html`<${RoundResult} head=${best ? `${best[0] === ME ? 'You were' : `${nameOf(best[0])} was`} quickest` : order.length ? 'Everyone jumped the gun' : ''} sub=${best ? `${best[1]} ms` : ''} rows=${rows} empty="Nobody tapped." />`}
+    : html`<${RoundResult} head=${best ? `${best[0] === ME ? 'You were' : `${nameOf(best[0])} was`} quickest` : order.length ? 'Everyone jumped the gun' : ''} sub=${best ? `${best[1]} ms` : ''} rows=${rows} totals=${v.pts} empty="Nobody tapped." />`}
   </div><aside class="pside"><${Scores} pts=${v.pts} gained=${res ? v.gained : null} /></aside></div>`
 }
 

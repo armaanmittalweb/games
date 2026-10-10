@@ -355,7 +355,7 @@ function Room() {
       <button class="icon bar-btn" onClick=${leave} aria-label="Leave the room" title="Leave">${ICONS.back}</button>
       ${inGame
         ? html`<button class="bar-game" id="rules-btn" onClick=${() => setRules(room.inst.id)} title="How to play"><${GameIcon} m=${meta} size="tiny" /><span class="vh">How to play </span><span class="ell">${meta.name}</span>${ICONS.help}</button>`
-        : html`<span class="bar-here ell">${plural(here, 'player')} here${room.screens ? ' · on TV' : ''}</span>`}
+        : html`<span class="bar-here ell">${room.screens ? `${here} here · on TV` : `${plural(here, 'player')} here`}</span>`}
       ${s.status !== 'open' ? html`<span class="pill warn">reconnecting</span>` : ''}
       ${room.screens ? html`<span class="pill tv-pill" title="This room is on a shared screen">On TV</span>` : ''}
       ${inGame && isHost && !room.inst.intro && !room.inst.paused ? html`<button class="icon bar-btn" onClick=${() => send({ t: 'pause', mins: 5 })} aria-label="Pause the game for everyone" title="Pause">${ICONS.pause}</button>` : ''}
@@ -371,6 +371,7 @@ function Room() {
         ${room.phase === 'lobby' && html`<${Lobby} isHost=${isHost} onRules=${setRules} />`}
         ${room.phase === 'game' && room.inst && html`<${GameScreen} key=${room.inst.n} />`}
         ${inGame && room.inst.paused && html`<${PauseCover} paused=${room.inst.paused} isHost=${isHost} />`}
+        ${inGame && !room.inst.intro && room.inst.players.includes(ME) && REACT_PHASES.has(s.game?.phase) && html`<${ReactDock} />`}
         ${room.phase === 'results' && room.inst && html`<${Results} isHost=${isHost} />`}
       </main>
       ${s.chatOpen && html`<${Chat} />`}
@@ -378,7 +379,6 @@ function Room() {
     ${rules && html`<${RulesModal} id=${rules} onClose=${() => setRules(null)} />`}
     ${s.invite && html`<${InviteModal} code=${room.code} onClose=${() => { S.invite = false; changed() }} />`}
     ${inGame && html`<${RulesIntro} key=${room.code + room.inst.n} inst=${room.inst} code=${room.code} />`}
-    ${(room.phase === 'results' || (inGame && REACT_PHASES.has(s.game?.phase))) && html`<${ReactBar} />`}
     <${ReactFloat} />
   </div>`
 }
@@ -388,24 +388,41 @@ function Room() {
 /** Phases in which a game is showing how something went: the moment for a reaction. */
 const REACT_PHASES = new Set(['reveal', 'result', 'sold', 'show', 'over'])
 
-/** A button that opens a tray of stickers; each tap sends one to everyone in the room (and the shared screen). */
-function ReactBar() {
-  const [open, setOpen] = useState(false)
-  const shut = useRef()
-  useEffect(() => () => clearTimeout(shut.current), [])
-  const react = k => { send({ t: 'react', r: k }); clearTimeout(shut.current); shut.current = setTimeout(() => setOpen(false), 5000) }
-  return html`<div class=${'react-bar' + (open ? ' open' : '')}>
-    ${open ? html`<div class="react-tray" role="group" aria-label="Send a reaction">${STICKERS.map(s => html`<button key=${s.k} type="button" class="react-btn" onClick=${() => react(s.k)} aria-label=${s.label} title=${s.label}><${Sticker} k=${s.k} size=${34} /></button>`)}</div>` : ''}
-    <button type="button" class="react-fab" aria-expanded=${open} aria-label=${open ? 'Close the reactions' : 'React'} title="React" onClick=${() => setOpen(!open)}>${open ? ICONS.close : html`<${Sticker} k="haha" size=${30} />`}</button>
-  </div>`
+const react = k => send({ t: 'react', r: k })
+const StickerButtons = ({ size = 34 }) => STICKERS.map(s => html`<button key=${s.k} type="button" class="react-btn" onClick=${() => react(s.k)} aria-label=${s.label} title=${s.label}><${Sticker} k=${s.k} size=${size} /></button>`)
+
+/** While a round's answers are up: the stickers in a bar docked at the bottom of the game, one tap each. */
+function ReactDock() {
+  return html`<div class="react-dock" role="group" aria-label="React: send a sticker to everyone"><span class="rd-k" aria-hidden="true">React</span><div class="rd-row"><${StickerButtons} size=${32} /></div></div>`
 }
 
-/** Stickers anyone sends rise up the screen with the sender's name. */
+/** On the results screen: a button in the action bar that opens the stickers above it. */
+export function ReactButton() {
+  const [open, setOpen] = useState(false)
+  const box = useRef()
+  useEffect(() => {
+    if (!open) return
+    const out = e => { if (!box.current?.contains(e.target)) setOpen(false) }
+    const t = setTimeout(() => setOpen(false), 8000)
+    addEventListener('pointerdown', out)
+    return () => { clearTimeout(t); removeEventListener('pointerdown', out) }
+  }, [open])
+  return html`<span class="react-pop" ref=${box}>
+    ${open ? html`<span class="react-tray" role="group" aria-label="Send a reaction"><${StickerButtons} /></span>` : ''}
+    <button type="button" class="ghost-btn react-open" aria-expanded=${open} onClick=${() => setOpen(!open)}><${Sticker} k="haha" size=${22} />React</button>
+  </span>`
+}
+
+/** Stickers anyone sends rise up the screen with the sender's name, spread out so they do not land on each other. */
 function ReactFloat({ big = false }) {
   const [items, setItems] = useState([])
+  const recent = useRef([])
   useEffect(() => onEvent(ev => {
     if (ev.k !== 'react' || !STICKER[ev.r]) return
-    const it = { key: Math.random(), r: ev.r, who: ev.id, x: 6 + Math.random() * 78, tilt: Math.round(Math.random() * 30 - 15) }
+    let x = 0
+    for (let i = 0; i < 12; i++) { x = 6 + Math.random() * 78; if (recent.current.every(r => Math.abs(r - x) > 13)) break }
+    recent.current = [...recent.current.slice(-3), x]
+    const it = { key: Math.random(), r: ev.r, who: ev.id, x, tilt: Math.round(Math.random() * 30 - 15) }
     setItems(l => [...l.slice(-15), it])
     setTimeout(() => setItems(l => l.filter(x => x !== it)), 2900)
   }), [])
@@ -423,7 +440,8 @@ function LastRound({ mod, inst }) {
   if (!mod?.recap || !r || r.n !== inst.n || !S.game || REACT_PHASES.has(S.game.phase)) return null
   const x = mod.recap(r.v)
   if (!x) return null
-  return html`<div class="last-round" role="note"><span class="lr-k">Last round</span><span class="lr-t">${x.text}</span>${inst.players.includes(ME) && !S.screen ? html`<${Plus} n=${x.pts} />` : ''}</div>`
+  const mine = inst.players.includes(ME) && !S.screen
+  return html`<div class="last-round" role="note"><span class="lr-k">Last round</span><span class="lr-t">${x.text}</span>${mine ? (x.pts > 0 ? html`<${Plus} n=${x.pts} />` : html`<span class="lr-miss">no points</span>`) : ''}</div>`
 }
 
 /** A short double buzz when a round ends your way (Android phones; others have no vibration for web pages). */
@@ -928,11 +946,29 @@ function NoWatching({ inst }) {
 // answers, the scores and the reactions. Phones keep their own screens for what only their player may see and to
 // answer. The screen joins as a watcher, so it never learns anything a player's phone keeps secret.
 
-/** How big to draw everything so the room's usual layout fills the screen. */
-function useTvZoom() {
-  const calc = () => Math.max(1, Math.min(2.4, innerWidth / 1180, innerHeight / 740))
-  const [z, setZ] = useState(calc)
-  useEffect(() => { const on = () => setZ(calc()); addEventListener('resize', on); return () => removeEventListener('resize', on) }, [])
+/**
+ * How big to draw everything: as big as the screen's width allows, but never taller than the screen, since nobody
+ * scrolls a TV. What is shown is measured whenever it changes size, and the scale follows.
+ */
+function useTvFit(box) {
+  const wide = () => Math.min(2.4, innerWidth / 1180)
+  const [z, setZ] = useState(() => Math.max(1, Math.min(wide(), innerHeight / 740)))
+  const zr = useRef(z)
+  useEffect(() => {
+    const el = box.current
+    if (!el) return
+    const fit = () => {
+      const bar = document.querySelector('.tv-bar')?.offsetHeight ?? 70
+      const natural = el.getBoundingClientRect().height / zr.current
+      if (!natural) return
+      const next = Math.max(0.7, Math.min(wide(), (innerHeight - bar - 28) / natural))
+      if (Math.abs(next - zr.current) / zr.current > 0.02) { zr.current = next; setZ(next) }
+    }
+    const ro = new ResizeObserver(fit)
+    ro.observe(el)
+    addEventListener('resize', fit)
+    return () => { ro.disconnect(); removeEventListener('resize', fit) }
+  }, [])
   return z
 }
 
@@ -968,7 +1004,8 @@ function TvRoom() {
   const s = useStore()
   const room = s.room
   const inst = room.inst
-  const z = useTvZoom()
+  const fitBox = useRef()
+  const z = useTvFit(fitBox)
   const [mod, setMod] = useState(null)
   useEffect(() => { setMod(inst && mods[inst.id] ? mods[inst.id] : null); if (inst) loadGame(inst.id).then(setMod, () => {}) }, [inst?.id])
   const meta = inst ? META[inst.id] : null
@@ -986,10 +1023,17 @@ function TvRoom() {
       <span class="grow"></span>
       ${s.status !== 'open' ? html`<span class="pill warn">reconnecting</span>` : ''}
       <span class="tv-join">Join at <b>${location.host}</b> with code <b class="code">${room.code}</b></span>
+      ${room.phase !== 'lobby' ? html`<${TvCornerQr} code=${room.code} />` : ''}
     </header>
-    <main class="tv-main">${body}${playing && inst.paused ? html`<${PauseCover} paused=${inst.paused} isHost=${false} />` : ''}</main>
+    <main class="tv-main"><div class="tv-fit" ref=${fitBox}>${body}</div>${playing && inst.paused ? html`<${PauseCover} paused=${inst.paused} isHost=${false} />` : ''}</main>
     <${ReactFloat} big=${true} />
   </div>`
+}
+
+/** A small QR code in the TV's top bar during games, for anyone arriving late. */
+function TvCornerQr({ code }) {
+  const qr = useQr(code)
+  return html`<span class="tv-qr-mini" dangerouslySetInnerHTML=${{ __html: qr }}></span>`
 }
 
 /** Before a game: how to join, who is here, and what is next. */
@@ -1043,9 +1087,11 @@ function TvHelp({ code, onClose }) {
         <li>On the TV's browser, open <b>${location.host}/tv</b></li>
         <li>Type the code <b class="code">${code}</b></li>
       </ol>
-      <div class="invite-btns two">
-        <button type="button" class="primary big" onClick=${() => open(link, '_blank', 'noopener')}>Open on this device</button>
-        <button type="button" class="big" onClick=${() => copy(link, 'TV link copied')}>Copy the TV link</button>
+      <div class="invite-btns two">${matchMedia('(pointer: coarse)').matches
+        ? html`<button type="button" class="primary big" onClick=${() => share('Open this on the TV to show our game night', link)}>Share the TV link</button>
+          <button type="button" class="big" onClick=${() => copy(link, 'TV link copied')}>Copy it</button>`
+        : html`<button type="button" class="primary big" onClick=${() => open(link, '_blank', 'noopener')}>Open on this device</button>
+          <button type="button" class="big" onClick=${() => copy(link, 'TV link copied')}>Copy the TV link</button>`}
       </div>
     </div>
   </div>`

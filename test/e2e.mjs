@@ -160,7 +160,7 @@ async function play(id) {
     const rows = await host.locator('.results .tbl tr').count()
     await host.screenshot({ path: `${SHOTS}/${id}-results.png`, fullPage: true })
     // A sticker from the results screen reaches the TV.
-    await pages[3].click('.react-fab'); await pages[3].click('.react-btn[aria-label="On fire"]')
+    await pages[3].click('.react-open'); await pages[3].click('.react-pop .react-btn[aria-label="On fire"]')
     try { await tv.waitForSelector('.react-float .rf', { timeout: 3000 }) } catch { errors.push(`${id}: a reaction did not reach the TV`) }
     if (await tv.locator('.tv .res-actions, .tv .fb').count()) errors.push(`${id}: the TV shows buttons meant for players`)
     await tv.screenshot({ path: `${SHOTS}/${id}-tv-results.png` })

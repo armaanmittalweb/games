@@ -4,8 +4,8 @@
 import { html, useState, useEffect, useRef } from './preact.js'
 import { S, ME, send, toast, copy } from './core.js'
 import { ask } from './dialog.js'
-import { Avatar, Name, nameOf, initialOf, colorOf, plural } from './ui.js'
-import { META, mods, loadGame, GameIcon, NightTable, Feedback, ICONS, GameOptions, nightCfg } from './app.js'
+import { Avatar, Name, nameOf, initialOf, colorOf, plural, Plus } from './ui.js'
+import { META, mods, loadGame, GameIcon, NightTable, Feedback, ICONS, GameOptions, nightCfg, ReactButton } from './app.js'
 
 const still = () => matchMedia('(prefers-reduced-motion: reduce)').matches
 const ordinal = n => n + (n % 100 >= 11 && n % 100 <= 13 ? 'th' : ['th', 'st', 'nd', 'rd'][n % 10] ?? 'th')
@@ -304,11 +304,13 @@ export function Results({ isHost, tv = false }) {
         ${ready}
         ${st.length ? html`<button class="ghost-btn" onClick=${card} disabled=${busy} aria-label="Share result as a picture">Share result</button>` : ''}
         ${!night ? html`<button class="ghost-btn" onClick=${() => send({ t: 'lobby' })}>Other game</button>` : ''}
+        ${seated ? html`<${ReactButton} />` : ''}
         ${night && !night.done ? html`<button class="ghost-btn" onClick=${async () => (await ask({ title: 'End the game night now?', body: 'The table so far stays in the room.', ok: 'End night', danger: true })) && send({ t: 'nightEnd' })}>End night</button>` : ''}`
       : html`
         ${inBtn}
         ${ready}
-        ${st.length ? html`<button class="ghost-btn" onClick=${card} disabled=${busy} aria-label="Share result as a picture">Share result</button>` : ''}`}
+        ${st.length ? html`<button class="ghost-btn" onClick=${card} disabled=${busy} aria-label="Share result as a picture">Share result</button>` : ''}
+        ${seated ? html`<${ReactButton} />` : ''}`}
     </div>`}
     ${setFor ? html`<details class="card fold res-opts"><summary>Settings for ${night ? 'the next game, ' : ''}${META[setFor].name}</summary>
       <${GameOptions} meta=${META[setFor]} cfg=${night ? nightCfg(night, setFor) : room.configs[setFor] ?? {}} isHost=${true} onSet=${onSet} /></details>` : ''}
@@ -316,8 +318,8 @@ export function Results({ isHost, tv = false }) {
 
     <div class="card">
       <div class="scroll"><table class="tbl res-table"><tr><th>#</th><th>Player</th><th>Score</th><th></th><th class="r" title="Room points">Room pts</th></tr>
-        ${st.map((x, i) => html`<tr key=${x.id} class=${x.id === ME ? 'me' : ''} style=${`--i:${i}`}><td>${x.place}</td><td><${Name} id=${x.id} /></td><td><b><${Count} to=${x.score} delay=${1300} /></b></td><td class="dim small">${x.detail ?? ''}</td><td class="r"><b class=${'ptspill' + (pts[x.id] ? '' : ' zero')}>+${pts[x.id] ?? 0}</b></td></tr>`)}
-        ${all.filter(x => sat.includes(x.id)).map((x, i) => html`<tr key=${x.id} class=${'sat' + (x.id === ME ? ' me' : '')} style=${`--i:${st.length + i}`}><td>–</td><td><${Name} id=${x.id} /></td><td class="dim">–</td><td class="dim small">no moves</td><td class="r"><b class="ptspill zero">+0</b></td></tr>`)}
+        ${st.map((x, i) => html`<tr key=${x.id} class=${x.id === ME ? 'me' : ''} style=${`--i:${i}`}><td>${x.place}</td><td><${Name} id=${x.id} /></td><td><b><${Count} to=${x.score} delay=${1300} /></b></td><td class="dim small">${x.detail ?? ''}</td><td class="r"><${Plus} n=${pts[x.id] ?? 0} /></td></tr>`)}
+        ${all.filter(x => sat.includes(x.id)).map((x, i) => html`<tr key=${x.id} class=${'sat' + (x.id === ME ? ' me' : '')} style=${`--i:${st.length + i}`}><td>–</td><td><${Name} id=${x.id} /></td><td class="dim">–</td><td class="dim small">no moves</td><td class="r"><${Plus} n=${0} /></td></tr>`)}
       </table></div>
       ${st.length === 1 && !sat.length ? '' : html`<p class="dim small nomargin res-pts-note">Room points: 10 for a win down to 0 for last, by how many you beat. No moves, no points.</p>`}
     </div>

@@ -1,5 +1,5 @@
 // Dictionary Bluff: write a fake meaning, then find the real one.
-import { html, Head, Scores, AnswerBox, Waiting, Name } from '../ui.js'
+import { html, Head, Scores, AnswerBox, Waiting, Name, RevealHead } from '../ui.js'
 import { act, ME } from '../core.js'
 
 export default function Bluff({ v, inst, seated }) {
@@ -29,7 +29,8 @@ export default function Bluff({ v, inst, seated }) {
           ${o.voters?.length ? html`<span class="small dim">· picked by ${o.voters.map((id, j) => html`${j ? ', ' : ''}<${Name} key=${id} id=${id} you=${false} />`)}</span>` : ''}</span>` : ''}
       </button>`
     })}</div>
-    ${voting ? html`<${Waiting} ids=${inst.players} done=${v.voted} label="voted" />` : html`<p class="center">${v.gained[ME] ? html`<span class="plus">+${v.gained[ME]} for you</span>` : ''} <span class="dim small">3 for finding the real one, 2 for each player you fooled</span></p>`}
+    ${voting ? html`<${Waiting} ids=${inst.players} done=${v.voted} label="voted" />` : html`<${RevealHead} head=${(() => { const n = v.options.find(o => o.real)?.voters?.length ?? 0; return n === 0 ? 'Nobody found the real meaning' : `${n} found the real meaning` })()}
+      sub=${v.gained[ME] ? html`<span class="ok">+${v.gained[ME]} for you</span>` : seated ? 'No points for you this time' : ''} /><p class="center"><span class="dim small">3 for finding the real one, 2 for each player you fooled</span></p>`}
   </div><aside class="pside"><${Scores} pts=${v.pts} gained=${voting ? null : v.gained} /></aside></div>`
 }
 

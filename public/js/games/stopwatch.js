@@ -65,7 +65,7 @@ export default function Stopwatch({ v, inst, seated }) {
         rows=${rows.map(x => {
           const perfect = Math.abs(x.d) <= v.perfect, worst = Math.max(...rows.map(r => Math.abs(r.d)), 1)
           return { id: x.id, value: `${sec(x.ms)} s`, bar: perfect ? 1 : Math.max(0.04, 1 - Math.abs(x.d) / worst * 0.9), note: perfect ? 'PERFECT' : `${signed(x.d)} ${x.d < 0 ? 'early' : 'late'}`, pts: v.gained[x.id] ?? 0 }
-        })} empty="Nobody stopped the clock." />`}
+        })} totals=${v.pts} empty="Nobody stopped the clock." />`}
   </div><aside class="pside"><${Scores} pts=${v.pts} gained=${result ? v.gained : null} /></aside></div>`
 }
 

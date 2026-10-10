@@ -1621,8 +1621,12 @@ b.g { color: var(--ok); } b.y { color: var(--goldtext); }
 :root[data-theme="light"] .scores .mv.down { color: #a3261a; background: #fde4e0; }
 
 .rr { background: var(--panel); border-radius: 22px; padding: 14px 14px 10px; box-shadow: var(--shadow); display: flex; flex-direction: column; gap: 10px; }
-.rr-head { display: flex; flex-direction: column; align-items: center; gap: 2px; text-align: center; }
-.rr-head b { font-family: var(--display); font-size: clamp(19px, 3.4vw, 24px); letter-spacing: -.01em; }
+.reveal-head { display: flex; flex-direction: column; align-items: center; gap: 3px; text-align: center; padding: 2px 8px; animation: rr-in .35s ease-out both; }
+.reveal-head > b { font-family: var(--display); font-size: clamp(19px, 3.4vw, 24px); letter-spacing: -.01em; line-height: 1.2; }
+.reveal-head .rh-sub { font-size: 14px; font-weight: 600; color: var(--dim); }
+.reveal-head .rh-sub .ok { color: var(--ok); }
+:root[data-theme="light"] .reveal-head .rh-sub .ok { color: #12632d; }
+.reveal-head .top-pick { font: inherit; }
 .rr-rows { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
 .rr-rows li { display: flex; align-items: center; gap: 10px; padding: 8px 8px; margin: 0 -6px; border-radius: 14px; animation: rr-in .4s calc(var(--i) * 70ms) ease-out both; }
 .rr-rows li + li { border-top: 1px solid var(--rule); }
@@ -1634,22 +1638,31 @@ b.g { color: var(--ok); } b.y { color: var(--goldtext); }
 .rr-line .nm { font-size: 15px; }
 .rr-val { flex: none; font-size: 15px; font-variant-numeric: tabular-nums; }
 .rr-bar { height: 8px; border-radius: 4px; background: var(--panel2); overflow: hidden; }
-.rr-bar i { display: block; height: 100%; width: var(--w); border-radius: 4px; background: var(--c); animation: rr-grow .8s calc(.15s + var(--i) * 70ms) cubic-bezier(.2,.8,.2,1) both; }
+.rr-bar i { display: block; height: 100%; width: var(--w); border-radius: 4px; background: var(--sel); animation: rr-grow .8s calc(.15s + var(--i) * 70ms) cubic-bezier(.2,.8,.2,1) both; }
 .rr-note { font-size: 12px; font-weight: 600; color: var(--dim); }
 .rr-rows li.bad .rr-val { color: var(--bad); }
 .rr-rows li:first-child:not(.bad) .rr-note { color: var(--ok); }
+.rr-rows li:first-child:not(.bad) .rr-bar i { background: var(--gold); }
+:root[data-theme="light"] .rr-rows li:first-child:not(.bad) .rr-note { color: #12632d; }
+/* On phones the card stands in for the scoreboard while it is up: each row carries the total, the scoreboard folds. */
+.rr-total { display: none; min-width: 30px; text-align: right; font-size: 15px; font-weight: 800; font-variant-numeric: tabular-nums; }
+@media (max-width: 860px) {
+  .rr-total { display: block; }
+  .play2:has(.rr) > .pside { display: none; }
+}
 @keyframes rr-in { from { opacity: 0; transform: translateY(6px); } }
 @keyframes rr-grow { from { width: 0; } }
 @media (prefers-reduced-motion: reduce) { .rr-rows li, .rr-bar i, .scores .mv { animation: none; } }
 
 /* Closest Wins: every guess on one line with the answer. */
-.nline { position: relative; height: calc(30px + var(--rows) * 30px); margin: 4px 6px 0; }
-.nl-track { position: absolute; left: 0; right: 0; bottom: 10px; height: 4px; border-radius: 2px; background: var(--panel2); }
-.nl-dot { position: absolute; bottom: calc(18px + var(--row) * 28px); transform: translateX(-50%); width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; font-size: 12px; font-weight: 800; color: #15161a; background: var(--c); box-shadow: 0 0 0 2px var(--panel); animation: rr-in .45s ease-out both; }
+.nline { position: relative; height: calc(52px + var(--rows) * 30px); margin: 4px 14px 0; }
+.nl-track { position: absolute; left: 0; right: 0; bottom: 28px; height: 4px; border-radius: 2px; background: var(--panel2); }
+.nl-dot { position: absolute; bottom: calc(36px + var(--row) * 28px); z-index: 1; transform: translateX(-50%); width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; font-size: 12px; font-weight: 800; color: #15161a; background: var(--c); box-shadow: 0 0 0 2px var(--panel); animation: rr-in .45s ease-out both; }
 .nl-dot::after { content: ''; position: absolute; left: 50%; top: 100%; width: 2px; height: calc(var(--row) * 28px + 4px); background: var(--c); transform: translateX(-50%); opacity: .55; }
 .nl-dot.me { box-shadow: 0 0 0 2px var(--panel), 0 0 0 4px var(--text); }
-.nl-answer { position: absolute; bottom: 0; transform: translateX(-50%); width: 4px; height: 24px; }
-.nl-answer i { position: absolute; left: 50%; bottom: 2px; width: 16px; height: 16px; transform: translateX(-50%) rotate(45deg); background: var(--gold); border: 2px solid #3d2f00; border-radius: 3px; }
+.nl-answer { position: absolute; top: 0; bottom: 0; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; }
+.nl-answer i { flex: 1; width: 3px; border-radius: 2px; background: var(--gold); opacity: .9; }
+.nl-answer b { flex: none; margin-top: 2px; padding: 1px 8px; border-radius: 99px; font-size: 12px; font-weight: 800; white-space: nowrap; background: var(--gold); color: #2b2100; }
 
 /* Auction: why you cannot bid. */
 .au-why { margin: 0; font-size: 14px; color: var(--dim); max-width: 46ch; align-self: center; }
@@ -1702,20 +1715,10 @@ b.g { color: var(--ok); } b.y { color: var(--goldtext); }
 .last-round { display: flex; align-items: center; gap: 10px; width: calc(100% - 24px); max-width: 1076px; margin: 8px auto 0; padding: 8px 8px 8px 14px; border-radius: 14px; background: var(--panel2); font-size: 14px; animation: rr-in .35s ease-out both; }
 .lr-k { flex: none; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; color: var(--dim); }
 .lr-t { flex: 1; min-width: 0; font-weight: 700; overflow-wrap: anywhere; }
+.lr-miss { flex: none; font-size: 12px; font-weight: 700; color: var(--dim); padding-right: 6px; }
 .menu-switch { justify-content: space-between; cursor: pointer; }
 .sticker { display: block; overflow: visible; }
 
-/* The tray opens above the button, so all seven stickers fit across a phone. */
-.react-bar { position: fixed; right: 16px; bottom: max(16px, env(safe-area-inset-bottom)); z-index: 35; display: flex; flex-direction: column-reverse; align-items: flex-end; gap: 8px; }
-.room:has(.results) .react-bar { bottom: calc(92px + env(safe-area-inset-bottom)); }
-/* Room to scroll the end of a reveal out from under the react button. */
-.room:has(.react-bar) .room-main { padding-bottom: 76px; }
-@media (min-width: 861px) { .room.chat-on .react-bar { right: 356px; } }
-.react-fab { width: 56px; height: 56px; min-height: 0; border-radius: 50%; padding: 0; display: grid; place-items: center; background: var(--panel); box-shadow: var(--pop), 0 0 0 1px var(--rule); }
-.react-fab .ico { width: 22px; height: 22px; }
-.react-bar:not(.open) .react-fab { animation: fab-in .35s ease-out both, fab-nudge 1.2s .6s ease-in-out 2; }
-@keyframes fab-in { from { transform: scale(.4); opacity: 0; } }
-@keyframes fab-nudge { 30% { transform: rotate(-12deg) scale(1.08); } 60% { transform: rotate(10deg) scale(1.08); } }
 .react-tray { display: flex; gap: 2px; padding: 5px; border-radius: 99px; background: var(--panel); box-shadow: var(--pop), 0 0 0 1px var(--rule); max-width: calc(100vw - 32px); overflow-x: auto; scrollbar-width: none; animation: tray-in .2s ease-out both; }
 @keyframes tray-in { from { opacity: 0; transform: translateY(10px) scale(.96); } }
 @media (max-width: 380px) { .react-btn { width: 42px; height: 42px; } }
@@ -1731,7 +1734,7 @@ b.g { color: var(--ok); } b.y { color: var(--goldtext); }
 @keyframes rf-fade { 0%, 80% { opacity: 1; } 100% { opacity: 0; } }
 @media (prefers-reduced-motion: reduce) {
   .rf { bottom: 120px; animation: rf-fade 2.6s forwards; }
-  .react-bar:not(.open) .react-fab, .react-tray, .last-round { animation: none; }
+  .react-dock, .react-tray, .last-round { animation: none; }
 }
 
 /* ---------- TV mode ---------- */
@@ -1747,7 +1750,9 @@ b.g { color: var(--ok); } b.y { color: var(--goldtext); }
 .tv-brand { font-family: var(--display); font-weight: 800; font-size: 1.2em; }
 .tv-now { display: inline-flex; align-items: center; gap: 8px; font-weight: 700; }
 .tv-join b.code { font-size: 1.35em; letter-spacing: .08em; margin-left: 4px; }
-.tv-main { flex: 1; position: relative; zoom: var(--z); padding: 8px 0 16px; }
+.tv-main { flex: 1; position: relative; zoom: var(--z); padding: 8px 0 16px; display: flex; flex-direction: column; justify-content: center; }
+.tv-fit { width: 100%; }
+.tv-qr-mini { width: calc(52px * var(--z)); flex: none; } .tv-qr-mini svg { display: block; width: 100%; height: auto; border-radius: 6px; }
 .tv-main .pause-card { top: 24px; }
 .tv-lobby { display: grid; grid-template-columns: minmax(280px, 380px) 1fr; gap: 28px; max-width: 1100px; margin: 0 auto; padding: 12px 20px; align-items: start; }
 .tv-join-card { background: var(--panel); border-radius: 28px; padding: 22px; display: flex; flex-direction: column; align-items: center; gap: 4px; text-align: center; box-shadow: var(--shadow); }
@@ -1765,6 +1770,24 @@ b.g { color: var(--ok); } b.y { color: var(--goldtext); }
 .tv-plan { display: flex; flex-wrap: wrap; gap: 10px 16px; margin-top: 8px; }
 .tv-plan > span { display: inline-flex; align-items: center; gap: 8px; font-weight: 700; }
 .tv-plan .past { opacity: .45; }
-.tv-intro { max-width: 820px; margin: 12px auto; font-size: 18px; }
+.tv-intro { max-width: 900px; margin: 12px auto; font-size: 22px; padding: 28px 32px; }
+.tv-intro .rules li { font-size: 22px; line-height: 1.45; }
+.tv-intro .rules-head h2 { font-size: 40px; }
 .tv .results .fb, .tv .watch { display: none; }
 @media (max-width: 760px) { .tv-lobby { grid-template-columns: 1fr; } }
+
+/* ---------- Reactions: docked, never over the game ---------- */
+/* During a reveal: a bar at the bottom of the game, the stickers one tap each. It takes its own space, so nothing is
+   hidden under it once the page is scrolled to the end. */
+.react-dock { position: sticky; bottom: 0; z-index: 9; margin-top: auto; display: flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 6px 10px calc(6px + env(safe-area-inset-bottom)); background: color-mix(in srgb, var(--bar) 88%, transparent); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  border-top: 1px solid var(--rule); animation: dock-in .3s ease-out both; }
+.rd-k { font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; color: var(--dim); }
+.rd-row { display: flex; gap: 2px; }
+@keyframes dock-in { from { transform: translateY(100%); } }
+@media (max-width: 400px) { .rd-k { display: none; } .react-dock .react-btn { width: 44px; height: 44px; } }
+/* On results: a React button in the action bar, the stickers opening above it. */
+.react-pop { position: relative; display: inline-flex; }
+.react-open { display: inline-flex; align-items: center; gap: 6px; }
+.react-pop .react-tray { position: absolute; bottom: calc(100% + 8px); right: 0; z-index: 12; }
+@media (max-width: 560px) { .react-pop { flex: 1 1 0; } .react-open { width: 100%; justify-content: center; } }

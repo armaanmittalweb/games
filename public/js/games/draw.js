@@ -46,7 +46,7 @@ export default function Draw({ v, inst, seated }) {
       ${v.phase === 'reveal' ? html`<div class="turn-pts">${Object.entries(v.turnPts).sort((a, b) => b[1] - a[1]).map(([id, p]) => html`<span key=${id}><${Name} id=${id} /> +${p}</span>`)}${!Object.keys(v.turnPts).length ? html`<span class="dim">Nobody got it.</span>` : ''}</div>` : ''}
     </div>
     <aside class="draw-side">
-      <${Scores} pts=${v.pts} note=${id => (id === v.drawer ? html`<span title="Drawing">${Mark.pencil()}</span>` : v.guessed[id] !== undefined ? '✓' : '')} />
+      <${Scores} pts=${v.pts} gained=${v.phase === 'reveal' ? v.turnPts : null} note=${id => (id === v.drawer ? html`<span title="Drawing">${Mark.pencil()}</span>` : v.guessed[id] !== undefined ? '✓' : '')} />
       <${Feed} lines=${lines} />
       ${seated ? html`<${AnswerBox} onSend=${t => act({ a: 'guess', text: t })} placeholder=${drawing || got ? 'Chat with others who know' : 'Type your guess'} max=${60} autoFocus=${!drawing} />` : ''}
     </aside>

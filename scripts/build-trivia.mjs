@@ -5,6 +5,12 @@
 //   node scripts/build-trivia.mjs
 import { readFileSync, writeFileSync } from 'node:fs'
 import india from '../data/india-trivia.mjs'
+import fixes from '../data/trivia-fixes.mjs'
+
+// The database's typos, fixed (data/trivia-fixes.mjs), and its stray and doubled spaces tidied.
+const edge = s => (/^\w/.test(s) ? '\\b' : '') + s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + (/\w$/.test(s) ? '\\b' : '')
+const FIX = fixes.map(([from, to]) => [new RegExp(edge(from), 'g'), to])
+const tidy = t => FIX.reduce((x, [re, to]) => x.replace(re, to), t.replace(/\s+/g, ' ').trim())
 
 const CATS = {
   'General Knowledge': 'general', 'Entertainment: Books': 'general', Art: 'general', Vehicles: 'general',
@@ -26,7 +32,7 @@ for (const q of opentdb) {
   if (q.question.length > 200 || q.answer.length > 60 || q.wrong.some(w => w.length > 60)) continue
   // "Which of these is NOT…" questions read badly against a clock.
   if (/\bNOT\b/.test(q.question)) continue
-  out.push({ c, d: q.difficulty, q: q.question, a: q.answer, w: q.type === 'boolean' ? [q.answer === 'True' ? 'False' : 'True'] : q.wrong })
+  out.push({ c, d: q.difficulty, q: tidy(q.question), a: tidy(q.answer), w: q.type === 'boolean' ? [q.answer === 'True' ? 'False' : 'True'] : q.wrong.map(tidy) })
 }
 for (const [d, q, a, w] of india) out.push({ c: 'india', d, q, a, w })
 // The same question asked twice (the database has a few, and some overlap the India set): keep the last, so ours wins.

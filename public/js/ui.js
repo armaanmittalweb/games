@@ -144,22 +144,29 @@ export function Scores({ pts = {}, ids, note, gained }) {
   })}</ol>`
 }
 
+/** The line that opens every reveal, in every game: what happened in a few words, and what it meant for you. */
+export const RevealHead = ({ head, sub }) => html`<div class="reveal-head" role="status"><b>${head}</b>${sub ? html`<span class="rh-sub">${sub}</span>` : ''}</div>`
+
+/** "3 of 4 got it", the count that heads a reveal where there was one right answer. */
+export const gotIt = (n, of) => (n === 0 ? 'Nobody got it' : n === of ? (of === 1 ? 'Got it!' : `All ${of} got it`) : `${n} of ${of} got it`)
+
 /**
  * How a round ended, told the same way in every game with a round of scores: a headline (who took it), anything the
  * game wants to draw (`children`), then a row per player, best first, with a bar (longer is better), what they did, a
  * note and the points. Your row is marked.
- * rows: [{ id, value, bar: 0..1, note, pts, place, bad }]
+ * rows: [{ id, value, bar: 0..1, note, pts, place, bad }]. With `totals` (everyone's points so far), each row shows the
+ * player's total too, on phones, where this card stands in for the scoreboard while it is up.
  */
-export function RoundResult({ head, sub, rows, empty = 'Nobody played this round.', children }) {
+export function RoundResult({ head, sub, rows, totals, empty = 'Nobody played this round.', children }) {
   return html`<section class="rr" aria-label="How the round went">
-    ${head ? html`<div class="rr-head"><b>${head}</b>${sub ? html`<span class="dim small">${sub}</span>` : ''}</div>` : ''}
+    ${head ? html`<${RevealHead} head=${head} sub=${sub} />` : ''}
     ${children}
     ${rows.length ? html`<ol class="rr-rows">${rows.map((r, i) => html`<li key=${r.id} class=${(r.id === ME ? 'me' : '') + (r.bad ? ' bad' : '')} style=${`--i:${i}`}>
       <span class="rr-pl">${r.place ?? i + 1}</span><${Avatar} id=${r.id} size=${28} />
       <span class="rr-main"><span class="rr-line"><span class="ell"><${Name} id=${r.id} /></span><b class="rr-val">${r.value}</b></span>
-        <span class="rr-bar" aria-hidden="true"><i style=${`--w:${Math.max(3, Math.round((r.bar ?? 0) * 100))}%;--c:${colorOf(r.id)}`}></i></span>
+        <span class="rr-bar" aria-hidden="true">${r.bad ? '' : html`<i style=${`--w:${Math.max(3, Math.round((r.bar ?? 0) * 100))}%`}></i>`}</span>
         ${r.note ? html`<span class="rr-note">${r.note}</span>` : ''}</span>
-      <${Plus} n=${r.pts ?? 0} /></li>`)}</ol>` : html`<p class="dim center">${empty}</p>`}
+      <${Plus} n=${r.pts ?? 0} />${totals ? html`<b class="rr-total" aria-label=${`${totals[r.id] ?? 0} in total`}>${totals[r.id] ?? 0}</b>` : ''}</li>`)}</ol>` : html`<p class="dim center">${empty}</p>`}
   </section>`
 }
 

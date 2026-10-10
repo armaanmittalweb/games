@@ -1,5 +1,5 @@
 // Trivia: four choices (or true or false), a clock, points for speed.
-import { html, Head, Scores, Waiting, Name, useTick, Mark } from '../ui.js'
+import { html, Head, Scores, Waiting, Name, useTick, Mark, RevealHead, gotIt } from '../ui.js'
 import { act, now, ME } from '../core.js'
 
 const CATS = { india: 'India', general: 'General knowledge', science: 'Science & nature', geography: 'Geography', history: 'History', screen: 'Film & TV', music: 'Music', sports: 'Sports', tech: 'Computers & gadgets', games: 'Video games' }
@@ -25,7 +25,8 @@ export default function Trivia({ v, inst, seated }) {
       })}</div>
       ${reading ? html`<p class="center dim">Read the question…</p>` : ''}
       ${!reveal ? html`<${Waiting} ids=${inst.players} done=${v.answered} />` : ''}
-      ${reveal && seated ? html`<p class="center">${mine ? html`<span class="plus">Right! +${mine}</span>` : v.mine === null ? html`<span class="dim">No answer</span>` : html`<span class="bad">Not this time</span>`}</p>` : ''}
+      ${reveal ? html`<${RevealHead} head=${gotIt(Object.values(v.picks).filter(i => i === v.right).length, inst.players.length)}
+        sub=${!seated ? '' : mine ? html`<span class="ok">Right! +${mine} for you</span>` : v.mine === null ? 'You did not answer' : 'Not this time for you'} />` : ''}
     </div>
     <aside class="pside"><${Scores} pts=${v.pts} gained=${reveal ? v.gained : null} /></aside>
   </div>`
