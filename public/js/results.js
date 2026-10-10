@@ -40,8 +40,12 @@ function headline(st, winners, meta, sat) {
   const gap = above && num(above) !== null && num(mine) !== null ? num(above) - num(mine) : null
   const last = mine.place === Math.max(...st.map(x => x.place)) && st.length > 2
   const big = `${level.length ? 'Joint ' : 'You came '}${ordinal(mine.place)}${level.length ? ' place' : ''}`
-  const sub = gap > 0 ? `${fmtNum(gap)} behind ${nameOf(above.id)}${above.place === 1 ? ' for the win' : ` for ${ordinal(above.place)}`}.` : last ? 'The next one is yours.' : ''
-  return { big, sub, win: false }
+  // Nothing scored: how far behind someone else is beside the point.
+  const none = num(mine) === 0
+  const sub = none ? (last ? 'No points this time. The next one is yours.' : 'No points this time.')
+    : gap > 0 ? `${fmtNum(gap)} behind ${nameOf(above.id)}${above.place === 1 ? ' for the win' : ` for ${ordinal(above.place)}`}.` : last ? 'The next one is yours.' : ''
+  // A little confetti for a place on the podium that scored; none for last place or for nothing scored.
+  return { big, sub, win: false, cheer: mine.place <= 3 && !last && !none }
 }
 
 /** What is worth talking about, from what the room already knows: up to three. Told to `me` ("You have won…"), or
@@ -61,7 +65,7 @@ function moments(room, inst, st, winners, me = ME) {
   const [a, b] = [st.find(x => x.place === 1), st.find(x => x.place === 2)]
   if (winners.length === 1 && num(a) !== null && num(b) !== null && num(a) > num(b)) {
     const gap = num(a) - num(b)
-    if (gap <= Math.max(1, num(a) * 0.05)) out.push(['📸', `Photo finish: ${fmtNum(gap)} in it`])
+    if (gap <= Math.max(1, num(a) * 0.05)) out.push(['📸', `Photo finish: 1st and 2nd just ${fmtNum(gap)} apart`])
     else if (num(b) > 0 && num(a) >= num(b) * 2) out.push(['🚀', `Runaway win: more than double ${nameOf(b.id)}'s score`])
   }
   // The room's leaderboard before this game: take off the points this game gave.
@@ -271,6 +275,8 @@ export function Results({ isHost, tv = false }) {
   useEffect(() => {
     if (celebrated.has(key) || !st.length) return
     celebrated.add(key)
+    // Someone who played gets confetti for a win or a place that scored; watchers see the winners' moment.
+    if (seated && !head.win && !head.cheer && !night?.done) return
     const t = setTimeout(() => confetti(head.win || night?.done), 1250)
     return () => clearTimeout(t)
   }, [key])
@@ -302,14 +308,14 @@ export function Results({ isHost, tv = false }) {
         ${night?.done ? html`<button class="primary big grow" onClick=${() => send({ t: 'nightEnd' })}>Back to the lobby</button>` : ''}
         ${!night ? html`<button class="primary big grow" onClick=${() => send({ t: 'start', id: inst.id })}>Play again</button>` : ''}
         ${ready}
-        ${st.length ? html`<button class="ghost-btn" onClick=${card} disabled=${busy} aria-label="Share result as a picture">Share result</button>` : ''}
+        ${st.length ? html`<button class="ghost-btn" onClick=${card} disabled=${busy} aria-label="Share the result as a picture">Share</button>` : ''}
         ${!night ? html`<button class="ghost-btn" onClick=${() => send({ t: 'lobby' })}>Other game</button>` : ''}
         ${seated ? html`<${ReactButton} />` : ''}
         ${night && !night.done ? html`<button class="ghost-btn" onClick=${async () => (await ask({ title: 'End the game night now?', body: 'The table so far stays in the room.', ok: 'End night', danger: true })) && send({ t: 'nightEnd' })}>End night</button>` : ''}`
       : html`
         ${inBtn}
         ${ready}
-        ${st.length ? html`<button class="ghost-btn" onClick=${card} disabled=${busy} aria-label="Share result as a picture">Share result</button>` : ''}
+        ${st.length ? html`<button class="ghost-btn" onClick=${card} disabled=${busy} aria-label="Share the result as a picture">Share</button>` : ''}
         ${seated ? html`<${ReactButton} />` : ''}`}
     </div>`}
     ${setFor ? html`<details class="card fold res-opts"><summary>Settings for ${night ? 'the next game, ' : ''}${META[setFor].name}</summary>

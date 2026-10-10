@@ -4,8 +4,11 @@
 //   public/games.html           the index of every game
 //   public/sitemap.xml
 //   the top bar, footer and head of the hand-written pages (public/*.html), so every page has the same ones
+//   public/v/<hash>/   the page's code (style.css, catalog.js, js/), versioned, which every page then points at
 // Runs before every deploy (npm run deploy).
-import { readFileSync, writeFileSync, mkdirSync } from 'node:fs'
+import { readFileSync, writeFileSync, mkdirSync, readdirSync, rmSync, statSync, copyFileSync } from 'node:fs'
+import { createHash } from 'node:crypto'
+import { dirname, sep } from 'node:path'
 import { CATALOG } from '../src/catalog.ts'
 import { iconSvg as icon, KINDS } from '../src/icons.ts'
 
@@ -31,7 +34,7 @@ const nav = current => `<header class="site-nav"><div class="sn">
 const foot = `<footer class="foot"><div class="foot-in">
   <nav class="foot-games" aria-label="Games">${CATALOG.map(m => `<a href="/games/${m.id}">${esc(m.name)}</a>`).join('')}</nav>
   <p>Game Night is an independent site by <a href="https://www.amittal.dev/">Armaan Mittal</a>. It is not affiliated with the makers of Wordle, Codenames, Uno, Pictionary, Boggle or any other game named here. Trivia questions from the <a href="https://opentdb.com/">Open Trivia Database</a> (CC BY-SA 4.0).</p>
-  <nav class="foot-links" aria-label="Guides"><a href="/how-to-play">Word Race rules</a><a href="/game-modes">Game modes</a><a href="/wordle-tips">Wordle starting words</a><a href="/wordle-unlimited">Wordle practice</a><a href="/privacy">Privacy</a></nav>
+  <nav class="foot-links" aria-label="Guides"><a href="/how-to-play">Word Race rules</a><a href="/game-modes">Game modes</a><a href="/wordle-tips">Wordle starting words</a><a href="/wordle-unlimited">Wordle practice</a><a href="/privacy">Privacy</a><a href="/terms">Terms</a><a href="/contact">Report a problem</a></nav>
 </div></footer>`
 // Light or dark: the saved choice, else the system setting. Runs before the page draws.
 const THEME_SCRIPT = `<script>/* Light or dark: the saved choice, else the system setting. Runs before the page draws. */(function(){var d=document.documentElement;function set(t){d.dataset.theme=t;var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==='light'?'#eef0f3':'#121318'}var t;try{t=localStorage.getItem('gn.theme')}catch(e){}set(t||(matchMedia('(prefers-color-scheme: light)').matches?'light':'dark'));window.toggleTheme=function(){var n=d.dataset.theme==='light'?'dark':'light';set(n);try{localStorage.setItem('gn.theme',n)}catch(e){}}})()</script>`
@@ -177,7 +180,7 @@ const urls = [
   ['/', '1.0', 'weekly'], ['/games', '0.9', 'weekly'],
   ...CATALOG.map(m => [`/games/${m.id}`, '0.8', 'monthly']),
   ['/how-to-play', '0.6', 'monthly'], ['/game-modes', '0.6', 'monthly'], ['/wordle-tips', '0.7', 'monthly'], ['/wordle-unlimited', '0.7', 'monthly'],
-  ['/privacy', '0.2', 'yearly'],
+  ['/privacy', '0.2', 'yearly'], ['/terms', '0.2', 'yearly'], ['/contact', '0.3', 'yearly'],
 ]
 writeFileSync('public/sitemap.xml', `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
@@ -194,7 +197,7 @@ const HERO = `<section class="hero"><div class="hero-text"><h1>Play together, ea
 
 
 // The hand-written pages get the same top bar, footer, colours and fonts as the generated ones.
-for (const file of ['index', 'how-to-play', 'game-modes', 'wordle-tips', 'wordle-unlimited', 'privacy', '404']) {
+for (const file of ['index', 'how-to-play', 'game-modes', 'wordle-tips', 'wordle-unlimited', 'privacy', 'terms', 'contact', '404']) {
   const path = `public/${file}.html`
   let page = readFileSync(path, 'utf8')
   page = page.replace(/<meta name="theme-color" content="[^"]*">/, '<meta name="theme-color" content="#121318">')
@@ -205,3 +208,23 @@ for (const file of ['index', 'how-to-play', 'game-modes', 'wordle-tips', 'wordle
   if (file === 'index') page = page.replace(/<section class="hero">[\s\S]*?<\/section>/, () => HERO)
   writeFileSync(path, page)
 }
+
+// The page's code, versioned. A copy of style.css, catalog.js and js/ goes in public/v/<hash>/, where it is cached for
+// a year (public/_headers), and every page points there. Any change to any of the files makes a new hash, so the
+// first visit after a deploy fetches the new code and every visit after that fetches none of it. The modules import
+// each other by relative paths, so they all load from the same version. The newest few versions are kept, for a page
+// still open from before a deploy; public/v/ is not committed.
+const CODE = ['style.css', 'catalog.js', ...readdirSync('public/js', { recursive: true }).map(f => 'js/' + String(f).replaceAll(sep, '/')).filter(f => f.endsWith('.js'))].sort()
+const sum = createHash('sha256')
+for (const f of CODE) sum.update(f).update(readFileSync('public/' + f))
+const V = sum.digest('hex').slice(0, 10)
+for (const f of CODE) { mkdirSync(dirname(`public/v/${V}/${f}`), { recursive: true }); copyFileSync('public/' + f, `public/v/${V}/${f}`) }
+const kept = readdirSync('public/v').filter(d => /^[0-9a-f]{10}$/.test(d)).sort((a, b) => statSync(`public/v/${b}`).mtimeMs - statSync(`public/v/${a}`).mtimeMs)
+for (const d of kept.slice(3)) if (d !== V) rmSync(`public/v/${d}`, { recursive: true, force: true })
+const pages = [...readdirSync('public').filter(f => f.endsWith('.html')), ...readdirSync('public/games').filter(f => f.endsWith('.html')).map(f => 'games/' + f)]
+for (const f of pages) {
+  const page = readFileSync('public/' + f, 'utf8')
+  const out = page.replace(/((?:href|src)=")(?:\/v\/[0-9a-f]{10})?\/(style\.css|catalog\.js|js\/[\w/-]+\.js)"/g, `$1/v/${V}/$2"`)
+  if (out !== page) writeFileSync('public/' + f, out)
+}
+console.log(`code version ${V}: ${CODE.length} files, ${pages.length} pages point at it`)

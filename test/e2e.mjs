@@ -54,7 +54,7 @@ await tv.goto(url.replace('/r/', '/tv/'))
 await tv.waitForSelector('.tv-lobby')
 await tv.screenshot({ path: `${SHOTS}/tv-lobby.png` })
 
-const send = (page, m) => page.evaluate(async m => (await import('/js/core.js')).send(m), m)
+const send = (page, m) => page.evaluate(async m => (await import(document.querySelector('script[src*="/js/app.js"]').src.replace('app.js', 'core.js'))).send(m), m)
 const visible = async (page, sel) => { try { return await page.locator(sel).first().isVisible() } catch { return false } }
 const rnd = a => a[Math.floor(Math.random() * a.length)]
 

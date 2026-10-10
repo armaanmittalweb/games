@@ -83,7 +83,7 @@ export function Clock({ until }) {
   const left = Math.max(0, until - now())
   if (span.current.until !== until) span.current = { until, total: Math.max(left, 1000) }
   const text = fmt(left), gone = 100 - Math.min(1, left / span.current.total) * 100
-  return html`<span class=${'clock' + (left < 5500 ? ' low' : '') + (text.length > 2 ? ' long' : '')} role="timer" aria-label=${`${text} left`}>
+  return html`<span class=${'clock' + (left < 5500 ? ' low' : '') + (text.length > 2 ? ' long' : '') + (text.length > 4 ? ' xl' : '')} role="timer" aria-label=${`${text} left`}>
     <svg viewBox="0 0 44 44" aria-hidden="true"><circle class="trk" cx="22" cy="22" r="19" /><circle class="arc" cx="22" cy="22" r="19" pathLength="100" style=${`stroke-dashoffset:${gone}`} /></svg><b>${text}</b></span>`
 }
 

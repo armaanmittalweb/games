@@ -92,6 +92,8 @@ export class Stats extends DurableObject {
     const old = Date.now() - KEEP
     this.sql.exec('DELETE FROM rooms WHERE last < ?', old)
     this.sql.exec('DELETE FROM players WHERE last < ?', old)
+    // Messages from the contact page can hold a way to reply: kept for 30 days (see public/contact.html).
+    this.sql.exec("DELETE FROM a_feedback WHERE kind = 'report' AND at < ?", Date.now() - 30 * DAY)
     await this.ctx.storage.setAlarm(Date.now() + DAY)
   }
 

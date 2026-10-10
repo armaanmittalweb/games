@@ -145,9 +145,11 @@ export interface Feedback { vid: string; rid: string; game: string; rating?: num
 export function feedback(sql: Sql, f: Feedback, now = Date.now()) {
   const rating = Number.isInteger(f.rating) && f.rating! >= 1 && f.rating! <= 5 ? f.rating! : null
   const again = typeof f.again === 'boolean' ? (f.again ? 1 : 0) : null
-  const text = short(f.text, 300).trim()
+  const report = f.kind === 'report'
+  const text = short(f.text, report ? 1200 : 300).trim()
   if (rating === null && again === null && !text) return
-  const kind = f.kind === 'idea' ? 'idea' : text ? 'fix' : null
+  // 'report': sent from the contact page (game holds its topic).
+  const kind = report ? 'report' : f.kind === 'idea' ? 'idea' : text ? 'fix' : null
   sql.exec('INSERT INTO a_feedback (at, vid, rid, game, rating, again, kind, text, x) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
     now, f.vid, f.rid, short(f.game, 20), rating, again, kind, text || null, idOk(f.vid) ? isX(sql, f.vid) : 0)
 }
@@ -264,7 +266,8 @@ export function report(sql: Sql, days: number, now = Date.now()) {
   const creators = new Set(started.map(r => r.creator))
 
   // Feedback.
-  const fb = q<{ at: number; game: string; rating: number | null; again: number | null; kind: string | null; text: string | null; x: number }>('SELECT * FROM a_feedback WHERE at >= ? AND x = 0', dayMs(from))
+  // Reports from the contact page are all shown, the maker's own test ones too (they are few, and read one by one).
+  const fb = q<{ at: number; game: string; rating: number | null; again: number | null; kind: string | null; text: string | null; x: number }>("SELECT * FROM a_feedback WHERE at >= ? AND (x = 0 OR kind = 'report')", dayMs(from))
   const rated = fb.filter(f => f.rating !== null)
   const voted = fb.filter(f => f.again !== null)
   const texts = (kind: string) => {
@@ -380,10 +383,10 @@ export function report(sql: Sql, days: number, now = Date.now()) {
       topErrors: counts.filter(c => c.kind === 'err').reduce((m, c) => m.set(c.key, (m.get(c.key) ?? 0) + c.n), new Map<string, number>()),
     },
     feedback: {
-      responses: fb.length, ratings: rated.length, avgRating: rated.length ? round(rated.reduce((a, f) => a + f.rating!, 0) / rated.length, 2) : null,
+      responses: fb.filter(f => f.kind !== 'report').length, ratings: rated.length, avgRating: rated.length ? round(rated.reduce((a, f) => a + f.rating!, 0) / rated.length, 2) : null,
       stars: [1, 2, 3, 4, 5].map(s => rated.filter(f => f.rating === s).length),
       againVotes: voted.length, again: pct(voted.filter(f => f.again).length, voted.length),
-      complaints: texts('fix'), ideas: texts('idea'),
+      complaints: texts('fix'), ideas: texts('idea'), reports: texts('report'),
     },
     series,
   }

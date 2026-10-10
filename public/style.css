@@ -180,6 +180,10 @@ a { color: var(--accent); }
 .name-row { box-shadow: inset 0 0 0 1.5px var(--field); }
 .name-row:focus-within { box-shadow: inset 0 0 0 2px var(--accent); }
 .join-row { display: flex; gap: 8px; }
+.field-err { margin: -4px 0 0; padding: 0 6px; font-size: 14px; font-weight: 600; color: var(--bad); text-align: left; }
+.gate-title { margin: 14px 0 0; font-size: 24px; line-height: 1.2; text-wrap: balance; }
+.gate-title .code { white-space: nowrap; }
+.gate-art.missing span { font: 800 48px/1 var(--display); }
 .join-row input { flex: 1; min-height: 52px; border-radius: 26px; padding: 0 18px; font-weight: 600; }
 .code-in { text-transform: uppercase; letter-spacing: .12em; }
 .code-in::placeholder { text-transform: none; letter-spacing: 0; }
@@ -308,6 +312,20 @@ button.tint { min-height: 52px; padding: 0 22px; background: #e6e9ff; color: #24
 .menu-item:hover:not(:disabled) { filter: none; background: var(--panel2); }
 .menu-item > span { display: flex; flex-direction: column; gap: 1px; }
 .menu-item small { font-size: 12px; font-weight: 500; color: var(--dim); }
+a.menu-item { color: var(--text); text-decoration: none; }
+
+/* The contact page. */
+.contact-form { display: flex; flex-direction: column; gap: 16px; padding: 20px; margin-top: 8px; }
+.cf-field { display: flex; flex-direction: column; gap: 6px; margin: 0; }
+.cf-field > span { font-size: 15px; font-weight: 700; color: var(--text); }
+.cf-field small { font-weight: 500; color: var(--dim); }
+.cf-field select, .cf-field input, .cf-field textarea { width: 100%; font: inherit; font-size: 16px; color: var(--text); background: var(--panel2); border: 0; border-radius: 14px; padding: 12px 14px; box-shadow: inset 0 0 0 1.5px var(--field); }
+.cf-field select, .cf-field input { min-height: 50px; }
+.cf-field textarea { resize: vertical; min-height: 140px; line-height: 1.5; }
+.cf-field :focus { outline: none; box-shadow: inset 0 0 0 2px var(--accent); }
+.cf-err { margin: 0; font-weight: 600; color: var(--bad); }
+.contact-form .primary { align-self: flex-start; min-width: 160px; }
+.cf-done { padding: 20px; margin-top: 8px; } .cf-done h2 { margin-top: 0; }
 .danger-text { color: var(--bad); font-weight: 700; }
 @media (prefers-reduced-motion: reduce) { .room-menu { animation: none; } }
 .room-body { flex: 1; display: flex; min-height: 0; }
@@ -528,6 +546,9 @@ button.len[aria-disabled="true"] { opacity: 1; } button.len[aria-disabled="true"
 .plan b { font-size: 15px; }
 .plan-acts { display: flex; }
 .plan-acts .link { padding: 0 8px; font-weight: 600; font-size: 14px; }
+.host-away { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding: 10px 14px; background: var(--banner); border-bottom: 1px solid var(--banner-line); font-size: 14px; }
+.host-away p { margin: 0; flex: 1 1 220px; line-height: 1.4; }
+.host-away button { min-height: 40px; padding: 0 16px; }
 .night-banner { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding: 8px 14px; background: var(--banner); border-bottom: 1px solid var(--banner-line); font-size: 14px; }
 .plan-mini { display: flex; gap: 4px; font-size: 18px; align-items: center; }
 .plan-mini span { display: inline-flex; opacity: .4; }
@@ -576,7 +597,7 @@ button.len[aria-disabled="true"] { opacity: 1; } button.len[aria-disabled="true"
 .res-actions button.big { min-height: 56px; }
 /* On a phone the main action gets the whole row and the quieter ones share the next, side by side. */
 @media (max-width: 560px) { .res-actions .grow { flex-basis: 100%; } .res-actions .ghost-btn { flex: 1 1 0; min-width: 0; padding: 0 12px; } }
-.ghost-btn { background: var(--panel); box-shadow: var(--shadow); }
+.ghost-btn { background: var(--panel); box-shadow: var(--shadow); white-space: nowrap; }
 .res-opts { padding: 0 16px; }
 .res-opts[open] { padding-bottom: 16px; }
 button.in { background: var(--right-bg); color: var(--ok); box-shadow: inset 0 0 0 2px var(--ok); }
@@ -650,6 +671,8 @@ table.tbl, .tbl { border-collapse: collapse; width: 100%; font-size: 15px; }
 .clock .arc { fill: none; stroke: var(--accent); stroke-width: 3.5; stroke-linecap: round; stroke-dasharray: 100; transition: stroke-dashoffset .25s linear, stroke .3s; }
 .clock b { position: relative; font-weight: inherit; }
 .clock.long b { font-size: 12.5px; letter-spacing: -.02em; }
+/* Ten minutes and more ("10:00"): a bigger ring, so the time sits inside it. */
+.clock.xl, .status .clock.xl { --size: 58px; } .clock.xl b { font-size: 11.5px; letter-spacing: -.03em; }
 .clock.low .arc { stroke: #ff5a3c; }
 .clock.low b { color: #ff5a3c; }
 :root[data-theme="light"] .clock.low b { color: #c4320a; }
@@ -1581,6 +1604,14 @@ b.g { color: var(--ok); } b.y { color: var(--goldtext); }
   .inv-body { flex-direction: row; align-items: center; }
   .inv-qr { flex: none; } .inv-info { flex: 1; min-width: 0; }
   .qr { width: min(200px, calc(var(--vvh, 100dvh) - 150px)); }
+
+  /* Answer games: the round line and its clock stay at the top while the answers scroll, the answers sit in two
+     columns so all four fit, and the stickers come after the answers instead of over them. */
+  .pmain > .ghead { position: sticky; top: 0; z-index: 8; background: var(--bg); margin: -6px -10px 0; padding: 6px 10px; }
+  .prompt { padding: 10px 14px; font-size: 18px; border-radius: 18px; }
+  .choices { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .choices .choice { min-height: 48px; padding: 6px 10px; font-size: 16px; }
+  .room .react-dock { position: static; animation: none; margin-top: 8px; backdrop-filter: none; -webkit-backdrop-filter: none; }
 }
 
 .team-col li.away { opacity: .62; }

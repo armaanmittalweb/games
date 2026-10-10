@@ -83,6 +83,7 @@ function open() {
     if (m.t === 's') {
       offset = m.now - Date.now()
       S.room = m.room
+      S.room.at = Date.now() // when it came, for the host-away countdown
       S.you = m.you
       S.status = 'open'
       const inst = m.room.inst
@@ -107,6 +108,9 @@ function open() {
       }
       else if (S.gameN !== inst.n) { S.game = null; S.gameN = inst.n }
       changed()
+    } else if (m.t === 'host') {
+      // The host changed hands: a line that dropped for too long, someone taking over, or the owner coming back.
+      for (const fn of evSubs) fn({ k: 'host', from: m.from, to: m.to, back: m.back, left: m.left })
     } else if (m.t === 'react') {
       for (const fn of evSubs) fn({ k: 'react', id: m.id, r: m.r })
     } else if (m.t === 'missed') {
@@ -167,7 +171,8 @@ function drop(sock) {
   clearInterval(pingT)
   clearTimeout(probe)
   probe = null
-  try { sock.close() } catch { /* closed */ }
+  // Not 1000: to the room this is a line that dropped, not someone leaving (a host keeps the room meanwhile).
+  try { sock.close(4003, 'reconnecting') } catch { /* closed */ }
   S.status = 'reconnecting'
   changed()
   retry = 0
@@ -198,14 +203,16 @@ export function keepAwake(on) {
   else if (lock) { lock.release().catch(() => {}); lock = null }
 }
 
-export function disconnect() {
+/** Leaves the room's line. `left`: the player chose to leave (the Leave button, or Back and Leave), which hands the
+ *  room to someone else at once if they were its host. */
+export function disconnect(left = false) {
   const s = ws
   ws = null
   wanted = null
   clearInterval(pingT)
   clearTimeout(probe)
   probe = null
-  if (s) try { s.close() } catch { /* closed */ }
+  if (s) try { left ? s.close(4002, 'left') : s.close() } catch { /* closed */ }
 }
 
 export function send(m) {

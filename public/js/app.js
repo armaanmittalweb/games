@@ -3,10 +3,10 @@ import { html, render, useState, useEffect, useRef } from './preact.js'
 import { S, ME, connect, disconnect, send, subscribe, changed, toast, share, copy, codeFrom, keepAwake, getName, setName, now, onEvent, local } from './core.js'
 import { Avatar, Name, nameOf, plural, useTick, useFocusTrap, Plus } from './ui.js'
 import { STICKERS, STICKER, Sticker } from './stickers.js'
-import { pageView, track } from './track.js'
+import { pageView, track, VID } from './track.js'
 import { ask, dismiss, dialogOpen } from './dialog.js'
 import { Results } from './results.js'
-import { CATALOG, KINDS } from '/catalog.js'
+import { CATALOG, KINDS } from '../catalog.js'
 
 export const META = Object.fromEntries(CATALOG.map(m => [m.id, m]))
 const MOODS = { think: 'Think', chaos: 'Chaos', competitive: 'Competitive', deception: 'Deception', creative: 'Creative', fast: 'Fast', social: 'Social', strategic: 'Strategic' }
@@ -36,8 +36,8 @@ function route() {
   if (m) return { room: m[1].toUpperCase() }
   if (tv) return { tv: (tv[1] ?? '').toUpperCase() }
   guarded = null
+  disconnect(leaving)
   leaving = false
-  disconnect()
   document.title = HOME_TITLE
   return { room: null }
 }
@@ -62,7 +62,7 @@ function countView() {
 }
 
 async function createRoom(pick, start = false) {
-  const r = await fetch('/api/rooms', { method: 'POST' })
+  const r = await fetch('/api/rooms', { method: 'POST', headers: { 'x-vid': VID } })
   const j = await r.json()
   if (!r.ok) throw new Error(j.error || 'Could not make a room')
   pending = { code: j.code, pick, start }
@@ -130,13 +130,17 @@ function App() {
     return () => { window.removeEventListener('popstate', on); window.removeEventListener('route', on) }
   }, [])
   if (where.tv !== undefined) return html`<${TvGate} code=${where.tv} />`
-  return where.room ? html`<${RoomGate} code=${where.room} />` : html`<${Home} />`
+  return where.room ? html`<${RoomGate} key=${where.room} code=${where.room} />` : html`<${Home} />`
 }
 
-function NameField({ value, onInput, onEnter }) {
+function NameField({ value, onInput, onEnter, error }) {
   return html`<label class="name-row" for="name"><span>Your name</span>
-    <input id="name" maxlength="16" autocomplete="nickname" placeholder="e.g. Armaan" defaultValue=${value} onInput=${e => onInput(e.target.value)} onKeyDown=${e => e.key === 'Enter' && onEnter?.()} /></label>`
+    <input id="name" maxlength="16" autocomplete="nickname" placeholder="e.g. Armaan" defaultValue=${value} aria-invalid=${error ? 'true' : null} aria-describedby=${error ? 'name-err' : null} onInput=${e => onInput(e.target.value)} onKeyDown=${e => e.key === 'Enter' && onEnter?.()} /></label>
+    ${error ? html`<p class="field-err" id="name-err" role="alert">${error}</p>` : ''}`
 }
+
+/** A message under a box that needs fixing, focused so a phone shows it. */
+const fieldFocus = id => setTimeout(() => document.getElementById(id)?.focus(), 0)
 
 /** The site's top bar, as on every other page. */
 function SiteNav() {
@@ -241,7 +245,9 @@ function Home() {
   const [code, setCode] = useState('')
   const [busy, setBusy] = useState(false)
   const [cat, setCat] = useState('All')
-  const need = () => { const n = name.trim(); if (!n) { toast('Enter your name first'); document.getElementById('name')?.focus(); return null } setName(n); return n }
+  const [nameErr, setNameErr] = useState('')
+  const [codeErr, setCodeErr] = useState('')
+  const need = () => { const n = name.trim(); if (!n) { setNameErr('Type your name first'); fieldFocus('name'); return null } setName(n); return n }
   const make = async (pick, start) => {
     if (!need()) return
     setBusy(true)
@@ -255,7 +261,7 @@ function Home() {
     if (!play && !solo) return
     history.replaceState(null, '', '/')
     if (getName()) make(solo ? 'wordle' : play, solo)
-    else toast('Enter your name, then tap the game again', 2600)
+    else { setNameErr('Type your name, then tap the game again'); fieldFocus('name') }
   }, [])
   // The code box shows capitals through CSS and is never rewritten while a word is being typed (that is what made
   // letters come out backwards on Android). A pasted link or invite message becomes just the code.
@@ -263,11 +269,12 @@ function Home() {
     const t = e.target.value
     if (!e.isComposing && (/[/\s]/.test(t.trim()) || t.length > 5)) { const c = codeFrom(t); if (c && c !== t) e.target.value = c }
     setCode(e.target.value)
+    setCodeErr('')
   }
   const join = () => {
     const c = codeFrom(code)
+    if (!/^[A-Z0-9]{5}$/.test(c)) { setCodeErr(code.trim() ? 'Room codes are 5 letters and numbers, like K7M2P' : 'Type the code your friend sent'); return fieldFocus('code') }
     if (!need()) return
-    if (!/^[A-Z0-9]{5}$/.test(c)) return toast('Room codes are 5 characters')
     go('/r/' + c)
   }
   const list = CATALOG.filter(m => cat === 'All' || m.cat === cat)
@@ -278,10 +285,11 @@ function Home() {
         <h1>Play together, each on your own phone</h1>
         <div class="hero-card start">
           <div class="start-head"><h2>Start playing</h2><p>Type your name and make a room. You get a code to send your friends.</p></div>
-          <${NameField} value=${name} onInput=${setN} onEnter=${() => make(null)} />
+          <${NameField} value=${name} error=${nameErr} onInput=${v => { setN(v); setNameErr('') }} onEnter=${() => make(null)} />
           <button class="primary big" disabled=${busy} onClick=${() => make(null)}>Create a room</button>
           <div class="or" role="separator"><span>Got a code from a friend?</span></div>
-          <div class="join-row"><input class="code-in" maxlength="200" onInput=${onCode} onKeyDown=${e => e.key === 'Enter' && join()} placeholder="Room code or link" autocapitalize="characters" autocomplete="off" spellcheck="false" enterkeyhint="go" aria-label="Room code, or paste the room link" /><button class="tint" onClick=${join}>Join</button></div>
+          <div class="join-row"><input class="code-in" id="code" maxlength="200" aria-invalid=${codeErr ? 'true' : null} aria-describedby=${codeErr ? 'code-err' : null} onInput=${onCode} onKeyDown=${e => e.key === 'Enter' && join()} placeholder="Room code or link" autocapitalize="characters" autocomplete="off" spellcheck="false" enterkeyhint="go" aria-label="Room code, or paste the room link" /><button class="tint" onClick=${join}>Join</button></div>
+          ${codeErr ? html`<p class="field-err" id="code-err" role="alert">${codeErr}</p>` : ''}
           <ul class="start-facts"><li>Free</li><li>No sign-up</li><li>No app needed</li></ul>
         </div>
       </div>
@@ -299,30 +307,57 @@ function Home() {
   </div>`
 }
 
+/** A room that is not open: what that means, a box for another code, and a way to make one. */
+function MissingRoom({ code }) {
+  const [val, setVal] = useState('')
+  const [err, setErr] = useState('')
+  const join = () => {
+    const c = codeFrom(val)
+    if (!/^[A-Z0-9]{5}$/.test(c)) { setErr(val.trim() ? 'Room codes are 5 letters and numbers, like K7M2P' : 'Type the code your friend sent'); return fieldFocus('code') }
+    go('/r/' + c)
+  }
+  return html`<${SiteNav} /><main class="gate">
+    <div class="gate-art missing" aria-hidden="true"><i></i><i></i><span>?</span></div>
+    <h1 class="gate-title">Room <span class="code">${code}</span> isn't open</h1>
+    <p class="lead">Rooms close a day after they were last used. Check the code with whoever sent it, or make a new room.</p>
+    <div class="hero-card">
+      <div class="join-row"><input class="code-in" id="code" maxlength="200" placeholder="Room code or link" autocapitalize="characters" autocomplete="off" spellcheck="false" enterkeyhint="go" aria-label="Room code, or paste the room link" aria-invalid=${err ? 'true' : null} aria-describedby=${err ? 'code-err' : null} onInput=${e => { setVal(e.target.value); setErr('') }} onKeyDown=${e => e.key === 'Enter' && join()} /><button class="tint" onClick=${join}>Join</button></div>
+      ${err ? html`<p class="field-err" id="code-err" role="alert">${err}</p>` : ''}
+      <div class="or" role="separator"><span>or</span></div>
+      <button class="primary big" onClick=${() => go('/')}>Make a new room</button>
+    </div>
+  </main>`
+}
+
 function RoomGate({ code }) {
   const s = useStore()
   const [name, setN] = useState(getName())
   const [ready, setReady] = useState(!!getName())
+  const [nameErr, setNameErr] = useState('')
+  // Ask first whether the room is open, so a dead link says so before anyone types a name. No answer (a bad network)
+  // counts as open: the room's own line will tell.
+  const [open, setOpen] = useState(true)
+  useEffect(() => { fetch(`/api/rooms/${code}`).then(r => { if (r.status === 404) setOpen(false) }, () => {}) }, [code])
   useEffect(() => { if (ready) connect(code); document.title = `Room ${code} · Game Night` }, [ready, code])
   // In the room: Back asks before leaving (see guard).
   useEffect(() => { if (s.room) guard(code) }, [!!s.room, code])
   // The screen stays on while in a room (see keepAwake).
   useEffect(() => { if (!ready) return; keepAwake(true); return () => keepAwake(false) }, [ready])
+  if (!open || s.closed === 'missing') return html`<${MissingRoom} code=${code} />`
   if (!ready) {
-    const ok = () => { const n = name.trim(); if (!n) return toast('Enter your name'); setName(n); setReady(true) }
+    const ok = () => { const n = name.trim(); if (!n) { setNameErr('Type your name to join'); return fieldFocus('name') } setName(n); setReady(true) }
     return html`<${SiteNav} /><main class="gate">
       <div class="gate-art" aria-hidden="true"><i></i><i></i><span>${ICONS.people}</span></div>
       <span class="gate-sub">You're invited to room</span>
       <span class="gate-code code">${code}</span>
       <p class="lead">Party games you play together, each on your own phone.</p>
-      <div class="hero-card"><${NameField} value=${name} onInput=${setN} onEnter=${ok} /><button class="primary big" onClick=${ok}>Join the room</button></div>
+      <div class="hero-card"><${NameField} value=${name} error=${nameErr} onInput=${v => { setN(v); setNameErr('') }} onEnter=${ok} /><button class="primary big" onClick=${ok}>Join the room</button></div>
       <p class="gate-foot">Free. No sign-up, no app. Only people in this room see your name. <a href="/privacy">Privacy</a></p>
     </main>`
   }
   const gate = (text, btn) => html`<${SiteNav} /><main class="gate"><p class="lead">${text}</p>${btn}</main>`
   if (s.closed === 'elsewhere') return gate('This room is open in another tab.', html`<button class="primary big" onClick=${() => location.reload()}>Use it here</button>`)
   if (s.closed === 'removed') return gate('The host removed you from this room.', html`<button class="big" onClick=${() => go('/')}>Home</button>`)
-  if (s.closed === 'missing') return gate(html`Room <b class="code">${code}</b> was not found. Rooms close a day after they were last used.`, html`<button class="primary big" onClick=${() => go('/')}>Make a new one</button>`)
   if (!s.room) return html`<main class="gate"><p class="dim">Connecting to ${code}…</p></main>`
   return html`<${Room} />`
 }
@@ -350,6 +385,7 @@ function Room() {
   const inGame = room.phase === 'game' && room.inst
   const meta = room.inst ? META[room.inst.id] : null
   const here = room.members.filter(m => m.online).length
+  useHostChanges()
   return html`<div class=${'room' + (s.chatOpen ? ' chat-on' : '')}>
     <header class="bar">
       <button class="icon bar-btn" onClick=${leave} aria-label="Leave the room" title="Leave">${ICONS.back}</button>
@@ -367,6 +403,7 @@ function Room() {
     ${tvHelp && html`<${TvHelp} code=${room.code} onClose=${() => setTvHelp(false)} />`}
     <div class="room-body">
       <main class="room-main">
+        ${room.hostAway && !isHost && html`<${HostAway} room=${room} inGame=${inGame && !room.inst.paused} />`}
         ${room.night && html`<${NightBanner} night=${room.night} isHost=${isHost} />`}
         ${room.phase === 'lobby' && html`<${Lobby} isHost=${isHost} onRules=${setRules} />`}
         ${room.phase === 'game' && room.inst && html`<${GameScreen} key=${room.inst.n} />`}
@@ -381,6 +418,37 @@ function Room() {
     ${inGame && html`<${RulesIntro} key=${room.code + room.inst.n} inst=${room.inst} code=${room.code} />`}
     <${ReactFloat} />
   </div>`
+}
+
+// ---------- the host's line dropped ----------
+
+/** How long a host has to be gone before anyone is told: a refresh or a quick look at WhatsApp goes unseen. */
+const HOST_QUIET_MS = 5000
+
+/**
+ * The host's line dropped. Games carry on by themselves, so nothing shows mid-game; in the lobby or on the results,
+ * where the room waits on its host, everyone sees who takes over and when, and that player can take over now.
+ */
+function HostAway({ room, inGame }) {
+  useTick(500)
+  const a = room.hostAway, since = Date.now() - room.at
+  const left = Math.ceil(Math.max(0, a.in - since) / 1000)
+  if (inGame || a.for + since < HOST_QUIET_MS) return null
+  const host = nameOf(room.host), next = a.next
+  return html`<div class="host-away" role="status">
+    <span class="wait-dots" aria-hidden="true"><i></i><i></i><i></i></span>
+    <p><b>${host} lost connection.</b> ${next === ME ? `You take over as host in ${left} s if ${host} isn't back.` : next ? `${nameOf(next)} takes over as host in ${left} s if ${host} isn't back.` : `Waiting for ${host} to come back.`}</p>
+    ${next === ME ? html`<button class="tint" onClick=${() => send({ t: 'takeHost' })}>Take over now</button>` : ''}
+  </div>`
+}
+
+/** Says why the host changed, to the two people it matters to. Everyone else just sees the new host's name. */
+function useHostChanges() {
+  useEffect(() => onEvent(ev => {
+    if (ev.k !== 'host') return
+    if (ev.to === ME) toast(ev.back ? 'You are the host again' : ev.left ? `${nameOf(ev.from)} left, so you are the host now` : `${nameOf(ev.from)} lost connection, so you are the host for now`, 3500)
+    else if (ev.from === ME) toast(ev.back ? `${nameOf(ev.to)} is back, so they are the host again` : `${nameOf(ev.to)} is the host now`, 3500)
+  }), [])
 }
 
 // ---------- reactions ----------
@@ -458,6 +526,7 @@ const svg = d => html`<svg viewBox="0 0 24 24" aria-hidden="true" class="ico">${
 export const ICONS = {
   get back() { return svg(html`<path d="M15 18l-6-6 6-6" />`) },
   get help() { return svg(html`<circle cx="12" cy="12" r="9" /><path d="M9.6 9.3a2.5 2.5 0 1 1 3.6 2.3c-.8.4-1.2 1-1.2 1.9M12 16.8v.2" />`) },
+  get flag() { return svg(html`<path d="M5 21V4M5 4h11l-2 4 2 4H5" />`) },
   get share() { return svg(html`<path d="M12 3v12M7 8l5-5 5 5M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6" />`) },
   get chat() { return svg(html`<path d="M21 12a8 8 0 0 1-11.6 7.1L4 20.5l1.4-4.9A8 8 0 1 1 21 12z" />`) },
   get more() { return html`<svg viewBox="0 0 24 24" aria-hidden="true" class="ico fillico"><circle cx="5.5" cy="12" r="1.9" /><circle cx="12" cy="12" r="1.9" /><circle cx="18.5" cy="12" r="1.9" /></svg>` },
@@ -503,6 +572,7 @@ function RoomMenu({ meta, isHost, onRules, onTv, onClose }) {
         <button type="button" role="switch" aria-checked=${buzz} aria-label="Buzz on a right answer" class=${'switch' + (buzz ? ' on' : '')} onClick=${flipBuzz}><i></i></button></label>` : ''}
       <hr /><button type="button" class="menu-item" onClick=${() => { onClose(); onTv() }}>${ICONS.tv}<span>Show on a TV<small>Questions and scores on a big screen</small></span></button>
       ${meta ? html`<hr /><button type="button" class="menu-item" onClick=${() => { onClose(); onRules() }}>${ICONS.help}How to play ${meta.name}</button>` : ''}
+      <a class="menu-item" href=${`/contact?room=${S.room.code}${meta ? `&game=${meta.id}` : ''}`} target="_blank" rel="noopener" onClick=${onClose}>${ICONS.flag}<span>Report a problem<small>Opens in a new tab, so you stay in the room</small></span></a>
       ${meta && isHost ? html`<hr /><button type="button" class="menu-item danger-text" onClick=${end}>${ICONS.stop}<span>End the game for everyone<small>Only the host sees this</small></span></button>` : ''}
     </div>`
 }

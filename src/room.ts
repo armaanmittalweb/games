@@ -53,6 +53,13 @@ interface State {
   v: 2
   code: string
   host: string | null
+  /**
+   * Whose room it is: the host, unless their line dropped and someone is standing in for them. They get the room back
+   * when they return. Handing the room over on purpose, or leaving it, makes the new host its owner.
+   */
+  owner?: string
+  /** When the host's line dropped. Someone else takes over once it has been gone HOST_GRACE_MS. */
+  hostAway?: number
   members: Record<string, Member>
   touched: number
   phase: 'lobby' | 'game' | 'results'
@@ -91,7 +98,14 @@ const PAUSE_MAX_MS = 5 * 60_000
 /** A player back within this long after their connection dropped counts as reconnected. */
 const REJOIN_MS = 120_000
 // Close codes a player chooses (leaving, closing the tab, opened elsewhere, removed); anything else is a dropped line.
-const CHOSEN_CLOSE = new Set([1000, 1001, 1005, 4000, 4001])
+const CHOSEN_CLOSE = new Set([1000, 1001, 1005, 4000, 4001, 4002])
+/** The page's Leave button closes with this, the one close that hands the room over at once. */
+const LEFT = 4002
+/**
+ * How long the room waits for a host whose line dropped (a refresh, a phone that switched to WhatsApp to send the
+ * link) before the next player takes over. Anyone here can take over sooner (see 'takeHost').
+ */
+const HOST_GRACE_MS = 30_000
 
 const hex = (bytes: number) => Array.from(crypto.getRandomValues(new Uint8Array(bytes)), b => b.toString(16).padStart(2, '0')).join('')
 const idOk = (x: unknown): x is string => typeof x === 'string' && /^[a-z0-9]{6,40}$/i.test(x)
@@ -183,6 +197,7 @@ export class Room extends DurableObject<Env> {
       return new Response('ok')
     }
     if (!this.s) return new Response('no such room', { status: 404 })
+    if (url.pathname === '/exists') return new Response('ok')
     if (req.headers.get('upgrade') !== 'websocket') return new Response('expected websocket', { status: 426 })
     const pair = new WebSocketPair()
     this.ctx.acceptWebSocket(pair[1])
@@ -243,6 +258,7 @@ export class Room extends DurableObject<Env> {
   due(now: number) {
     const s = this.s!
     let fired = false
+    if (s.hostAway && now >= s.hostAway + HOST_GRACE_MS && this.hostCheck(now)) fired = true
     if (s.inst?.paused && now >= s.inst.paused.until) { this.resume(s.inst, now); fired = true }
     for (let i = 0; i < 20; i++) {
       const inst = s.inst
@@ -480,6 +496,11 @@ export class Room extends DurableObject<Env> {
       ws.serializeAttachment({ id })
       this.sent.delete(ws)
       if (!s.host || !isMember(s, s.host)) s.host = id
+      s.owner ??= s.host!
+      // The room's owner is back: it is theirs again. A host whose line dropped is simply back.
+      if (s.owner === id && s.host !== id) { const was = s.host!; s.host = id; this.handed(was, id) }
+      if (s.host === id) delete s.hostAway
+      else this.hostCheck(now)
       if (s.away) delete s.away[id]
       // A player of this game who comes back is simply in it again: their seat was kept. Someone new takes a seat while
       // the rules are up (never in a tournament); once play is under way they watch, unless the game is still in its
@@ -711,13 +732,24 @@ export class Room extends DurableObject<Env> {
       case 'host': {
         const to = String(m.id ?? '')
         if (!isHost || !isMember(s, to)) return bail()
-        s.host = to
+        s.host = s.owner = to
+        delete s.hostAway
+        break
+      }
+      case 'takeHost': {
+        // The host's line has dropped and the room is waiting for them: someone here takes over now instead.
+        if (isHost || !s.host || this.online().has(s.host)) return bail()
+        const was = s.host
+        s.host = me
+        delete s.hostAway
+        this.handed(was, me)
         break
       }
       case 'kick': {
         const to = String(m.id ?? '')
         if (!isHost || to === me || !isMember(s, to)) return bail()
         delete s.members[to]
+        if (s.owner === to) s.owner = me
         for (const w of this.ctx.getWebSockets()) if (attached(w) === to) try { w.close(4001, 'removed by host') } catch { /* closed */ }
         const inst = s.inst
         if (inst && s.phase === 'game' && inst.players.includes(to)) {
@@ -763,6 +795,8 @@ export class Room extends DurableObject<Env> {
     const online = this.online(ws)
     const now = Date.now()
     const inst = s.phase === 'game' ? s.inst : null
+    this.reset()
+    this.isLazy = true
     // A line that dropped, not a player who left: they keep a seat in the next game for a while (see seatsFor).
     if (id && s.members[id] && !online.has(id)) {
       s.away ??= {}
@@ -778,11 +812,13 @@ export class Room extends DurableObject<Env> {
       if (!inst.q.dropped.includes(id)) inst.q.dropped.push(id)
     }
     if (id && id === s.host && !online.has(id)) {
-      const next = Object.values(s.members).filter(q => online.has(q.id)).sort((a, b) => a.joinedAt - b.joinedAt)[0]
-      if (next) s.host = next.id
+      if (code === LEFT) {
+        // Left on purpose: the next player takes the room over now, and it is theirs.
+        const next = this.nextHost(online)
+        if (next) { s.host = s.owner = next; this.handed(id, next, true) }
+        delete s.hostAway
+      } else s.hostAway = now
     }
-    this.reset()
-    this.isLazy = true
     // Whoever is still here may all have closed the rules already.
     if (inst?.intro) {
       await this.readDecks()
@@ -790,6 +826,38 @@ export class Room extends DurableObject<Env> {
       if (!inst.intro) this.isLazy = false
     }
     await this.commit()
+  }
+
+  /** Who takes over from the host: the room's owner if they are here, else whoever has been in the room longest. */
+  nextHost(online = this.online()) {
+    const s = this.s!
+    if (s.owner && s.owner !== s.host && online.has(s.owner)) return s.owner
+    return Object.values(s.members).filter(q => q.id !== s.host && online.has(q.id)).sort((a, b) => a.joinedAt - b.joinedAt)[0]?.id
+  }
+
+  /**
+   * A host who is not here: once their line has been gone HOST_GRACE_MS (or at once, if the room was not waiting for
+   * them), the next player here takes over until they are back. Returns whether anything changed.
+   */
+  hostCheck(now: number) {
+    const s = this.s!
+    if (!s.host) return false
+    const online = this.online()
+    if (online.has(s.host)) { const was = !!s.hostAway; delete s.hostAway; return was }
+    if (s.hostAway && now < s.hostAway + HOST_GRACE_MS) return false
+    const next = this.nextHost(online)
+    const was = s.host
+    if (!next) { const had = !!s.hostAway; delete s.hostAway; return had }
+    s.host = next
+    delete s.hostAway
+    this.handed(was, next)
+    return true
+  }
+
+  /** Tells the room the host changed hands, so the new host (and the old one, if here) see why. */
+  handed(from: string, to: string, left = false) {
+    const s = this.s!
+    this.emits.push({ msg: { t: 'host', from, to, back: !left && s.owner === to, left } })
   }
 
   online(except?: WebSocket) {
@@ -838,7 +906,8 @@ export class Room extends DurableObject<Env> {
     // With watching off, the game's own events (pen strokes, guesses) reach only its players.
     const only = s?.watch === false && s.inst ? new Set(s.inst.players) : null
     for (const { msg, to } of this.emits) {
-      const chat = (msg as { t?: string }).t === 'chat'
+      // Chat lines and a change of host go to everyone as they are; game events are wrapped.
+      const chat = ['chat', 'host'].includes((msg as { t?: string }).t ?? '')
       const wire = JSON.stringify(chat ? msg : { t: 'ev', ev: msg })
       const targets = to === undefined ? null : new Set(Array.isArray(to) ? to : [to])
       for (const ws of socks) {
@@ -891,6 +960,7 @@ export class Room extends DurableObject<Env> {
     if (inst?.paused) at = Math.min(at, inst.paused.until)
     else if (inst?.wake) at = Math.min(at, inst.wake + (inst.off ?? 0))
     if (this.dirty) at = Math.min(at, this.lastSave + LAZY_MS)
+    if (s.hostAway) at = Math.min(at, s.hostAway + HOST_GRACE_MS)
     if (at === this.alarmAt) return
     this.alarmAt = at
     await this.ctx.storage.setAlarm(at)
@@ -929,6 +999,9 @@ export class Room extends DurableObject<Env> {
       },
       night: s.night, watch: s.watch !== false,
       screens: this.ctx.getWebSockets().filter(isScreen).length,
+      // The room is waiting for its host's line to come back: who takes over, and in how long (ms from now).
+      hostAway: s.hostAway ? { next: this.nextHost(online) ?? null, in: Math.max(0, s.hostAway + HOST_GRACE_MS - now), for: now - s.hostAway } : null,
+      owner: s.owner ?? s.host,
     }
     const game = inst ? GAMES[inst.id] : null
     const ctx = inst ? this.ctxFor(inst, now) : null

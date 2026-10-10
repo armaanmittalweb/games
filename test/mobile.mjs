@@ -162,7 +162,7 @@ await host.page.waitForURL(/\/r\/[A-Z0-9]{5}$/)
 const url = host.page.url()
 for (const ph of phones) await ph.page.goto(url)
 await host.page.waitForFunction(n => document.querySelectorAll('.plist li').length >= n, phones.length + 1)
-const send = (page, m) => page.evaluate(async m => (await import('/js/core.js')).send(m), m)
+const send = (page, m) => page.evaluate(async m => (await import(document.querySelector('script[src*="/js/app.js"]').src.replace('app.js', 'core.js'))).send(m), m)
 
 for (const ph of phones) {
   await audit(ph.page, `lobby · ${ph.label}`)
@@ -231,19 +231,19 @@ for (const id of GAMES) {
   b.net.asleep = true
   for (const line of b.net.lines.splice(0)) await line.close({ code: 1001 }).catch(() => {})
   await b.page.waitForTimeout(3000)
-  if ((await b.page.evaluate(async () => (await import('/js/core.js')).S.status)) === 'open') fail('sleep', 'still connected after the line was cut (the test did not cut it)')
+  if ((await b.page.evaluate(async () => (await import(document.querySelector('script[src*="/js/app.js"]').src.replace('app.js', 'core.js'))).S.status)) === 'open') fail('sleep', 'still connected after the line was cut (the test did not cut it)')
   await b.page.waitForTimeout(37_000)
   b.net.asleep = false
   await b.page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')))
   const t0 = Date.now()
-  const status = () => b.page.evaluate(async () => (await import('/js/core.js')).S.status)
+  const status = () => b.page.evaluate(async () => (await import(document.querySelector('script[src*="/js/app.js"]').src.replace('app.js', 'core.js'))).S.status)
   let ok = false
   while (!ok && Date.now() - t0 < 15000) { ok = (await status()) === 'open'; if (!ok) await b.page.waitForTimeout(100) }
   const took = (Date.now() - t0) / 1000
   if (!ok) fail('sleep', 'no reconnect within 15 s of waking')
   else if (took > 3) fail('sleep', `took ${took.toFixed(1)} s to reconnect after waking`)
   else console.log(`sleep: back in ${took.toFixed(1)} s after waking`)
-  const same = await b.page.evaluate(async () => { const { S } = await import('/js/core.js'); return S.room?.phase === 'game' && !!S.game })
+  const same = await b.page.evaluate(async () => { const { S } = await import(document.querySelector('script[src*="/js/app.js"]').src.replace('app.js', 'core.js')); return S.room?.phase === 'game' && !!S.game })
   if (!same) fail('sleep', 'woke up without the live game')
   await send(host.page, { t: 'abort' })
   await host.page.waitForSelector('.lobby', { timeout: 5000 }).catch(() => {})

@@ -191,14 +191,14 @@ export const CATALOG: Meta[] = [
     options: [
       rounds(10, 3, 30, 'Questions'),
       secs('seconds', 'Seconds per question', 15, 5, 40),
-      { key: 'category', label: 'Category', kind: 'choice', def: 'any', choices: [['any', 'Everything'], ['india', 'India'], ['general', 'General knowledge'], ['science', 'Science & nature'], ['geography', 'Geography'], ['history', 'History'], ['screen', 'Film & TV'], ['music', 'Music'], ['sports', 'Sports'], ['tech', 'Computers & gadgets'], ['games', 'Video games']] },
+      { key: 'category', label: 'Category', kind: 'choice', def: 'india', choices: [['india', 'India'], ['any', 'Everything'], ['general', 'General knowledge'], ['science', 'Science & nature'], ['geography', 'Geography'], ['history', 'History'], ['screen', 'Film & TV'], ['music', 'Music'], ['sports', 'Sports'], ['tech', 'Computers & gadgets'], ['games', 'Video games']] },
       { key: 'difficulty', label: 'Difficulty', kind: 'choice', def: 'any', choices: [['any', 'Mixed'], ['easy', 'Easy'], ['medium', 'Medium'], ['hard', 'Hard']] },
     ],
     night: { rounds: 8 },
     rules: [
       'Everyone gets the same question with four choices (or true or false) and a timer.',
       'A right answer scores 500 points plus up to 500 more for speed. Three in a row and you get a streak bonus.',
-      'Questions come from the Open Trivia Database, plus a set about India written for this game.',
+      'The questions are about India unless the host picks another topic in the settings. India questions are written for this game; the other topics come from the Open Trivia Database.',
     ],
     seo: { title: 'Multiplayer Trivia Quiz with Friends, Free', description: 'A free live trivia quiz for friends: same questions, a timer, speed bonuses and streaks. Pick a category and difficulty. Private rooms.', about: 'a live multiplayer trivia quiz' },
   },

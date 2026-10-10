@@ -3,9 +3,33 @@
 //     questions that only make sense to an American audience (anime, comics, US sports and politics…), and
 //   - questions about India written for this game (data/india-trivia.mjs).
 //   node scripts/build-trivia.mjs
-import { readFileSync, writeFileSync } from 'node:fs'
-import india from '../data/india-trivia.mjs'
+import { readFileSync, writeFileSync, readdirSync } from 'node:fs'
+import first from '../data/india-trivia.mjs'
 import fixes from '../data/trivia-fixes.mjs'
+
+// The India set: the first questions (data/india-trivia.mjs) and the rest by topic (data/india/*.mjs), each
+// [difficulty, question, right answer, wrong answers]. A question that breaks a rule stops the build.
+const india = [...first]
+for (const f of readdirSync('data/india').filter(f => f.endsWith('.mjs')).sort()) {
+  const part = (await import(`../data/india/${f}`)).default
+  for (const q of part) india.push(Object.assign([...q], { from: f }))
+}
+{
+  const bad = [], seen = new Map()
+  const k = t => t.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim()
+  for (const q of india) {
+    const [d, text, a, w] = q, at = `${q.from ?? 'india-trivia.mjs'}: ${text}`
+    if (!['easy', 'medium', 'hard'].includes(d)) bad.push(`difficulty "${d}": ${at}`)
+    if (typeof text !== 'string' || text.length < 12 || text.length > 200) bad.push(`question length: ${at}`)
+    if (!Array.isArray(w) || !(w.length === 3 || (w.length === 1 && ['True', 'False'].includes(a)))) bad.push(`needs 3 wrong answers: ${at}`)
+    const all = [a, ...(w ?? [])]
+    if (all.some(x => typeof x !== 'string' || !x.trim() || x.length > 60)) bad.push(`answer length: ${at}`)
+    if (new Set(all.map(k)).size !== all.length) bad.push(`answer repeated among the choices: ${at}`)
+    if (seen.has(k(text))) bad.push(`asked twice (also in ${seen.get(k(text))}): ${at}`)
+    seen.set(k(text), q.from ?? 'india-trivia.mjs')
+  }
+  if (bad.length) { console.error(bad.join('\n')); console.error(bad.length, 'problems in the India set'); process.exit(1) }
+}
 
 // The database's typos, fixed (data/trivia-fixes.mjs), and its stray and doubled spaces tidied.
 const edge = s => (/^\w/.test(s) ? '\\b' : '') + s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + (/\w$/.test(s) ? '\\b' : '')

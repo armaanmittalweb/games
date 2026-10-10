@@ -12,7 +12,10 @@ interface Env {
   INTERNAL_KEY?: string
   /** Caps /api/ev per address, so a script cannot flood the counts. */
   EV_LIMIT?: RateLimit
+  /** New rooms per browser on an address, and per address. Mobile networks in India put many people behind one
+   *  address, so the address alone gets a far higher cap. */
   ROOM_LIMIT?: RateLimit
+  ROOM_IP_LIMIT?: RateLimit
 }
 
 /** Compares two strings in time that does not depend on where they differ. */
@@ -39,13 +42,22 @@ export default {
     const url = new URL(req.url)
     if (url.pathname === '/api/rooms' && req.method === 'POST') {
       const ip = req.headers.get('cf-connecting-ip') ?? ''
-      if (env.ROOM_LIMIT && !(await env.ROOM_LIMIT.limit({ key: ip })).success) return json({ error: 'Too many rooms made from here. Try again in a minute.' }, 429)
+      const vid = (req.headers.get('x-vid') ?? '').replace(/[^a-z0-9]/gi, '').slice(0, 40)
+      const busy = json({ error: 'Too many rooms made from here. Try again in a minute.' }, 429)
+      if (env.ROOM_LIMIT && !(await env.ROOM_LIMIT.limit({ key: `${ip} ${vid}` })).success) return busy
+      if (env.ROOM_IP_LIMIT && !(await env.ROOM_IP_LIMIT.limit({ key: ip })).success) return busy
       for (let i = 0; i < 6; i++) {
         const c = code()
         const res = await env.ROOMS.get(env.ROOMS.idFromName(c)).fetch(`https://room/init?code=${c}`)
         if (res.ok) return json({ code: c })
       }
       return json({ error: 'Could not make a room, try again' }, 503)
+    }
+    // Whether a room is open, so an invite link to a closed one says so before asking for a name.
+    const ex = url.pathname.match(/^\/api\/rooms\/([A-Za-z0-9]{5})$/)
+    if (ex && req.method === 'GET') {
+      const res = await env.ROOMS.get(env.ROOMS.idFromName(ex[1].toUpperCase())).fetch('https://room/exists')
+      return json({ open: res.ok }, res.ok ? 200 : 404)
     }
     const m = url.pathname.match(/^\/api\/rooms\/([A-Za-z0-9]{5})\/ws$/)
     if (m) {
@@ -68,6 +80,23 @@ export default {
       e.device = /iPad|Tablet/i.test(ua) ? 'tablet' : /Mobi|Android|iPhone/i.test(ua) ? 'mobile' : 'desktop'
       await env.STATS.get(env.STATS.idFromName('global')).event(e)
       return new Response(null, { status: 204 })
+    }
+    // The contact page: a problem report or a message, kept with the feedback the Switchboard shows.
+    if (url.pathname === '/api/report' && req.method === 'POST') {
+      const ip = req.headers.get('cf-connecting-ip') ?? ''
+      if (env.EV_LIMIT && !(await env.EV_LIMIT.limit({ key: `report ${ip}` })).success) return json({ error: 'Too many messages from here. Try again in a minute' }, 429)
+      const body = await req.text()
+      if (body.length > 4000) return json({ error: 'That is too long' }, 413)
+      let r: { vid?: unknown; topic?: unknown; text?: unknown; reply?: unknown; room?: unknown }
+      try { r = JSON.parse(body) } catch { return json({ error: 'Could not read that' }, 400) }
+      const str = (x: unknown, n: number) => (typeof x === 'string' ? x.replace(/\s+/g, ' ').trim().slice(0, n) : '')
+      const text = str(r?.text, 1000)
+      if (text.length < 10) return json({ error: 'Tell us a little more' }, 400)
+      const extra = [str(r?.room, 30) && `room ${str(r?.room, 30)}`, str(r?.reply, 100) && `reply to ${str(r?.reply, 100)}`].filter(Boolean).join(' · ')
+      await env.STATS.get(env.STATS.idFromName('global')).feedback({
+        vid: str(r?.vid, 40), rid: '', game: str(r?.topic, 20) || 'Something else', kind: 'report', text: extra ? `${text} (${extra})` : text,
+      })
+      return json({ ok: true })
     }
     if (url.pathname === '/internal/analytics') {
       const key = req.headers.get('x-internal-key') ?? ''
