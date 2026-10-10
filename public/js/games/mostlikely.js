@@ -24,3 +24,6 @@ export default function MostLikely({ v, inst, seated }) {
     <aside class="pside"><${Scores} pts=${v.pts} note=${id => (v.crowns[id] ? html`<span class="crowns" title="Times the room picked them">${Mark.crown()}${v.crowns[id] > 1 ? v.crowns[id] : ''}</span>` : '')} /></aside>
   </div>`
 }
+
+/** One line on how the last round ended, for the top of the next one, and whether it went your way (a buzz on phones). */
+export const recap = v => v.phase !== 'reveal' ? null : { text: v.top.length ? `The room picked ${v.top.map(nameOf).join(' & ')}` : 'The room was split', pts: v.top.includes(v.mine) ? 2 : 0, good: v.top.includes(v.mine) }

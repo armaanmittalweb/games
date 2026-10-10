@@ -1,7 +1,8 @@
 // Game Night: the page around the games. Home, rooms, the library, game nights, results and chat.
 import { html, render, useState, useEffect, useRef } from './preact.js'
-import { S, ME, connect, disconnect, send, subscribe, changed, toast, share, copy, codeFrom, keepAwake, getName, setName, now } from './core.js'
-import { Avatar, Name, nameOf, plural, useTick, useFocusTrap } from './ui.js'
+import { S, ME, connect, disconnect, send, subscribe, changed, toast, share, copy, codeFrom, keepAwake, getName, setName, now, onEvent, local } from './core.js'
+import { Avatar, Name, nameOf, plural, useTick, useFocusTrap, Plus } from './ui.js'
+import { STICKERS, STICKER, Sticker } from './stickers.js'
 import { pageView, track } from './track.js'
 import { ask, dismiss, dialogOpen } from './dialog.js'
 import { Results } from './results.js'
@@ -30,8 +31,10 @@ const HOME_TITLE = document.title
 
 function route() {
   const m = location.pathname.match(/^\/r\/([A-Za-z0-9]{5})\/?$/)
-  document.body.dataset.view = m ? 'room' : 'home'
+  const tv = location.pathname.match(/^\/tv(?:\/([A-Za-z0-9]{5}))?\/?$/)
+  document.body.dataset.view = m ? 'room' : tv ? 'tv' : 'home'
   if (m) return { room: m[1].toUpperCase() }
+  if (tv) return { tv: (tv[1] ?? '').toUpperCase() }
   guarded = null
   leaving = false
   disconnect()
@@ -126,6 +129,7 @@ function App() {
     window.addEventListener('route', on)
     return () => { window.removeEventListener('popstate', on); window.removeEventListener('route', on) }
   }, [])
+  if (where.tv !== undefined) return html`<${TvGate} code=${where.tv} />`
   return where.room ? html`<${RoomGate} code=${where.room} />` : html`<${Home} />`
 }
 
@@ -342,6 +346,7 @@ function Room() {
 
   const leave = async () => { if (await askLeave()) { leaving = true; go('/') } }
   const [menu, setMenu] = useState(false)
+  const [tvHelp, setTvHelp] = useState(false)
   const inGame = room.phase === 'game' && room.inst
   const meta = room.inst ? META[room.inst.id] : null
   const here = room.members.filter(m => m.online).length
@@ -350,14 +355,16 @@ function Room() {
       <button class="icon bar-btn" onClick=${leave} aria-label="Leave the room" title="Leave">${ICONS.back}</button>
       ${inGame
         ? html`<button class="bar-game" id="rules-btn" onClick=${() => setRules(room.inst.id)} title="How to play"><${GameIcon} m=${meta} size="tiny" /><span class="vh">How to play </span><span class="ell">${meta.name}</span>${ICONS.help}</button>`
-        : html`<span class="bar-here ell">${plural(here, 'player')} here</span>`}
+        : html`<span class="bar-here ell">${plural(here, 'player')} here${room.screens ? ' · on TV' : ''}</span>`}
       ${s.status !== 'open' ? html`<span class="pill warn">reconnecting</span>` : ''}
+      ${room.screens ? html`<span class="pill tv-pill" title="This room is on a shared screen">On TV</span>` : ''}
       ${inGame && isHost && !room.inst.intro && !room.inst.paused ? html`<button class="icon bar-btn" onClick=${() => send({ t: 'pause', mins: 5 })} aria-label="Pause the game for everyone" title="Pause">${ICONS.pause}</button>` : ''}
       <button class="bar-code" onClick=${() => { S.invite = true; changed() }} aria-label=${`Invite friends to room ${room.code}`} title="Invite friends: share, copy the link or show a QR code"><span class="code">${room.code}</span>${ICONS.share}</button>
       <button class="icon bar-btn chat-btn" onClick=${toggleChat} aria-label=${s.unread ? `Chat, ${s.unread} new` : 'Chat'} title="Chat">${ICONS.chat}${s.unread ? html`<i>${s.unread}</i>` : ''}</button>
       <button class="icon bar-btn" onClick=${() => setMenu(!menu)} aria-label=${inGame ? 'More: light or dark, how to play, end the game' : 'More: light or dark'} aria-haspopup="dialog" aria-expanded=${menu} title="More">${ICONS.more}</button>
     </header>
-    ${menu && html`<${RoomMenu} meta=${inGame ? meta : null} isHost=${isHost} onRules=${() => setRules(room.inst.id)} onClose=${() => setMenu(false)} />`}
+    ${menu && html`<${RoomMenu} meta=${inGame ? meta : null} isHost=${isHost} onRules=${() => setRules(room.inst.id)} onTv=${() => setTvHelp(true)} onClose=${() => setMenu(false)} />`}
+    ${tvHelp && html`<${TvHelp} code=${room.code} onClose=${() => setTvHelp(false)} />`}
     <div class="room-body">
       <main class="room-main">
         ${room.night && html`<${NightBanner} night=${room.night} isHost=${isHost} />`}
@@ -371,7 +378,61 @@ function Room() {
     ${rules && html`<${RulesModal} id=${rules} onClose=${() => setRules(null)} />`}
     ${s.invite && html`<${InviteModal} code=${room.code} onClose=${() => { S.invite = false; changed() }} />`}
     ${inGame && html`<${RulesIntro} key=${room.code + room.inst.n} inst=${room.inst} code=${room.code} />`}
+    ${(room.phase === 'results' || (inGame && REACT_PHASES.has(s.game?.phase))) && html`<${ReactBar} />`}
+    <${ReactFloat} />
   </div>`
+}
+
+// ---------- reactions ----------
+
+/** Phases in which a game is showing how something went: the moment for a reaction. */
+const REACT_PHASES = new Set(['reveal', 'result', 'sold', 'show', 'over'])
+
+/** A button that opens a tray of stickers; each tap sends one to everyone in the room (and the shared screen). */
+function ReactBar() {
+  const [open, setOpen] = useState(false)
+  const shut = useRef()
+  useEffect(() => () => clearTimeout(shut.current), [])
+  const react = k => { send({ t: 'react', r: k }); clearTimeout(shut.current); shut.current = setTimeout(() => setOpen(false), 5000) }
+  return html`<div class=${'react-bar' + (open ? ' open' : '')}>
+    ${open ? html`<div class="react-tray" role="group" aria-label="Send a reaction">${STICKERS.map(s => html`<button key=${s.k} type="button" class="react-btn" onClick=${() => react(s.k)} aria-label=${s.label} title=${s.label}><${Sticker} k=${s.k} size=${34} /></button>`)}</div>` : ''}
+    <button type="button" class="react-fab" aria-expanded=${open} aria-label=${open ? 'Close the reactions' : 'React'} title="React" onClick=${() => setOpen(!open)}>${open ? ICONS.close : html`<${Sticker} k="haha" size=${30} />`}</button>
+  </div>`
+}
+
+/** Stickers anyone sends rise up the screen with the sender's name. */
+function ReactFloat({ big = false }) {
+  const [items, setItems] = useState([])
+  useEffect(() => onEvent(ev => {
+    if (ev.k !== 'react' || !STICKER[ev.r]) return
+    const it = { key: Math.random(), r: ev.r, who: ev.id, x: 6 + Math.random() * 78, tilt: Math.round(Math.random() * 30 - 15) }
+    setItems(l => [...l.slice(-15), it])
+    setTimeout(() => setItems(l => l.filter(x => x !== it)), 2900)
+  }), [])
+  return html`<div class=${'react-float' + (big ? ' big' : '')} aria-hidden="true">${items.map(it => html`<span key=${it.key} class="rf" style=${`left:${it.x}%;--tilt:${it.tilt}deg`}>
+    <${Sticker} k=${it.r} size=${big ? 110 : 60} /><i>${it.who === ME ? 'You' : nameOf(it.who)}</i></span>`)}</div>`
+}
+
+// ---------- the last round, and a buzz for a good one ----------
+
+const buzzOn = () => local.get('gn.buzz', 'on') !== 'off'
+
+/** One line at the top of a round on how the last one ended (the answer, and what you got). */
+function LastRound({ mod, inst }) {
+  const r = S.recap
+  if (!mod?.recap || !r || r.n !== inst.n || !S.game || REACT_PHASES.has(S.game.phase)) return null
+  const x = mod.recap(r.v)
+  if (!x) return null
+  return html`<div class="last-round" role="note"><span class="lr-k">Last round</span><span class="lr-t">${x.text}</span>${inst.players.includes(ME) && !S.screen ? html`<${Plus} n=${x.pts} />` : ''}</div>`
+}
+
+/** A short double buzz when a round ends your way (Android phones; others have no vibration for web pages). */
+function useBuzz(mod, inst) {
+  const key = S.recap?.n === inst.n ? S.recap.key : null
+  useEffect(() => {
+    if (!key || !mod?.recap || S.screen || !buzzOn() || !navigator.vibrate) return
+    if (mod.recap(S.recap.v)?.good) try { navigator.vibrate([30, 60, 40]) } catch { /* not allowed */ }
+  }, [key, !!mod])
 }
 
 const svg = d => html`<svg viewBox="0 0 24 24" aria-hidden="true" class="ico">${d}</svg>`
@@ -386,6 +447,7 @@ export const ICONS = {
   get sun() { return svg(html`<circle cx="12" cy="12" r="4.2" /><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M5.3 18.7l1.6-1.6M17.1 6.9l1.6-1.6" />`) },
   get moon() { return svg(html`<path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z" />`) },
   get pause() { return html`<svg viewBox="0 0 24 24" aria-hidden="true" class="ico fillico"><rect x="6" y="5" width="4.2" height="14" rx="1.4" /><rect x="13.8" y="5" width="4.2" height="14" rx="1.4" /></svg>` },
+  get tv() { return svg(html`<rect x="3" y="5" width="18" height="12" rx="2" /><path d="M8 21h8M12 17v4" />`) },
   get stop() { return svg(html`<rect x="5" y="5" width="14" height="14" rx="3" />`) },
   get copy() { return svg(html`<rect x="8" y="8" width="12" height="12" rx="2" /><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2" />`) },
   get qr() { return svg(html`<path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h2v2h-2zM18 14h2v2h-2zM14 18h2v2h-2zM18 18h2v2h-2z" />`) },
@@ -396,8 +458,10 @@ export const ICONS = {
 }
 
 /** The menu behind the dots in the room's top bar: light or dark, the rules, and (for the host) ending the game. */
-function RoomMenu({ meta, isHost, onRules, onClose }) {
+function RoomMenu({ meta, isHost, onRules, onTv, onClose }) {
   const [theme, setTheme] = useState(document.documentElement.dataset.theme)
+  const [buzz, setBuzz] = useState(buzzOn())
+  const flipBuzz = () => { local.set('gn.buzz', buzz ? 'off' : 'on'); setBuzz(!buzz); if (!buzz) try { navigator.vibrate?.(40) } catch { /* not allowed */ } }
   const box = useRef()
   useFocusTrap(box)
   const pick = t => { if (document.documentElement.dataset.theme !== t) window.toggleTheme?.(); setTheme(t) }
@@ -417,6 +481,9 @@ function RoomMenu({ meta, isHost, onRules, onClose }) {
           <button type="button" role="radio" aria-checked=${theme === 'light'} class=${theme === 'light' ? 'on' : ''} onClick=${() => pick('light')}>${ICONS.sun}Light</button>
           <button type="button" role="radio" aria-checked=${theme !== 'light'} class=${theme !== 'light' ? 'on' : ''} onClick=${() => pick('dark')}>${ICONS.moon}Dark</button>
         </div></div>
+      ${navigator.vibrate ? html`<label class="menu-item menu-switch"><span>Buzz on a right answer<small>A short vibration when a round goes your way</small></span>
+        <button type="button" role="switch" aria-checked=${buzz} aria-label="Buzz on a right answer" class=${'switch' + (buzz ? ' on' : '')} onClick=${flipBuzz}><i></i></button></label>` : ''}
+      <hr /><button type="button" class="menu-item" onClick=${() => { onClose(); onTv() }}>${ICONS.tv}<span>Show on a TV<small>Questions and scores on a big screen</small></span></button>
       ${meta ? html`<hr /><button type="button" class="menu-item" onClick=${() => { onClose(); onRules() }}>${ICONS.help}How to play ${meta.name}</button>` : ''}
       ${meta && isHost ? html`<hr /><button type="button" class="menu-item danger-text" onClick=${end}>${ICONS.stop}<span>End the game for everyone<small>Only the host sees this</small></span></button>` : ''}
     </div>`
@@ -784,6 +851,7 @@ function GameScreen() {
     if (mods[inst.id]) return setMod(mods[inst.id])
     loadGame(inst.id).then(setMod).catch(() => toast('Could not load the game. Refresh the page.'))
   }, [inst.id])
+  useBuzz(mod, inst)
   if (inst.intro) return html`<${IntroWait} inst=${inst} />`
   const seated = inst.players.includes(ME)
   if (!seated && !s.room.watch) return html`<${NoWatching} inst=${inst} />`
@@ -792,6 +860,7 @@ function GameScreen() {
   const missed = s.missed?.n === inst.n && REPLAY.has(inst.id) && seated ? s.missed : null
   return html`<div class=${'game-area g-' + inst.id} ref=${area}>
     ${!seated ? html`<div class="watch">You are watching this game. You will be in the next one.</div>` : ''}
+    <${LastRound} mod=${mod} inst=${inst} />
     <${Game} v=${s.game} inst=${inst} seated=${seated} />
     ${missed && html`<${MissedReveal} key=${missed.v.round} Game=${Game} v=${missed.v} inst=${inst} />`}
   </div>`
@@ -854,6 +923,134 @@ function NoWatching({ inst }) {
   </div>`
 }
 
+// ---------- TV mode ----------
+// A TV, laptop or projector everyone can see shows the room: the code to join, the rules, each question and its
+// answers, the scores and the reactions. Phones keep their own screens for what only their player may see and to
+// answer. The screen joins as a watcher, so it never learns anything a player's phone keeps secret.
+
+/** How big to draw everything so the room's usual layout fills the screen. */
+function useTvZoom() {
+  const calc = () => Math.max(1, Math.min(2.4, innerWidth / 1180, innerHeight / 740))
+  const [z, setZ] = useState(calc)
+  useEffect(() => { const on = () => setZ(calc()); addEventListener('resize', on); return () => removeEventListener('resize', on) }, [])
+  return z
+}
+
+function TvGate({ code }) {
+  const s = useStore()
+  useEffect(() => {
+    document.title = code ? `TV · Room ${code} · Game Night` : 'Show on a TV · Game Night'
+    if (!code) return
+    connect(code, { tv: true })
+    keepAwake(true)
+    return () => { keepAwake(false); disconnect() }
+  }, [code])
+  if (!code) return html`<${TvStart} />`
+  if (s.closed === 'missing') return html`<main class="tv-gate"><p class="lead">Room <b class="code">${code}</b> was not found. Rooms close a day after they were last used.</p><button class="big" onClick=${() => go('/tv')}>Try another code</button></main>`
+  if (!s.room) return html`<main class="tv-gate"><p class="dim">Connecting to ${code}…</p></main>`
+  return html`<${TvRoom} />`
+}
+
+/** games.amittal.dev/tv: type the room's code on the big screen. */
+function TvStart() {
+  const [code, setCode] = useState('')
+  const show = () => { const c = codeFrom(code); if (!/^[A-Z0-9]{5}$/.test(c)) return toast('Room codes are 5 characters'); go('/tv/' + c) }
+  return html`<main class="tv-gate">
+    <span class="tv-big-ico" aria-hidden="true">${ICONS.tv}</span>
+    <h1 class="nomargin">Show a room on this screen</h1>
+    <p class="lead">Everyone plays on their own phone. This screen shows the questions, the answers, the scores and the reactions, big enough for the whole room.</p>
+    <div class="join-row tv-code-in"><input class="code-in" maxlength="200" onInput=${e => setCode(e.target.value)} onKeyDown=${e => e.key === 'Enter' && show()} placeholder="Room code" autocapitalize="characters" autocomplete="off" spellcheck="false" aria-label="Room code" autofocus /><button class="primary big" onClick=${show}>Show it</button></div>
+    <p class="dim small">The host finds the code at the top of the room, or under ••• › Show on a TV.</p>
+  </main>`
+}
+
+function TvRoom() {
+  const s = useStore()
+  const room = s.room
+  const inst = room.inst
+  const z = useTvZoom()
+  const [mod, setMod] = useState(null)
+  useEffect(() => { setMod(inst && mods[inst.id] ? mods[inst.id] : null); if (inst) loadGame(inst.id).then(setMod, () => {}) }, [inst?.id])
+  const meta = inst ? META[inst.id] : null
+  const playing = room.phase === 'game' && inst
+  let body
+  if (room.phase === 'lobby' || !inst) body = html`<${TvLobby} />`
+  else if (playing && inst.intro) body = html`<${TvIntro} inst=${inst} />`
+  else if (playing) body = mod && s.game ? html`<div class=${'game-area tv-game g-' + inst.id}><${LastRound} mod=${mod} inst=${inst} /><${mod.default} v=${s.game} inst=${inst} seated=${false} /></div>` : html`<p class="dim center">Loading…</p>`
+  else body = html`<${Results} isHost=${false} tv=${true} />`
+  return html`<div class="tv" style=${`--z:${z}`}>
+    <header class="tv-bar">
+      <span class="tv-brand">Game Night</span>
+      ${playing ? html`<span class="tv-now"><${GameIcon} m=${meta} size="tiny" />${meta.name}</span>` : ''}
+      ${room.night && room.night.idx >= 0 ? html`<span class="tv-now dim">game ${Math.min(room.night.idx + 1, room.night.plan.length)} of ${room.night.length === 'endless' ? '∞' : room.night.plan.length}</span>` : ''}
+      <span class="grow"></span>
+      ${s.status !== 'open' ? html`<span class="pill warn">reconnecting</span>` : ''}
+      <span class="tv-join">Join at <b>${location.host}</b> with code <b class="code">${room.code}</b></span>
+    </header>
+    <main class="tv-main">${body}${playing && inst.paused ? html`<${PauseCover} paused=${inst.paused} isHost=${false} />` : ''}</main>
+    <${ReactFloat} big=${true} />
+  </div>`
+}
+
+/** Before a game: how to join, who is here, and what is next. */
+function TvLobby() {
+  const room = S.room
+  const qr = useQr(room.code)
+  const here = room.members.filter(m => m.online)
+  const night = room.night && !room.night.done ? room.night : null
+  const pick = META[room.pick]
+  return html`<div class="tv-lobby">
+    <section class="tv-join-card">
+      <div class="tv-qr" dangerouslySetInnerHTML=${{ __html: qr }}></div>
+      <div class="dim">Point your phone's camera here, or go to</div>
+      <div class="tv-url">${location.host}</div>
+      <div class="dim">and type</div>
+      <div class="code tv-code">${room.code}</div>
+    </section>
+    <section class="tv-side">
+      <h2 class="nomargin">${plural(here.length, 'player')} here</h2>
+      <ul class="tv-people">${room.members.map(m => html`<li key=${m.id} class=${m.online ? '' : 'off'}><${Avatar} id=${m.id} size=${44} off=${!m.online} /><span class="ell"><${Name} id=${m.id} you=${false} /></span>${m.id === room.host ? html`<span class="host" title="Host">${ICONS.crown}</span>` : ''}</li>`)}</ul>
+      ${night ? html`<div class="tv-next"><div class="dim">Tonight's games</div><div class="tv-plan">${night.plan.map((id, i) => html`<span key=${i} class=${i <= night.idx ? 'past' : ''}><${GameIcon} m=${META[id]} size="mid" /><span>${META[id].name}</span></span>`)}</div></div>`
+        : pick ? html`<div class="tv-next"><div class="dim">Up next</div><div class="tv-pick"><${GameIcon} m=${pick} size="big" /><div><b>${pick.name}</b><div class="dim">${pick.blurb}</div></div></div></div>` : ''}
+      <p class="dim">${nameOf(room.host)} starts the game from their phone.</p>
+    </section>
+  </div>`
+}
+
+/** The rules, big, while everyone reads them on their phones. */
+function TvIntro({ inst }) {
+  useTick(250)
+  const m = META[inst.id]
+  const left = Math.max(0, Math.ceil((inst.intro.until - now()) / 1000))
+  return html`<div class="tv-intro card">
+    <${RulesHead} m=${m} id="tv-rules" />
+    <${RulesList} m=${m} />
+    <p class="dim">Starting in <b class="ink">${left} s</b>, or as soon as everyone has read the rules on their phone.</p>
+  </div>`
+}
+
+/** From the room menu: how to put the room on a TV. */
+function TvHelp({ code, onClose }) {
+  const box = useRef()
+  useFocusTrap(box)
+  useEffect(() => { const onKey = e => e.key === 'Escape' && onClose(); addEventListener('keydown', onKey); return () => removeEventListener('keydown', onKey) }, [])
+  const link = `${location.origin}/tv/${code}`
+  return html`<div class="modal" onClick=${e => e.target === e.currentTarget && onClose()} role="dialog" aria-modal="true" aria-labelledby="tv-title">
+    <div class="card stack modal-card tv-help" ref=${box}>
+      <div class="row between"><h2 class="nomargin" id="tv-title">Show it on a TV</h2><button class="icon" onClick=${onClose} aria-label="Close">${ICONS.close}</button></div>
+      <p class="nomargin">Put the room on a TV, laptop or projector everyone can see. Phones keep playing; the big screen shows the questions, the answers, the scores and the reactions.</p>
+      <ol class="tv-steps">
+        <li>On the TV's browser, open <b>${location.host}/tv</b></li>
+        <li>Type the code <b class="code">${code}</b></li>
+      </ol>
+      <div class="invite-btns two">
+        <button type="button" class="primary big" onClick=${() => open(link, '_blank', 'noopener')}>Open on this device</button>
+        <button type="button" class="big" onClick=${() => copy(link, 'TV link copied')}>Copy the TV link</button>
+      </div>
+    </div>
+  </div>`
+}
+
 // ---------- inviting ----------
 
 const roomLink = code => `${location.origin}/r/${code}`
@@ -871,12 +1068,10 @@ function InviteButtons({ code }) {
 }
 
 /** The room's QR code (the camera app opens the room), its code in big letters and its link. */
-function InviteModal({ code, onClose }) {
+/** A QR code for a room's link: a phone camera pointed at it opens the room. */
+function useQr(code) {
   const [svg, setSvg] = useState('')
-  const box = useRef()
-  useFocusTrap(box)
   useEffect(() => {
-    track('share', { method: 'qr' })
     import('./qr.js').then(({ default: qrcode }) => {
       const q = qrcode(0, 'M')
       q.addData(roomLink(code))
@@ -886,6 +1081,16 @@ function InviteModal({ code, onClose }) {
       for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) if (q.isDark(y, x)) d += `M${x + pad} ${y + pad}h1v1h-1z`
       setSvg(`<svg viewBox="0 0 ${n + pad * 2} ${n + pad * 2}" shape-rendering="crispEdges" role="img" aria-label="QR code for the room link"><rect width="100%" height="100%" fill="#fff"/><path d="${d}" fill="#15161a"/></svg>`)
     }, () => setSvg(''))
+  }, [code])
+  return svg
+}
+
+function InviteModal({ code, onClose }) {
+  const svg = useQr(code)
+  const box = useRef()
+  useFocusTrap(box)
+  useEffect(() => {
+    track('share', { method: 'qr' })
     const onKey = e => e.key === 'Escape' && onClose()
     addEventListener('keydown', onKey)
     return () => removeEventListener('keydown', onKey)

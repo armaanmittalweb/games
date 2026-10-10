@@ -30,3 +30,6 @@ export default function Trivia({ v, inst, seated }) {
     <aside class="pside"><${Scores} pts=${v.pts} gained=${reveal ? v.gained : null} /></aside>
   </div>`
 }
+
+/** One line on how the last round ended, for the top of the next one, and whether it went your way (a buzz on phones). */
+export const recap = v => v.right === null ? null : { text: `Answer: ${v.choices[v.right]}`, pts: v.gained?.[ME] ?? 0, good: (v.gained?.[ME] ?? 0) > 0 }

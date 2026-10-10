@@ -37,7 +37,8 @@ export default function Auction({ v, inst, seated }) {
           <input inputmode="numeric" maxlength="6" onInput=${e => setCustom(e.target.value.replace(/\D/g, ''))} placeholder=${`${v.bid + 1}+`} aria-label="Your bid" />
           <button disabled=${topMe || !(Number(custom) > v.bid && Number(custom) <= mine)}>Bid</button></form>
       </div>
-      ${topMe ? html`<p class="center plus">You are the top bid</p>` : ''}` : ''}
+      ${topMe ? html`<p class="center plus">You are the top bid</p>`
+        : v.bid + Math.min(...v.raises) > mine ? html`<p class="center au-why">You have ${mine} coins, not enough to beat ${v.bid}. Keep them for a later lot: every 10 left at the end is a point.</p>` : ''}` : ''}
       ${v.log.length ? html`<ol class="au-log">${v.log.slice().reverse().slice(0, 5).map((b, i) => html`<li key=${i}><${Name} id=${b.id} /> ${b.bid}</li>`)}</ol>` : ''}
       ${v.next.length ? html`<div><div class="dim small">Coming up</div><div class="au-next">${v.next.map((l, i) => html`<${LotCard} key=${i} lot=${l} />`)}</div></div>` : ''}
       <details class="au-rules"><summary class="small">How points work</summary><p class="small">Each lot is worth its points. Three lots from the same set: +10. Every 10 coins left at the end: +1. Mystery lots show their worth once sold.</p></details>

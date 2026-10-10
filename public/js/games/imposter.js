@@ -45,3 +45,6 @@ export default function Imposter({ v, inst }) {
     <${Clues} v=${v} />
   </div><aside class="pside"><${Scores} pts=${v.pts} gained=${v.phase === 'reveal' ? v.gained : null} /></aside></div>`
 }
+
+/** One line on how the last round ended, for the top of the next one, and whether it went your way (a buzz on phones). */
+export const recap = v => v.phase !== 'reveal' || !v.imposter ? null : { text: `The imposter was ${v.imposter === ME ? 'you' : nameOf(v.imposter)}`, pts: v.gained?.[ME] ?? 0, good: (v.gained?.[ME] ?? 0) > 0 }

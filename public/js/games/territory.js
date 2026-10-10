@@ -1,5 +1,5 @@
 // Territory: pick a free square next to your land each turn; picks are shown together; clashes stay free.
-import { html, Head, Scores, Waiting, colorOf, Name } from '../ui.js'
+import { html, Head, Scores, Waiting, colorOf } from '../ui.js'
 import { act, ME } from '../core.js'
 
 export default function Territory({ v, inst, seated }) {
@@ -10,7 +10,8 @@ export default function Territory({ v, inst, seated }) {
   return html`<div class="play2">
     <div class="pmain">
       <${Head} title=${`Turn ${v.turn}`} sub=${can ? (v.mine === null ? 'Pick a glowing square next to your land' : 'Picked. You can still change it.') : seated ? 'No free square next to your land' : 'Watching'} until=${v.until} />
-      <div class="tt-frame"><div class="tt-grid" style=${`--w:${v.w}`} role="group" aria-label="The map">
+      ${me >= 0 ? html`<p class="tt-you small"><i class="tt-sw me" style=${`--c:${colorOf(ME)}`}></i> Your land is this colour, striped</p>` : ''}
+      <div class="tt-frame" style=${me >= 0 ? `--mine:${colorOf(ME)}` : ''}><div class="tt-grid" style=${`--w:${v.w}`} role="group" aria-label="The map">
         ${v.cells.map((c, i) => {
           const owner = c >= 0 ? v.seats[c] : null
           let cls = 'tt-cell'
@@ -29,7 +30,6 @@ export default function Territory({ v, inst, seated }) {
       <p class="dim small center">${v.last.clash.length ? `${v.last.clash.length} square${v.last.clash.length > 1 ? 's' : ''} picked by two players stayed free (✕). ` : ''}${v.last.walled.length ? `${v.last.walled.length} walled-in square${v.last.walled.length > 1 ? 's' : ''} changed hands. ` : ''}Wall off an area and it is yours.</p>
       <${Waiting} ids=${inst.players} done=${v.picked} label="picked" />
     </div>
-    <aside class="pside"><${Scores} pts=${v.counts} note=${id => html`<i class="tt-sw" style=${`--c:${colorOf(id)}`}></i>`} />
-      ${me >= 0 ? html`<p class="dim small">Your colour: <i class="tt-sw" style=${`--c:${colorOf(ME)}`}></i> <${Name} id=${ME} /></p>` : ''}</aside>
+    <aside class="pside"><${Scores} pts=${v.counts} note=${id => html`<i class=${'tt-sw' + (id === ME ? ' me' : '')} style=${`--c:${colorOf(id)}`}></i>`} /></aside>
   </div>`
 }

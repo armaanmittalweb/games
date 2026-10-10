@@ -45,6 +45,14 @@ const url = host.url()
 console.log('room', url)
 for (const p of pages.slice(1)) await p.goto(url)
 await host.waitForFunction(() => document.querySelectorAll('.plist li').length >= 4)
+// A shared screen (TV mode) follows every game; its errors count like a player's.
+const tvCtx = await browser.newContext({ viewport: { width: 1920, height: 1080 } })
+const tv = await tvCtx.newPage()
+tv.on('pageerror', e => errors.push(`TV: ${e.message}`))
+tv.on('console', m => { if (m.type() === 'error' && !/WebSocket|favicon|net::|AudioContext/.test(m.text())) errors.push(`TV console: ${m.text()}`) })
+await tv.goto(url.replace('/r/', '/tv/'))
+await tv.waitForSelector('.tv-lobby')
+await tv.screenshot({ path: `${SHOTS}/tv-lobby.png` })
 
 const send = (page, m) => page.evaluate(async m => (await import('/js/core.js')).send(m), m)
 const visible = async (page, sel) => { try { return await page.locator(sel).first().isVisible() } catch { return false } }
@@ -143,6 +151,7 @@ async function play(id) {
       shot = true
       await host.screenshot({ path: `${SHOTS}/${id}-desktop.png` })
       await pages[3].screenshot({ path: `${SHOTS}/${id}-phone.png` })
+      await tv.screenshot({ path: `${SHOTS}/${id}-tv.png` })
     }
     await host.waitForTimeout(250)
   }
@@ -150,6 +159,11 @@ async function play(id) {
   if (done) {
     const rows = await host.locator('.results .tbl tr').count()
     await host.screenshot({ path: `${SHOTS}/${id}-results.png`, fullPage: true })
+    // A sticker from the results screen reaches the TV.
+    await pages[3].click('.react-fab'); await pages[3].click('.react-btn[aria-label="On fire"]')
+    try { await tv.waitForSelector('.react-float .rf', { timeout: 3000 }) } catch { errors.push(`${id}: a reaction did not reach the TV`) }
+    if (await tv.locator('.tv .res-actions, .tv .fb').count()) errors.push(`${id}: the TV shows buttons meant for players`)
+    await tv.screenshot({ path: `${SHOTS}/${id}-tv-results.png` })
     if (!rated) {
       rated = true
       await host.click('.fb .stars button:nth-child(4)')

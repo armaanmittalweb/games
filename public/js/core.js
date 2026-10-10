@@ -18,7 +18,9 @@ export const getName = () => store.get('wr.name', '')
 export const setName = n => store.set('wr.name', n)
 
 /** Everything the page knows about the room it is in. */
-export const S = { code: null, room: null, game: null, gameN: 0, you: ME, chat: [], unread: 0, chatOpen: false, status: 'idle', closed: null, missed: null }
+export const S = { code: null, room: null, game: null, gameN: 0, you: ME, chat: [], unread: 0, chatOpen: false, status: 'idle', closed: null, missed: null, recap: null, screen: false }
+/** Phases in which a game shows how a round ended. */
+export const REVEALS = new Set(['reveal', 'result'])
 let offset = 0
 export const now = () => Date.now() + offset
 
@@ -36,12 +38,14 @@ let before = null
 /** The last reveal (a round's answers) this page got, when, and since when the page has been in view. */
 let lastReveal = null, inView = Date.now()
 
-export function connect(code) {
-  if (wanted === code && ws) return
+/** Joins a room as a player, or (`{ tv: true }`) as a shared screen that shows the room to everyone and never plays. */
+export function connect(code, { tv = false } = {}) {
+  if (wanted === code && ws && S.screen === tv) return
   disconnect()
+  S.screen = tv
   wanted = code
   before = lastReveal = null
-  Object.assign(S, { code, room: null, game: null, gameN: 0, chat: [], unread: 0, status: 'connecting', closed: null, missed: null })
+  Object.assign(S, { code, room: null, game: null, gameN: 0, chat: [], unread: 0, status: 'connecting', closed: null, missed: null, recap: null })
   changed()
   open()
 }
@@ -55,8 +59,8 @@ function open() {
   sock.onopen = () => {
     retry = 0
     heard = Date.now()
-    before = S.game ? { n: S.gameN, v: S.game } : null
-    sock.send(JSON.stringify({ t: 'join', id: ME, secret, name: getName(), vid: VID, sid: session() }))
+    before = S.game && !S.screen ? { n: S.gameN, v: S.game } : null
+    sock.send(JSON.stringify(S.screen ? { t: 'join', tv: true } : { t: 'join', id: ME, secret, name: getName(), vid: VID, sid: session() }))
     clearInterval(pingT)
     // A line can die and still say it is open (a network that changed, a carrier that dropped it): nothing arrives
     // and nothing tells us. So a quiet line is asked to answer: after 5 s in a game, where a missed update means a
@@ -87,6 +91,12 @@ function open() {
         const was = before, v = m.game.v
         before = null
         S.game = v; S.gameN = m.game.n
+        // The round just ended: kept for the line at the top of the next round, and so the page can buzz once for it.
+        if (REVEALS.has(v?.phase)) {
+          const key = `${m.game.n}:${v.round ?? ''}:${v.turn ?? ''}`
+          if (S.recap?.key === key) S.recap.v = v
+          else S.recap = { n: m.game.n, key, v }
+        }
         if (v?.phase === 'reveal') lastReveal = { n: m.game.n, v, at: Date.now() }
         else if (lastReveal?.n === m.game.n && typeof v?.round === 'number' && v.round > lastReveal.v.round) {
           // The round moved on. A reveal that was on screen for a moment only (a page the phone had paused gets it and
@@ -97,6 +107,8 @@ function open() {
       }
       else if (S.gameN !== inst.n) { S.game = null; S.gameN = inst.n }
       changed()
+    } else if (m.t === 'react') {
+      for (const fn of evSubs) fn({ k: 'react', id: m.id, r: m.r })
     } else if (m.t === 'missed') {
       if (m.n === S.gameN) { S.missed = { n: m.n, v: m.v }; changed() }
     } else if (m.t === 'ev') {

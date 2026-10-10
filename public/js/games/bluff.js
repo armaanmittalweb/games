@@ -32,3 +32,6 @@ export default function Bluff({ v, inst, seated }) {
     ${voting ? html`<${Waiting} ids=${inst.players} done=${v.voted} label="voted" />` : html`<p class="center">${v.gained[ME] ? html`<span class="plus">+${v.gained[ME]} for you</span>` : ''} <span class="dim small">3 for finding the real one, 2 for each player you fooled</span></p>`}
   </div><aside class="pside"><${Scores} pts=${v.pts} gained=${voting ? null : v.gained} /></aside></div>`
 }
+
+/** One line on how the last round ended, for the top of the next one, and whether it went your way (a buzz on phones). */
+export const recap = v => v.real ? { text: `It meant: ${v.real}`, pts: v.gained?.[ME] ?? 0, good: v.myVote !== null && !!v.options[v.myVote]?.real } : null

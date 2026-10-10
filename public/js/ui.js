@@ -1,5 +1,5 @@
 // Pieces every game screen uses: names, clocks, score lists, answer boxes and the drawing canvas.
-import { html, useState, useEffect, useRef } from './preact.js'
+import { html, useState, useEffect, useRef, useLayoutEffect } from './preact.js'
 import { S, ME, now, onEvent } from './core.js'
 
 export { html, useState, useEffect, useRef }
@@ -92,15 +92,75 @@ export function Head({ title, sub, until, children }) {
   return html`<div class="ghead"><div><div class="gtitle">${title}</div>${sub ? html`<div class="dim small">${sub}</div>` : ''}</div>${children}<${Clock} until=${until} /></div>`
 }
 
-/** Players sorted by points, with an optional note per player (a tick for "answered"). */
+/** Points won: "+10" in green, "+0" in grey. The one way every game shows them. */
+export const Plus = ({ n = 0 }) => html`<b class=${'plus-pill' + (n > 0 ? '' : ' zero')}>+${n}</b>`
+
+const MOVE_MS = 4500
+
+/**
+ * Players sorted by points, with an optional note per player (a tick for "answered"). Until someone scores there are no
+ * places, only dashes. When a round moves people up or down, their rows slide to their new places and show how far
+ * they moved, for a few seconds.
+ */
 export function Scores({ pts = {}, ids, note, gained }) {
   const list = (ids ?? S.room?.inst?.players ?? []).slice().sort((a, b) => (pts[b] ?? 0) - (pts[a] ?? 0))
-  let place = 0
-  return html`<ol class="scores">${list.map((id, i) => {
-    if (i === 0 || (pts[id] ?? 0) !== (pts[list[i - 1]] ?? 0)) place = i + 1
-    return html`<li key=${id} class=${id === ME ? 'me' : ''}><span class="pl">${place}</span><${Avatar} id=${id} size=${24} /><span class="grow ell"><${Name} id=${id} /></span>
-      ${note ? html`<span class="note">${note(id)}</span>` : ''}${gained && gained[id] ? html`<span class="plus">+${gained[id]}</span>` : ''}<b class="pts">${pts[id] ?? 0}</b></li>`
+  const scored = list.some(id => (pts[id] ?? 0) !== 0)
+  const places = {}
+  list.forEach((id, i) => { places[id] = i > 0 && (pts[id] ?? 0) === (pts[list[i - 1]] ?? 0) ? places[list[i - 1]] : i + 1 })
+  const box = useRef()
+  const mem = useRef({ key: '', places: null, scored: false, moves: {}, until: 0, tops: {} })
+  const [, force] = useState(0)
+  const m = mem.current
+  const key = list.map(id => `${id}:${pts[id] ?? 0}`).join()
+  if (key !== m.key) {
+    const moves = {}
+    // Only a change of real places counts: going from "nobody has scored" to a first score moves nobody.
+    if (m.places && m.scored) for (const id of list) if (m.places[id] && m.places[id] !== places[id]) moves[id] = m.places[id] - places[id]
+    if (Object.keys(moves).length) { m.moves = moves; m.until = Date.now() + MOVE_MS }
+    m.places = places
+    m.scored = scored
+    m.key = key
+  }
+  const moving = Date.now() < m.until ? m.moves : {}
+  useEffect(() => { if (Date.now() >= m.until) return; const t = setTimeout(() => force(x => x + 1), m.until - Date.now() + 50); return () => clearTimeout(t) }, [m.until])
+  // Rows that changed place slide from where they were (the order changed between two paints).
+  useLayoutEffect(() => {
+    const rows = box.current ? [...box.current.children] : []
+    const still = matchMedia('(prefers-reduced-motion: reduce)').matches
+    const tops = {}
+    for (const li of rows) {
+      const id = li.dataset.id, top = li.offsetTop
+      tops[id] = top
+      const was = m.tops[id]
+      if (!still && was !== undefined && was !== top && li.animate) li.animate([{ transform: `translateY(${was - top}px)` }, { transform: 'none' }], { duration: 520, easing: 'cubic-bezier(.2,.8,.2,1)' })
+    }
+    m.tops = tops
+  })
+  return html`<ol class="scores" ref=${box}>${list.map(id => {
+    const mv = moving[id]
+    return html`<li key=${id} data-id=${id} class=${id === ME ? 'me' : ''}><span class="pl">${scored ? places[id] : '–'}</span><${Avatar} id=${id} size=${24} /><span class="grow ell"><${Name} id=${id} /></span>
+      ${mv ? html`<span class=${'mv ' + (mv > 0 ? 'up' : 'down')} aria-label=${`${mv > 0 ? 'up' : 'down'} ${plural(Math.abs(mv), 'place')}`}>${mv > 0 ? '▲' : '▼'}${Math.abs(mv)}</span>` : ''}
+      ${note ? html`<span class="note">${note(id)}</span>` : ''}${gained ? html`<${Plus} n=${gained[id] ?? 0} />` : ''}<b class="pts">${pts[id] ?? 0}</b></li>`
   })}</ol>`
+}
+
+/**
+ * How a round ended, told the same way in every game with a round of scores: a headline (who took it), anything the
+ * game wants to draw (`children`), then a row per player, best first, with a bar (longer is better), what they did, a
+ * note and the points. Your row is marked.
+ * rows: [{ id, value, bar: 0..1, note, pts, place, bad }]
+ */
+export function RoundResult({ head, sub, rows, empty = 'Nobody played this round.', children }) {
+  return html`<section class="rr" aria-label="How the round went">
+    ${head ? html`<div class="rr-head"><b>${head}</b>${sub ? html`<span class="dim small">${sub}</span>` : ''}</div>` : ''}
+    ${children}
+    ${rows.length ? html`<ol class="rr-rows">${rows.map((r, i) => html`<li key=${r.id} class=${(r.id === ME ? 'me' : '') + (r.bad ? ' bad' : '')} style=${`--i:${i}`}>
+      <span class="rr-pl">${r.place ?? i + 1}</span><${Avatar} id=${r.id} size=${28} />
+      <span class="rr-main"><span class="rr-line"><span class="ell"><${Name} id=${r.id} /></span><b class="rr-val">${r.value}</b></span>
+        <span class="rr-bar" aria-hidden="true"><i style=${`--w:${Math.max(3, Math.round((r.bar ?? 0) * 100))}%;--c:${colorOf(r.id)}`}></i></span>
+        ${r.note ? html`<span class="rr-note">${r.note}</span>` : ''}</span>
+      <${Plus} n=${r.pts ?? 0} /></li>`)}</ol>` : html`<p class="dim center">${empty}</p>`}
+  </section>`
 }
 
 /** Who has done the thing everyone is waiting for. */

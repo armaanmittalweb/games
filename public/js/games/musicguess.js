@@ -1,6 +1,6 @@
 // Music Guess: the clip plays by itself (or on a tap if the browser asks); pick the song from four.
 import { html, Head, Scores, Name, Waiting, useEffect, useRef, useState } from '../ui.js'
-import { act } from '../core.js'
+import { act, ME } from '../core.js'
 
 /** Plays `secs` seconds of the preview from `at`. Resolves false if the browser blocked it (no tap yet). */
 async function playClip(audio, at, secs) {
@@ -51,3 +51,6 @@ export default function MusicGuess({ v, inst, seated }) {
       <p class="dim small">Song clips are Apple Music previews.</p></aside>
   </div>`
 }
+
+/** One line on how the last round ended, for the top of the next one, and whether it went your way (a buzz on phones). */
+export const recap = v => v.song ? { text: `It was ${v.song.t}${v.song.f ? ` (${v.song.f})` : ''}`, pts: v.gained?.[ME] ?? 0, good: (v.gained?.[ME] ?? 0) > 0 } : null

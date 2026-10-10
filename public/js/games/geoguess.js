@@ -56,3 +56,10 @@ export default function GeoGuess({ v, inst, seated }) {
       <p class="dim small">100 for a pin inside the country or on the city. Points fall with distance.</p></aside>
   </div>`
 }
+
+/** One line on how the last round ended, for the top of the next one, and whether it went your way (a buzz on phones). */
+export const recap = v => {
+  if (!v.result) return null
+  const mine = v.result[ME], best = Object.entries(v.result).sort((a, b) => a[1].km - b[1].km)[0]
+  return { text: `${v.name}${mine ? ` · you were ${Math.round(mine.km).toLocaleString('en-IN')} km away` : ''}`, pts: mine?.pts ?? 0, good: !!mine && best?.[0] === ME }
+}

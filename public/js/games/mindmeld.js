@@ -1,6 +1,6 @@
 // Mind Meld: one prompt, everyone answers, matches score.
 import { html, Head, Scores, AnswerBox, Waiting, Name } from '../ui.js'
-import { act } from '../core.js'
+import { act, ME } from '../core.js'
 
 export default function MindMeld({ v, inst, seated }) {
   const answering = v.phase === 'answer'
@@ -19,4 +19,10 @@ export default function MindMeld({ v, inst, seated }) {
     </div>
     <aside class="pside"><${Scores} pts=${v.pts} /></aside>
   </div>`
+}
+
+/** One line on how the last round ended, for the top of the next one, and whether it went your way (a buzz on phones). */
+export const recap = v => {
+  const top = v.groups?.[0], mine = v.groups?.find(g => g.ids.includes(ME))
+  return top ? { text: top.ids.length > 1 ? `Most said “${top.text}”` : 'Nobody matched', pts: mine ? mine.ids.length - 1 : 0, good: !!mine && mine.ids.length > 1 } : null
 }

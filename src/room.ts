@@ -102,6 +102,13 @@ const isMember = (s: State, id: string) => Object.hasOwn(s.members, id)
 const CHAT_BURST = 5, CHAT_WINDOW_MS = 4000
 
 const attached = (ws: WebSocket) => (ws.deserializeAttachment() as { id?: string } | null)?.id
+/** A shared screen (a TV or laptop showing the room to everyone): it watches, never plays, and sends nothing. */
+const isScreen = (ws: WebSocket) => (ws.deserializeAttachment() as { tv?: boolean } | null)?.tv === true
+const MAX_SCREENS = 4
+/** The stickers players can send (drawn in public/js/stickers.js). */
+const REACTIONS = new Set(['wah', 'haha', 'fire', 'arre', 'oof', 'legend', 'chai'])
+/** Reactions: at most this many from one player in this long. */
+const REACT_BURST = 6, REACT_WINDOW_MS = 5000
 
 /** A room saved while a game that has since been taken off the site was picked or playing goes back to its lobby. */
 function retire(s: State) {
@@ -127,6 +134,8 @@ export class Room extends DurableObject<Env> {
   reveals = new Map<string, { n: number; v: string }>()
   /** Per player: when their last few chat lines were sent (see CHAT_BURST). */
   chatAt = new Map<string, number[]>()
+  /** Per player: when their last few reactions were sent (see REACT_BURST). */
+  reactAt = new Map<string, number[]>()
   reports: ((stats: DurableObjectStub<Stats>) => Promise<unknown>)[] = []
   /** The site's place in each content pool, read when a game starts, and the places this room has moved to since. */
   site: Record<string, number> = {}
@@ -138,6 +147,10 @@ export class Room extends DurableObject<Env> {
   ended: { standings: Standing[]; summary?: unknown } | null = null
   dirty = false
   lastSave = 0
+  /** Storage is billed by the row written: the chat is written only when it changed, and the alarm only when its
+   *  time did. */
+  chatDirty = false
+  alarmAt = 0
   /** Who was online, and in which phase, when the Stats object last heard (it shows who is on right now). */
   lastPresence = ''
 
@@ -429,6 +442,16 @@ export class Room extends DurableObject<Env> {
     const err = (msg: string) => { try { ws.send(JSON.stringify({ t: 'error', msg })) } catch { /* closed */ } }
     const fired = this.due(now)
 
+    if (m.t === 'join' && m.tv === true) {
+      // A shared screen: it shows the room and the game as someone watching would see them, so it never learns
+      // anything a player's own screen keeps secret.
+      if (!isScreen(ws) && this.ctx.getWebSockets().filter(isScreen).length >= MAX_SCREENS) return err(`This room already has ${MAX_SCREENS} screens`)
+      ws.serializeAttachment({ tv: true })
+      this.sent.delete(ws)
+      try { ws.send(JSON.stringify({ t: 'chat', all: this.chat })) } catch { /* closed */ }
+      return this.commit()
+    }
+
     if (m.t === 'join') {
       const id = String(m.id ?? '').slice(0, 40), secret = String(m.secret ?? '').slice(0, 80)
       let name = clean(m.name, 16)
@@ -504,6 +527,18 @@ export class Room extends DurableObject<Env> {
         if (typeof e === 'string') { err(e); if (!this.emits.length && !fired) return }
         break
       }
+      case 'react': {
+        // A sticker for everyone in the room (the shared screen too). Nothing is kept.
+        const r = String(m.r)
+        if (!REACTIONS.has(r)) return bail()
+        const sent = (this.reactAt.get(me) ?? []).filter(t => now - t < REACT_WINDOW_MS)
+        if (sent.length >= REACT_BURST) return bail()
+        sent.push(now)
+        this.reactAt.set(me, sent)
+        const wire = JSON.stringify({ t: 'react', id: me, r })
+        for (const w of this.ctx.getWebSockets()) try { w.send(wire) } catch { /* closing */ }
+        return bail()
+      }
       case 'missed': {
         // Back on a new line after the round moved on: the reveal this player's old line never delivered.
         const inst = s.inst, r = this.reveals.get(me)
@@ -520,6 +555,7 @@ export class Room extends DurableObject<Env> {
         const c = { id: me, text, at: now }
         this.chat.push(c)
         if (this.chat.length > 80) this.chat.splice(0, this.chat.length - 80)
+        this.chatDirty = true
         if (!fired) this.isQuiet = true
         this.isLazy = true
         this.emits.push({ msg: { t: 'chat', m: c } })
@@ -700,6 +736,8 @@ export class Room extends DurableObject<Env> {
   }
 
   async alarm() {
+    // A fired alarm is gone from storage: the next one has to be set even if it is for the same time.
+    this.alarmAt = 0
     const s = this.s
     if (!s) return
     const now = Date.now()
@@ -768,7 +806,8 @@ export class Room extends DurableObject<Env> {
 
   async save() {
     if (!this.s) return
-    const puts: Record<string, unknown> = { s: this.s, chat: this.chat }
+    const puts: Record<string, unknown> = { s: this.s }
+    if (this.chatDirty) { puts.chat = this.chat; this.chatDirty = false }
     const dels: string[] = []
     for (const k of this.dirtyBlobs) {
       if (this.blobs.has(k)) puts['b:' + k] = this.blobs.get(k)
@@ -804,6 +843,8 @@ export class Room extends DurableObject<Env> {
       const targets = to === undefined ? null : new Set(Array.isArray(to) ? to : [to])
       for (const ws of socks) {
         const id = attached(ws)
+        // A shared screen gets what goes to everyone (pen strokes, guesses shown to all), never anyone's own.
+        if (isScreen(ws)) { if (!targets) try { ws.send(wire) } catch { /* closing */ } continue }
         if (!id || (targets && !targets.has(id)) || (!chat && only && !only.has(id))) continue
         try { ws.send(wire) } catch { /* closing */ }
       }
@@ -850,6 +891,8 @@ export class Room extends DurableObject<Env> {
     if (inst?.paused) at = Math.min(at, inst.paused.until)
     else if (inst?.wake) at = Math.min(at, inst.wake + (inst.off ?? 0))
     if (this.dirty) at = Math.min(at, this.lastSave + LAZY_MS)
+    if (at === this.alarmAt) return
+    this.alarmAt = at
     await this.ctx.storage.setAlarm(at)
   }
 
@@ -885,6 +928,7 @@ export class Room extends DurableObject<Env> {
         paused: inst.paused ? { until: inst.paused.until - (inst.off ?? 0) } : null,
       },
       night: s.night, watch: s.watch !== false,
+      screens: this.ctx.getWebSockets().filter(isScreen).length,
     }
     const game = inst ? GAMES[inst.id] : null
     const ctx = inst ? this.ctxFor(inst, now) : null
@@ -892,17 +936,19 @@ export class Room extends DurableObject<Env> {
     // by the length of the pause when play carries on.
     const wireNow = now - (inst?.off ?? 0)
     for (const ws of this.ctx.getWebSockets()) {
-      const id = attached(ws)
-      if (!id || !s.members[id]) continue
-      const base = JSON.stringify({ t: 's', now: wireNow, you: id, room })
+      const screen = isScreen(ws)
+      const id = screen ? '~screen' : attached(ws)
+      if (!id || (!screen && !isMember(s, id))) continue
+      const base = JSON.stringify({ t: 's', now: wireNow, you: screen ? null : id, screen, room })
       let wire = base
-      // Players see their game; anyone else sees it only while the host lets people watch.
-      if (inst && game && ctx && !inst.intro && (s.watch !== false || inst.players.includes(id))) {
+      // Players see their game; anyone else sees it only while the host lets people watch. A shared screen always
+      // does: it is the host's own way of showing the game.
+      if (inst && game && ctx && !inst.intro && (screen || s.watch !== false || inst.players.includes(id))) {
         let v: string
         try {
           const view = game.view(ctx, inst.s, id) as { phase?: string } | null
           v = JSON.stringify({ n: inst.n, v: view })
-          if (view?.phase === 'reveal') this.reveals.set(id, { n: inst.n, v: JSON.stringify(view) })
+          if (view?.phase === 'reveal' && !screen) this.reveals.set(id, { n: inst.n, v: JSON.stringify(view) })
         } catch (e) { console.error('view', inst.id, e); v = JSON.stringify({ n: inst.n, v: null }) }
         // Only send the game view when it changed for this player.
         if (this.sent.get(ws) !== v) { this.sent.set(ws, v); wire = base.slice(0, -1) + ',"game":' + v + '}' }

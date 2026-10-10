@@ -1,6 +1,6 @@
 // 24 Game: tap a number, an operation and another number to combine them; make the last number 24.
 import { html, Head, Scores, Waiting, Name, useState, useEffect } from '../ui.js'
-import { act } from '../core.js'
+import { act, ME } from '../core.js'
 
 const gcd = (a, b) => (b ? gcd(b, a % b) : Math.abs(a))
 const fr = (n, d) => { if (d < 0) { n = -n; d = -d } const g = gcd(n, d) || 1; return [n / g, d / g] }
@@ -83,3 +83,6 @@ export default function Make24({ v, inst, seated }) {
     <aside class="pside"><${Scores} pts=${v.pts} gained=${reveal ? v.gained : null} /></aside>
   </div>`
 }
+
+/** One line on how the last round ended, for the top of the next one, and whether it went your way (a buzz on phones). */
+export const recap = v => v.answer ? { text: `One way: ${v.answer}`, pts: v.gained?.[ME] ?? 0, good: (v.gained?.[ME] ?? 0) > 0 } : null

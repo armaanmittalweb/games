@@ -27,7 +27,9 @@ export default function Telephone({ v, inst }) {
         ${v.mine ? html`<p class="center">Sent: <b>${v.mine}</b> <span class="dim small">(send again to change it)</span></p>` : ''}
         <${AnswerBox} key=${v.step} onSend=${t => act({ a: 'text', text: t })} placeholder=${v.step === 0 ? 'A monkey riding a rocket…' : 'I think it shows…'} max=${100} label=${v.mine ? 'Change' : 'Send'} />`
       : html`<${Canvas} k=${v.step} strokes=${v.mine} edit=${!v.doneMe} send=${act} />
-        <button class=${'wide big' + (v.doneMe ? '' : ' primary')} onClick=${() => act({ a: 'done' })}>${v.doneMe ? 'Keep drawing' : 'Done'}</button>`}
+        ${v.doneMe
+          ? html`<div class="tele-sent" role="status"><b>✓ Sent</b><span class="dim small">Waiting for the others.</span><button class="link" onClick=${() => act({ a: 'done' })}>Keep drawing</button></div>`
+          : html`<button class="wide big primary" onClick=${() => act({ a: 'done' })}>Done</button>`}`}
     `}
     <${Waiting} ids=${inst.players} done=${doneIds} label="done" />
   </div>`

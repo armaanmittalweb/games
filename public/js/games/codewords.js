@@ -166,6 +166,13 @@ function Clue({ v }) {
   </div>`
 }
 
+const EYE = html`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="3" fill="currentColor"/></svg>`
+/** A team's players under its score, spymaster first with an eye on their picture. */
+const Roster = ({ v, inst, team }) => html`<div class=${'cw-roster ' + team} aria-label=${`${T[team]} team`}>${inst.players.filter(id => v.team[id] === team)
+  .sort((a, b) => (v.spy[team] === b) - (v.spy[team] === a)).map(id => html`<span key=${id} class=${'cw-who' + (v.spy[team] === id ? ' spy' : '') + (id === ME ? ' me' : '')}>
+    <span class="cw-av"><${Avatar} id=${id} size=${22} />${v.spy[team] === id ? html`<i class="cw-eye" title="Spymaster">${EYE}</i>` : ''}</span>
+    <span class="ell">${id === ME ? 'You' : nameOf(id)}${v.spy[team] === id ? html`<span class="vh">, spymaster</span>` : ''}</span></span>`)}</div>`
+
 const Score = ({ team, left, on }) => html`<div class=${'cw-score ' + team + (on ? ' on' : '')} aria-label=${`${T[team]}: ${left} left to find`}>
   <b>${left}</b><small>left</small></div>`
 
@@ -198,6 +205,7 @@ export default function CodeWords({ v, inst }) {
       <div class="grow center cw-status">${status}</div>
       <${Score} team="blue" left=${v.remaining.blue} on=${!over && v.turn === 'blue'} />
     </div>
+    <div class="cw-rosters"><${Roster} v=${v} inst=${inst} team="red" /><${Roster} v=${v} inst=${inst} team="blue" /></div>
     ${over ? '' : html`<${TurnBar} v=${v} />`}
     <div class="cw-board">${v.words.map((w, i) => {
       const k = v.keys[i]
@@ -214,9 +222,6 @@ export default function CodeWords({ v, inst }) {
       ${v.black > 1 ? html`<p class="small dim center"><span class="cw-dot"></span> ${v.black} black cards on this board. Any one of them loses the game.</p>` : ''}
       ${v.log.length ? html`<div class="cw-log" aria-label="Clues so far">${v.log.map((l, j) => html`<span key=${j} class=${'cw-logchip ' + l.team}>
         <b>${l.clue} ${num(l.n)}</b>${l.picks.length ? html` ${l.picks.map(i => html`<span key=${i} class=${'cw-dotw ' + v.keys[i]}>${v.words[i].toLowerCase()}</span>`)}` : ''}</span>`)}</div>` : ''}
-      <div class="cw-teams small">
-        ${['red', 'blue'].map(t => html`<span key=${t} class=${t}>${T[t]}: ${inst.players.filter(id => v.team[id] === t).map(id => nameOf(id) + (v.spy[t] === id ? ' (spymaster)' : '')).join(', ')}</span>`)}
-      </div>
     </div>
   </div>`
 }

@@ -1,6 +1,6 @@
 // Mastermind: build a guess from the colours, see how close it is, crack the code in as few guesses as you can.
 import { html, Head, Scores, Name, Waiting, useState, useEffect } from '../ui.js'
-import { act } from '../core.js'
+import { act, ME } from '../core.js'
 
 // Colours that stay apart for most kinds of colour blindness, each with a letter as well.
 export const PEGS = [['#e03131', 'R', 'red'], ['#1c7ed6', 'B', 'blue'], ['#2f9e44', 'G', 'green'], ['#fcc419', 'Y', 'yellow'],
@@ -68,6 +68,9 @@ export default function Mastermind({ v, inst, seated }) {
         })}</table>` : ''}
       ${!reveal ? html`<${Waiting} ids=${inst.players} done=${v.done} label="finished" />` : ''}
     </div>
-    <aside class="pside"><${Scores} pts=${v.pts} gained=${reveal ? v.gained : null} note=${reveal ? null : id => `${v.progress[id]?.n ?? 0}${v.progress[id]?.cracked ? ' ✓' : ''}`} /></aside>
+    <aside class="pside"><${Scores} pts=${v.pts} gained=${reveal ? v.gained : null} note=${reveal ? null : id => `${v.progress[id]?.n ?? 0} ${(v.progress[id]?.n ?? 0) === 1 ? 'try' : 'tries'}${v.progress[id]?.cracked ? ' ✓' : ''}`} /></aside>
   </div>`
 }
+
+/** One line on how the last round ended, for the top of the next one, and whether it went your way (a buzz on phones). */
+export const recap = v => v.code ? { text: `The code was ${v.code.map(c => PEGS[c]?.[2] ?? '?').join(', ')}`, pts: v.gained?.[ME] ?? 0, good: (v.gained?.[ME] ?? 0) > 0 } : null

@@ -1,6 +1,6 @@
 // Movie Guess: emojis first, then the story, then a famous line or the letters. Type the film's name.
 import { html, Head, Scores, Name, AnswerBox, Waiting, useEffect } from '../ui.js'
-import { act, onEvent, toast } from '../core.js'
+import { act, onEvent, toast, ME } from '../core.js'
 
 export default function MovieGuess({ v, inst, seated }) {
   useEffect(() => onEvent(e => { if (e.k === 'close') toast('So close! Check the spelling.') }), [])
@@ -25,3 +25,6 @@ export default function MovieGuess({ v, inst, seated }) {
       <p class="dim small">10 points on the emojis alone, 6 after the story, 3 after the last clue.</p></aside>
   </div>`
 }
+
+/** One line on how the last round ended, for the top of the next one, and whether it went your way (a buzz on phones). */
+export const recap = v => v.title ? { text: `It was ${v.title}${v.year ? ` (${v.year})` : ''}`, pts: v.gained?.[ME] ?? 0, good: (v.gained?.[ME] ?? 0) > 0 } : null

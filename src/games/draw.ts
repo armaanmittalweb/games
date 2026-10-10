@@ -103,7 +103,8 @@ export const draw: Game<S, C> = {
       if (id !== drawer || s.phase !== 'draw') return
       const ev = drawMsg(s.strokes, m)
       if (!ev) return
-      g.emit(ev, Object.keys(g.names).filter(p => p !== id))
+      // To everyone, a shared screen too; the drawer's own canvas ignores its strokes coming back.
+      g.emit(ev)
       g.quiet()
       g.lazy()
       return

@@ -239,7 +239,8 @@ async function shareCard(data) {
 
 // ---------- the screen ----------
 
-export function Results({ isHost }) {
+/** The results screen. On a shared screen (`tv`) it shows the outcome only: no buttons, nothing to fill in. */
+export function Results({ isHost, tv = false }) {
   const s = S
   const room = s.room
   const inst = room.inst
@@ -265,7 +266,7 @@ export function Results({ isHost }) {
   const mins = inst.startedAt && inst.endedAt ? Math.max(1, Math.round((inst.endedAt - inst.startedAt) / 60000)) : null
   const key = room.code + ':' + inst.n
   // The host can change the next game's settings here: the night's next game, or this one again.
-  const setFor = !isHost ? null : night ? (next && next !== 'more' ? next : null) : inst.id
+  const setFor = !isHost || tv ? null : night ? (next && next !== 'more' ? next : null) : inst.id
   const onSet = config => send(night ? { t: 'nightConfig', id: setFor, config } : { t: 'config', id: setFor, config })
   useEffect(() => {
     if (celebrated.has(key) || !st.length) return
@@ -295,7 +296,7 @@ export function Results({ isHost }) {
       ${lines.length ? html`<ul class="moments">${lines.map(([e, t], i) => html`<li key=${i} style=${`--i:${i}`}>${MARKS[e]?.() ?? ''}${t}</li>`)}</ul>` : ''}
     </section>
 
-    <div class="res-actions">
+    ${tv ? '' : html`<div class="res-actions">
       ${isHost ? html`
         ${night && !night.done && next ? html`<button class="primary big grow" onClick=${() => send({ t: 'nightGo' })}>Next: ${next === 'more' ? 'a new game' : META[next].name}</button>` : ''}
         ${night?.done ? html`<button class="primary big grow" onClick=${() => send({ t: 'nightEnd' })}>Back to the lobby</button>` : ''}
@@ -308,10 +309,10 @@ export function Results({ isHost }) {
         ${inBtn}
         ${ready}
         ${st.length ? html`<button class="ghost-btn" onClick=${card} disabled=${busy} aria-label="Share result as a picture">Share result</button>` : ''}`}
-    </div>
+    </div>`}
     ${setFor ? html`<details class="card fold res-opts"><summary>Settings for ${night ? 'the next game, ' : ''}${META[setFor].name}</summary>
       <${GameOptions} meta=${META[setFor]} cfg=${night ? nightCfg(night, setFor) : room.configs[setFor] ?? {}} isHost=${true} onSet=${onSet} /></details>` : ''}
-    ${!isHost ? html`<p class="dim small center nomargin">${night && !night.done ? `Up next: ${next && next !== 'more' ? META[next].name : 'another game'}. The host starts it.` : 'The host picks what is next.'}</p>` : ''}
+    ${!isHost && !tv ? html`<p class="dim small center nomargin">${night && !night.done ? `Up next: ${next && next !== 'more' ? META[next].name : 'another game'}. The host starts it.` : 'The host picks what is next.'}</p>` : ''}
 
     <div class="card">
       <div class="scroll"><table class="tbl res-table"><tr><th>#</th><th>Player</th><th>Score</th><th></th><th class="r" title="Room points">Room pts</th></tr>
@@ -321,7 +322,7 @@ export function Results({ isHost }) {
       ${st.length === 1 && !sat.length ? '' : html`<p class="dim small nomargin res-pts-note">Room points: 10 for a win down to 0 for last, by how many you beat. No moves, no points.</p>`}
     </div>
     ${Summary && html`<${Summary} inst=${inst} summary=${inst.summary} />`}
-    ${seated && html`<${Feedback} key=${key} inst=${inst} code=${room.code} />`}
+    ${seated && !tv && html`<${Feedback} key=${key} inst=${inst} code=${room.code} />`}
     ${night && html`<${NightTable} night=${night} />`}
   </div>`
 }
